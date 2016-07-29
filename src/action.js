@@ -86,6 +86,8 @@
                     {}, context,
                     decoder.decode( action.pyson_context || '{}'));
                 ctx = jQuery.extend(ctx, params.context);
+                // [Coog Specific] handle extra_context
+                ctx = jQuery.extend(ctx, data.extra_context || {});
 
                 ctx.context = ctx;
                 decoder = new Sao.PYSON.Decoder(ctx);
@@ -122,6 +124,8 @@
                 params.action = action.wiz_name;
                 params.data = data;
                 params.context = context;
+                params.context = jQuery.extend(
+                    params.context, data.extra_context || {});
                 params.window = action.window;
                 name_prm = jQuery.when(action.name);
                 if ((action.keyword || 'form_action') === 'form_action') {

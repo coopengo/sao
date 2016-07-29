@@ -779,7 +779,6 @@
                 this.response('RESPONSE_OK');
                 e.preventDefault();
             });
-
             this.screen = new Sao.Screen(model, {
                 mode: ['tree'],
                 context: this.context,

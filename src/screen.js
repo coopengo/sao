@@ -851,6 +851,9 @@
             this.fields_view_tree = {};
             this._domain_parser = {};
             this.pre_validate = false;
+            // [Coog specific] used for group_sync
+            this.parent = null;
+            // end
             this.switch_callback = null;
         },
         get readonly() {
@@ -918,8 +921,10 @@
             for (field in fields) {
                 this.group.model.fields[field].views.add(view_id);
             }
+            // [Coog specific] multi_mixed_view
             var view_widget = Sao.View.parse(
-                this, view_id, view.type, xml_view, view.field_childs);
+                this, view_id, view.type, xml_view, view.field_childs,
+                view.children_definitions);
             this.views.push(view_widget);
 
             return view_widget;
@@ -1935,11 +1940,23 @@
             var ids;
             const process_action = action => {
                 return this.reload(ids, true).then(() => {
+                    // [Coog specific]
+                    // JMO: report https://github.com/coopengo/tryton/pull/13
+                    var action_id;
+                    if (action && typeof action != 'string' &&
+                      action.length && action.length === 2) {
+                      action_id = action[0];
+                      action = action[1];
+                    } else if (typeof action == 'number') {
+                      action_id = action;
+                      action = undefined;
+                    }
+                    // end
                     if (typeof action == 'string') {
                         this.client_action(action);
                     }
-                    else if (action) {
-                        Sao.Action.execute(action, {
+                    else if (action_id) {
+                        Sao.Action.execute(action_id, {
                             model: this.model_name,
                             id: this.current_record.id,
                             ids: ids
@@ -2019,6 +2036,13 @@
         },
         client_action: function(action) {
             var access = Sao.common.MODELACCESS.get(this.model_name);
+            // [Coog] Allow multiple actions
+            var actions = action.split(',');
+            for (var i in actions){
+                this.do_single_action(actions[i], access);
+            }
+        },
+        do_single_action: function(action, access) {
             if (action == 'new') {
                 if (access.create) {
                     this.new_();

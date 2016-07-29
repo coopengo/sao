@@ -2462,7 +2462,7 @@
             }
             for (const record2 of (record._values[this.name] || [])) {
                 if (!record2.get_loaded() && (record2.id >= 0) &&
-                        !pre_validate) {
+                        !pre_validate){
                     continue;
                 }
                 if (!record2.validate(null, softvalidation, ldomain, true)) {
