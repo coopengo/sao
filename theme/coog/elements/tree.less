@@ -1,0 +1,85 @@
+/* variables */
+    @treeview-header-color:         none;
+    @treeview-header-text-size:     @main-screen-font-size;
+    @treeview-header-text-color:    #333;
+
+    @treeview-color:                none;
+    @treeview-text-size:            @main-screen-font-size;
+    @treeview-text-color:           #333;
+
+    @treeview-stripe-mode:          true;
+    @treeview-striped-color:        #f9f9f9;
+
+    @treeview-hover-color:          #f5f5f5;
+    @treeview-hover-text-color:     #333;
+
+    @treeview-line-vertical-padding:8px;
+
+    @treeview-img-size:             2em;
+
+/* style */
+.main-screen-offcanvas > #tabs > .tab-content > .tab-pane > .tab-form > .screen-container .treeview, .modal-body {
+    font-size:                  @treeview-text-size;
+    color:                      @treeview-text-color;
+
+    /* header */
+    .treeview > .table > thead > tr {
+        background-color:       @treeview-header-color;
+        color:                  @treeview-header-text-color;
+        font-size:              @treeview-header-text-size;
+    }
+
+    /* body */
+    .table > tbody > tr {
+        background-color:       @treeview-color;
+        & > td {
+            padding-top:        @treeview-line-vertical-padding;
+            padding-bottom:     @treeview-line-vertical-padding;
+        }
+        img {
+            height:             @treeview-img-size;
+        }
+    }
+
+    /* strip */
+    .table-striped>tbody>tr:nth-of-type(odd) {
+        background-color:       @treeview-color;
+        & when (@treeview-stripe-mode = true) {
+            background-color:   @treeview-striped-color;
+        }
+    }
+
+    /* hover */
+    .table-hover > tbody > tr:hover {
+        background-color:       @treeview-hover-color;
+        color:                  @treeview-hover-text-color;
+        .glyphicon {
+            color:              @treeview-hover-text-color;
+        }
+    }
+
+    /* treefooter */
+    .treefooter > .btn {
+        font-size:              @treeview-text-size!important;
+    }
+}
+
+/* inner tree view */
+.main-screen-offcanvas > #tabs > .tab-content > .tab-pane > .tab-form {
+    .inner-tree-view {
+        thead > tr > th.selection {
+            display:            none;
+        }
+        tbody > tr > td.selection {
+            display:            none;
+        }
+    }
+    .form-one2many-content.panel-body > .screen-container .treeview {
+        .inner-tree-view;
+    }
+
+    .form-many2many-content.panel-body > .screen-container .treeview {
+        .inner-tree-view;
+    }
+
+}

@@ -1,0 +1,73 @@
+@import 'elements/menu.less';
+@global-font-size: 12px;
+
+/* global header */
+@import 'elements/global-header.less';
+
+/* menu */
+@import 'offcanva.less';
+    @menu-expander-color:           #0097c8;
+    @menu-line-hover-color:         @panel-color-2;
+    @menu-line-hover-text-color:    @color_white;
+    @menu-stripe-mode:              true;
+
+    @menu-icons-size:               17px;
+    @menu-text-size:                13px;
+    @global-search-text-size:       12px;
+    @global-search-icons-size:      15px;
+
+/* main-screen */
+@import 'elements/main-screen.less';
+    @main-screen-font-size:         @global-font-size;
+    @main-screen-icons-color:       @panel-color-2;
+
+/* inputs */
+@import 'elements/inputs.less';
+    @input-font-size:               12px;
+    @input-multi-color:             @panel-color-4;
+    @input-icons-color:             @panel-color-2;
+    @button-hover-color:            @panel-color-2;
+    @button-hover-text-color:       @color_white;
+
+    @input-border-radius:           3px;
+    @input-single-border:           1px;
+    @input-multi-border:            1px;
+
+
+/* panel */
+@import 'elements/panel.less';
+    @panel-border-color:            @panel-color-3;
+    @panel-btn-hover-color:         @panel-color-2;
+    @panel-btn-hover-text-color:    @color_white;
+    @panel-btn-active-color:        @panel-color-1;
+    @panel-btn-active-text-color:   none;
+
+/* tabs */
+@import 'elements/main-tabs.less';
+    @main-tabs-color:               @color_white;
+    @main-tabs-text-color:          @color_black;
+    @main-tabs-active-color:        @panel-color-3;
+    @main-tabs-active-text-color:   #333333;
+    @main-tabs-hover-color:         @panel-color-2;
+    @main-tabs-hover-text-color:    @color_white;
+    @main-tabs-vertical-padding:    4px;
+@import 'elements/tabs.less';
+    @main-vertical-padding:         4px;
+
+/* tree */
+@import 'elements/tree.less';
+    @treeview-stripe-mode:          true;
+    @treeview-striped-color:        @panel-color-1;
+    @treeview-hover-color:          @panel-color-2;
+    @treeview-hover-text-color:     @color_white;
+    @treeview-line-vertical-padding:2px;
+    @treeview-img-size:             17px;
+
+
+/* PANEL COLOR */
+@panel-color-1: #e6ffff;    /* lighter blue */
+@panel-color-2: #3399ff;    /* blue */
+@panel-color-3: #b3e6ff;    /* light blue */
+@panel-color-4: azure;      /* azure */
+@color_black:   #555;
+@color_white:   white;

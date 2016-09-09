@@ -1,0 +1,61 @@
+/* attributes */
+    @main-screen-font-size:     14px;
+    @main-screen-icons-color:   #777;
+
+    @header-nav-color:          #f8f8f8;
+    @header-nav-icons-color:    @main-screen-icons-color;
+
+    @filter-box-font-size:      14px;
+    @filter-box-height:         34px;
+
+/* custom */
+    @filter-box-font-size:      12px;
+    @filter-box-height:         31px;
+
+/* style */
+.main-screen-offcanvas > #tabs > .tab-content > .tab-pane > .tab-form, .modal-body {
+/* header */
+    & > .nav-wrapper > .toolbar > .container-fluid {
+        background-color:   @header-nav-color;
+        .glyphicon {
+            color:          @header-nav-icons-color;
+        }
+    }
+
+/* body */
+    & > .screen-container {
+        font-size:      @main-screen-font-size;
+        .glyphicon {
+            color:      @main-screen-icons-color;
+        }
+    }
+
+/* dictionary */
+    .form-container {
+        .row {
+            margin-bottom:  5px;
+        }
+        .dict-label {
+            padding-top:    5px;
+            padding-bottom: 5px;
+        }
+
+    }
+
+/* filter-box */
+    .filter-box {
+        input.form-control {
+            font-size:      @filter-box-font-size;
+            height:         @filter-box-height;
+        }
+        button.btn.btn-default {
+            font-size:      @filter-box-font-size;
+        }
+    }
+}
+
+.modal-footer {
+    .btn {
+        font-size:          @main-screen-font-size;
+    }
+}

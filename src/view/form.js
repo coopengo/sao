@@ -2473,7 +2473,7 @@ function eval_pyson(value){
             });
             this.input = this.labelled = jQuery('<input/>', {
                 'type': 'checkbox',
-                'class': 'form-control input-sm mousetrap',
+                'class': 'form-control input-sm mousetrap input-checkbox',
                 'name': attributes.name,
             }).appendTo(this.el);
             this.input.change(this.focus_out.bind(this));
@@ -3645,6 +3645,94 @@ function eval_pyson(value){
         },
         get modified() {
             return this.screen.current_view.modified;
+        },
+        group_sync: function(screen, current_record){
+            if (this.attributes.mode == 'form')
+                return;
+            if (!this.view || !this.view.widgets)
+                return;
+
+            function is_compatible(screen, record){
+                if (screen.current_view === undefined)
+                    return false;
+
+                return (!(screen.current_view.view_type == 'form' &&
+                    record !== undefined &&
+                    screen.model_name != record.model.name));
+            }
+
+            var key;
+            var record;
+            var widget;
+            var widgets = this.view.widgets[this.field_name];
+            var to_sync = [];
+
+            // !!!> get a list of widgets affected by the new record
+            for (var j = 0; j < widgets.length; j++){
+                widget = widgets[j];
+                if (!widget.hasOwnProperty('attributes')){
+                    return;
+                }
+
+                if (widget == this ||
+                    widget.attributes.group != this.attributes.group ||
+                    !widget.hasOwnProperty('screen')){
+                    continue;
+                }
+
+                if (widget.screen.current_record == current_record){
+                    continue;
+                }
+
+                record = current_record;
+                if (!is_compatible(widget.screen, record))
+                    record = null;
+                if (!widget.validate())
+                    return;
+
+                to_sync.push({'widget': widget, 'record': record});
+            }
+            widget = null;
+            var to_display = null;
+
+            // !!!> add fields; change widget's record; display widgets
+            for (var i = 0; i < to_sync.length; i++){
+                widget = to_sync[i].widget;
+                record = to_sync[i].record;
+
+                if (widget.screen.current_view === undefined)
+                    continue;
+
+                // !!!> add widget's fields to the record
+                if (widget.screen.current_view.view_type == 'form' &&
+                    record !== undefined && record !== null &&
+                    widget.screen.group.model.name == record.group.model.name){
+                    var fields = widget.screen.group.model.fields;
+                    // !!!> format fields for method "add_fields"
+                    var ret = [];
+                    for(var name in fields){
+                        ret[name] = fields[name].description;
+                    }
+                    // !!!> initiate and add new fields
+                    record.group.model.add_fields(ret);
+                }
+
+                widget.screen.current_record = record;
+                widget.display(widget.record(), widget.field());
+                if (record){
+                    to_display = widget;
+                }
+            }
+            // !!!> resize forms to fix display width
+            if (widget){
+                for (j in widget.view.containers) {
+                    var container = widget.view.containers[j];
+                    container.resize();
+                }
+            }
+            if (to_display) {
+                to_display.display(to_display.record(), to_display.field());
+            }
         },
         set_readonly: function(readonly) {
             Sao.View.Form.One2Many._super.set_readonly.call(this, readonly);

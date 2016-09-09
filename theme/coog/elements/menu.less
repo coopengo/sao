@@ -1,0 +1,96 @@
+/* variables */
+    @menu-item-spacing:         4px;
+    @menu-expander-color:       #333;
+    @menu-line-color:           white;
+    @menu-line-hover-color:     #f9f9f9;
+    @menu-line-hover-text-color:@color_black;
+    @menu-stripe-mode:          true;
+    @menu-striped-line-color:   #f9f9f9;
+
+    @menu-expander-size:        14px;
+    @menu-expander-width:       '';
+    @menu-icons-size:           2em;
+    @menu-text-size:            14px;
+
+    @menu-line-vertical-padding:8px;
+    @menu-padding:              15px;
+
+    @global-search-icons-size:  @menu-icons-size;
+    @global-search-text-size:   @menu-text-size;
+
+/* custom */
+    @menu-padding:              0;
+    @menu-line-vertical-padding:2px;
+
+    @menu-expander-size:        12px;
+    @menu-expander-width:       12px;
+    @menu-icons-size:           20px;
+    @menu-text-size:            14px;
+
+/* style */
+#menu {
+    padding-right:                  @menu-padding;
+    padding-left:                   @menu-padding;
+
+    /* search input */
+    .global-search-container input {
+        box-shadow:                 none;
+        border:                     0;
+        border-bottom:              1px solid #ccc;
+        border-radius:              0;
+    }
+
+    /* menu body */
+    .content-box {
+        .expander > span {
+            width:                  @menu-expander-width;
+            margin-left:            @menu-item-spacing;
+            margin-right:           @menu-item-spacing;
+            font-size:              @menu-expander-size;
+            color:                  @menu-expander-color;
+            &:focus {
+                outline:            0;
+            }
+        }
+        .prefix > img {
+            height:                 @menu-icons-size;
+            margin-right:           @menu-item-spacing;
+        }
+        .widget {
+            font-size:              @menu-text-size;
+        }
+        .table-striped>tbody>tr:nth-of-type(odd) {
+            background-color:       @menu-line-color;
+            & when (@menu-stripe-mode = true) {
+                background-color:   @menu-striped-line-color;
+            }
+        }
+        .table-hover > tbody > tr:hover {
+            background-color:       @menu-line-hover-color;
+            color:                  @menu-line-hover-text-color;
+            .glyphicon {
+                color:              @menu-line-hover-text-color;
+            }
+        }
+        .table > tbody > tr {
+            background-color:       @menu-line-color;
+            & > td {
+                padding-top:        @menu-line-vertical-padding;
+                padding-bottom:     @menu-line-vertical-padding;
+            }
+        }
+    }
+
+    /* global-search */
+    .open .dropdown-menu {
+        .completion {
+            .global-search-icon {
+                height:             @global-search-icons-size;
+                margin-right:       @menu-item-spacing;
+            }
+            .global-search-text {
+                font-size:          @global-search-text-size;
+            }
+        }
+    }
+}

@@ -1,0 +1,72 @@
+/* Header */
+    @global-header-color:                   none;
+    @global-header-text-color:              #777;
+
+    @global-header-menu-btn-text-mode:      true;
+
+    @global-header-menu-btn-text-color:     #fff;
+    @global-header-menu-btn-text-size:      none;
+    @global-header-menu-btn-color:          #337ab7;
+    @global-header-menu-btn-border-color:   #2e6da4;
+
+    @global-header-menu-btn-padding:        1px 5px;
+    @global-header-menu-btn-margin-top:     10px;
+
+/* custom button */
+    @global-header-menu-btn-text-mode:      false;
+    @global-header-menu-btn-text-color:     #337ab7;
+    @global-header-menu-btn-color:          #fff;
+    @global-header-menu-btn-border-color:   #eee;
+    @global-header-menu-btn-padding:        5px 10px;
+    @global-header-menu-btn-margin-top:     10px;
+
+
+/* style */
+body > .navbar-default {
+    margin-bottom: 0px!important;
+    border-bottom-width: 0px;
+
+    /* colors */
+    background-color:   @global-header-color;
+    .navbar-header > a {
+        color:          @global-header-text-color;
+    }
+    #user_menu_collapse > ul > li > a {
+        color:          @global-header-text-color;
+    }
+
+    /* menu toggle button */
+    .button-default-color {
+        color:              @global-header-menu-btn-text-color;
+        background-color:   @global-header-menu-btn-color;
+        border-color:       @global-header-menu-btn-border-color;
+        outline:            none;
+    }
+    .navbar-header > p {
+        margin-top:         0;
+        margin-bottom:      0;
+        > .btn-primary {
+            .button-default-color;
+            padding:        @global-header-menu-btn-padding;
+            margin-top:     @global-header-menu-btn-margin-top;
+            font-size:      @global-header-menu-btn-text-size;
+            &:active, &:focus {
+                .button-default-color;
+                outline:    none;
+            }
+            &:hover {
+                color:              @global-header-menu-btn-color;
+                background-color:   @global-header-menu-btn-text-color;
+                border-color:       @global-header-menu-btn-text-color;
+            }
+            & when (@global-header-menu-btn-text-mode = false) {
+                .glyphicon {
+                    display: inline-block !important;
+                }
+                #toggle-text {
+                    display: none;
+                }
+            }
+        }
+    }
+}
