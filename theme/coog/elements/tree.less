@@ -17,6 +17,9 @@
 
     @treeview-img-size:             2em;
 
+    @treeview-select-color:         @treeview-hover-color;
+    @treeview-select-text-color:    @treeview-hover-text-color;
+
 /* style */
 .main-screen-offcanvas > #tabs > .tab-content > .tab-pane > .tab-form > .screen-container .treeview, .modal-body {
     font-size:                  @treeview-text-size;
@@ -64,22 +67,17 @@
     }
 }
 
-/* inner tree view */
-.main-screen-offcanvas > #tabs > .tab-content > .tab-pane > .tab-form {
-    .inner-tree-view {
-        thead > tr > th.selection {
-            display:            none;
-        }
-        tbody > tr > td.selection {
-            display:            none;
-        }
+/* tree view selections */
+.treeview, .modal-body .treeview {
+    thead > tr > th.selection {
+        display:            none;
     }
-    .form-one2many-content.panel-body > .screen-container .treeview {
-        .inner-tree-view;
+    tbody > tr > td.selection {
+        display:            none;
     }
 
-    .form-many2many-content.panel-body > .screen-container .treeview {
-        .inner-tree-view;
+    .row-active {
+        background-color:   @treeview-select-color!important;
+        color:              @treeview-select-text-color;
     }
-
 }

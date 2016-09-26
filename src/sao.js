@@ -779,7 +779,8 @@ var Sao = {};
             'view_ids': view_ids,
             'domain': domain,
             'context': action_ctx,
-            'selection_mode': Sao.common.SELECTION_NONE,
+            // [Coog Specific] dbclick on menu entries
+            'selection_mode': Sao.common.SELECTION_SINGLE,
             'limit': null,
             'row_activate': Sao.main_menu_row_activate,
         });
