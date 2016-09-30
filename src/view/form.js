@@ -3458,8 +3458,9 @@ function eval_pyson(value){
                 'tabindex': -1,
                 'aria-label': Sao.i18n.gettext("New"),
                 'title': Sao.i18n.gettext("New"),
-            }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-create')
-            ).appendTo(buttons);
+            }).append(jQuery('<span/>', {
+                'class': 'glyphicon glyphicon-pencil'
+            })).appendTo(buttons);
             this.but_new.click(disable_during(this.new_.bind(this)));
 
             this.but_open = jQuery('<button/>', {
@@ -3492,7 +3493,8 @@ function eval_pyson(value){
             ).appendTo(buttons);
             this.but_undel.click(disable_during(this.undelete.bind(this)));
 
-            // !!!> hide toolbar
+            // [Coog specific]
+            //      > attribute expand_toolbar (hide toolbar)
             if (attributes.expand_toolbar)
                 this.menu.hide();
 
