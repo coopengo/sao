@@ -1965,7 +1965,7 @@ function eval_pyson(value){
             }).appendTo(this.el);
             this.date = this.labelled = jQuery('<input/>', {
                 'type': 'text',
-                'class': 'form-control input-sm mousetrap',
+                'class': 'form-control input-sm mousetrap input-date',
                 'name': attributes.name,
             }).appendTo(group);
             this.date.uniqueId();
