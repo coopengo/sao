@@ -1,0 +1,55 @@
+#!/bin/sh
+
+[ -z "$1" ] && echo missing branch or tag >&2 && exit 1
+VERSION="$1"
+
+DOCKER_IMAGE="build/sao"
+DOCKER_CONTAINER="build-sao"
+
+get_dir() {
+    local script_path; script_path=$(readlink -f "$0")
+    local script_dir; script_dir=$(dirname "$script_path")
+    echo "$script_dir"
+}
+
+BUILD_DIR=$(get_dir)
+ROOT_DIR=$(readlink -f "$BUILD_DIR/..")
+
+archive() {
+    echo "archive"
+    (cd "$ROOT_DIR" && \
+        git archive -o "$BUILD_DIR/sao.tar.gz" "$VERSION") || return 1
+}
+
+extract() {
+    echo "extract"
+    (cd "$BUILD_DIR" && \
+        mkdir sao && \
+        tar -xf sao.tar.gz -C sao) || return 1
+}
+
+image() {
+    echo "image"
+    (cd "$BUILD_DIR" && \
+        docker build -t "$DOCKER_IMAGE" . && \
+        rm -rf sao*) || return 1
+}
+
+build() {
+    echo "build"
+    (cd "$BUILD_DIR" \
+        && docker run -t --name "$DOCKER_CONTAINER" "$DOCKER_IMAGE" \
+        && rm -rf /tmp/sao \
+        && docker cp "$DOCKER_CONTAINER:/sao/dist" /tmp/sao \
+        && cp -rf /tmp/sao/* "$ROOT_DIR/dist/" \
+        && docker rm $DOCKER_CONTAINER \
+        && cp "$ROOT_DIR/index.html" "$ROOT_DIR/dist/" \
+        && sed -i "s/dist\///g" "$ROOT_DIR/dist/index.html") || return 1
+}
+
+clean() {
+    echo "clean"
+    docker rmi "$DOCKER_IMAGE" || return 1
+}
+
+archive && extract && image && build && clean
