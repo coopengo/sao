@@ -1,3 +1,4 @@
+@import 'elements/colors.less';
 @import 'elements/menu.less';
 @global-font-size: 12px;
 
@@ -6,7 +7,7 @@
 
 /* menu */
 @import 'offcanva.less';
-    @menu-expander-color:           #0097c8;
+    @menu-expander-color:           @color_sky;
     @menu-line-hover-color:         @panel-color-2;
     @menu-line-hover-text-color:    @color_white;
     @menu-stripe-mode:              true;
@@ -65,9 +66,7 @@
 
 
 /* PANEL COLOR */
-@panel-color-1: #e6ffff;    /* lighter blue */
-@panel-color-2: #3399ff;    /* blue */
-@panel-color-3: #b3e6ff;    /* light blue */
-@panel-color-4: azure;      /* azure */
-@color_black:   #555;
-@color_white:   white;
+@panel-color-1: @color_lighter_blue;
+@panel-color-2: @color_blue;
+@panel-color-3: @color_light_blue;
+@panel-color-4: @color_azure;

@@ -1,11 +1,13 @@
+@import 'colors.less';
+
 /* variables */
     @menu-item-spacing:         4px;
-    @menu-expander-color:       #333;
-    @menu-line-color:           white;
-    @menu-line-hover-color:     #f9f9f9;
-    @menu-line-hover-text-color:@color_black;
+    @menu-expander-color:       @color_deep_black;
+    @menu-line-color:           @color_white;
+    @menu-line-hover-color:     @color_white;
+    @menu-line-hover-text-color: @color_black;
     @menu-stripe-mode:          true;
-    @menu-striped-line-color:   #f9f9f9;
+    @menu-striped-line-color:   @color_white;
 
     @menu-expander-size:        14px;
     @menu-expander-width:       '';
@@ -36,7 +38,7 @@
     .global-search-container input {
         box-shadow:                 none;
         border:                     0;
-        border-bottom:              1px solid #ccc;
+        border-bottom:              1px solid @color_light_grey;
         border-radius:              0;
     }
 
