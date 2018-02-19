@@ -1,11 +1,13 @@
+@import 'colors.less';
+
 /* attributes */
     @main-tabs-color:               none;
-    @main-tabs-text-color:          #337ab7;
+    @main-tabs-text-color:          @color_greyish_blue;
 
-    @main-tabs-hover-color:         #eee;
-    @main-tabs-hover-text-color:    #337ab7;
+    @main-tabs-hover-color:         @color_lighter_grey;
+    @main-tabs-hover-text-color:    @color_greyish_blue;
 
-    @main-tabs-active-color:        white;
+    @main-tabs-active-color:        @color_white;
     @main-tabs-active-text-color:   @color_black;
 
     @main-tabs-back-color:          none;
@@ -28,7 +30,7 @@
     }
 
     .nav-tabs>li>a {
-        border:                 1px solid #ddd;
+        border:                 1px solid @color_light_grey_2;
         background-color:       @main-tabs-color;
         color:                  @main-tabs-text-color;
 
@@ -44,7 +46,7 @@
 
     .nav-tabs>li.active>a {
         border-style:           solid;
-        border-color:           #ddd;
+        border-color:           @color_light_grey_2;
         border-width:           1px 1px 0 1px;
         text-decoration:        none;
         background-color:       @main-tabs-active-color;
