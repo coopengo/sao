@@ -73,14 +73,14 @@
 /* tree view selections */
 .treeview, .modal-body .treeview {
     thead > tr > th.selection {
-        display:            none;
+       display:            none; /* JMO:this hides check box in tree view, i guess this is done to not have the box un the left menu ... */
     }
     tbody > tr > td.selection {
-        display:            none;
+        display:            none; /* JMO: same as above*/
     }
 
     .row-active {
-        background-color:   @treeview-select-color!important;
-        color:              @treeview-select-text-color;
+        background-color:   @treeview-select-color!important; /* JMO: this is greyish_white, so not very visible ... */
+        color:              @treeview-select-text-color;      /* JMO: idem ... */
     }
 }
