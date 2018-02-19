@@ -1,3 +1,6 @@
+@import 'colors.less';
+@import 'main-tabs.less';
+
 /* attributes */
     @tabs-color:                @main-tabs-color;
     @tabs-text-color:           @main-tabs-text-color;
@@ -16,7 +19,7 @@
         margin-bottom:          4px;
     }
     .nav-tabs>li>a {
-        border:                 1px solid #ddd;
+        border:                 1px solid @color_light_grey_2;
         background-color:       @tabs-color;
         color:                  @tabs-text-color;
         padding-top:            @main-vertical-padding;
@@ -30,7 +33,7 @@
 
     .nav-tabs>li.active>a {
         border-style:           solid;
-        border-color:           #ddd;
+        border-color:           @color_light_grey_2;
         border-width:           1px 1px 0 1px;
 
         text-decoration:        none;
