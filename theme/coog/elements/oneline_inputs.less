@@ -6,11 +6,11 @@
     @input-btn-size:            @main-screen-font-size;
 
     @input-icons-color:         @main-screen-icons-color;
-    @input-disabled-color:      @color_lighter_grey;
+    @input-disabled-color:      @color_lightest_grey;
     @input-disabled-text-color: none;
 
     @input-multi-color:         @color_white;
-    @input-multi-border-color:  @color_light_grey;
+    @input-multi-border-color:  @color_grey;
     @input-multi-text-color:    @color_black;
 
     @input-single-color:        @input-multi-color;
@@ -18,9 +18,9 @@
     @input-single-text-color:   @input-multi-text-color;
 
     @button-color:              @color_white;
-    @button-text-color:         @color_deep_black;
-    @button-hover-color:        @color_lighter_grey_2;
-    @button-hover-text-color:   @color_deep_black;
+    @button-text-color:         @color_black;
+    @button-hover-color:        @color_lightest_grey;
+    @button-hover-text-color:   @color_black;
 
     @input-border-radius:       0;
 
@@ -179,12 +179,12 @@
     .form-control[disabled], .form-control[readonly], fieldset[disabled] .form-control {
         background-color:   @input-disabled-color!important;
         color:              @input-disabled-text-color!important;
-        border:             1px solid @color_light_grey_2!important;
+        border:             1px solid @color_grey!important;
         box-shadow:         none!important;
     }
     .btn.disabled, .btn[disabled], fieldset[disabled] .btn {
         background-color:   @input-disabled-color!important;
-        color:              @color_deep_black !important;
+        color:              @color_black !important;
         .glyphicon{
             color:          @color_median_grey !important;
         }
