@@ -2,7 +2,7 @@
 
 /* Header */
     @global-header-color:                   none;
-    @global-header-text-color:              @color_median_grey;
+    @global-header-text-color:              @color_white;
 
     @global-header-menu-btn-text-mode:      true;
 
@@ -27,6 +27,7 @@
 body > .navbar-default {
     margin-bottom: 0px!important;
     border-bottom-width: 0px;
+    color:          @global-header-text-color;
 
     /* colors */
     background-color:   @global-header-color;
@@ -70,5 +71,8 @@ body > .navbar-default {
                 }
             }
         }
+    }
+    .navbar-nav > li > a {
+        color:          @global-header-text-color;
     }
 }

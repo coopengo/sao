@@ -4,6 +4,8 @@
 
 /* global header */
 @import 'elements/global-header.less';
+    @global-header-color:           @panel-color-2;
+    @global-header-text-color:      @color_white;
 
 /* menu */
 @import 'offcanva.less';
@@ -12,6 +14,7 @@
     @menu-line-hover-text-color:    @color_white;
     @menu-stripe-mode:              true;
 
+    @menu-striped-line-color:       @panel-color-5;
     @menu-icons-size:               17px;
     @menu-text-size:                13px;
     @global-search-text-size:       12px;
@@ -25,8 +28,10 @@
 /* inputs */
 @import 'elements/inputs.less';
     @input-font-size:               12px;
-    @input-multi-color:             @panel-color-4;
+    @input-multi-color:             @color_white;
     @input-icons-color:             @panel-color-2;
+    @input-multi-border-color:      @panel-color-2;
+    @input-multi-text-color:        @color_black;
     @button-hover-color:            @panel-color-2;
     @button-hover-text-color:       @color_white;
 
@@ -38,10 +43,12 @@
 /* panel */
 @import 'elements/panel.less';
     @panel-border-color:            @panel-color-3;
+    @panel-heading-text-color:      @color_white;
     @panel-btn-hover-color:         @panel-color-2;
     @panel-btn-hover-text-color:    @color_white;
-    @panel-btn-active-color:        @panel-color-1;
+    @panel-btn-active-color:        @panel-color-4;
     @panel-btn-active-text-color:   none;
+    @panel-icons-color:             @color_white;
 
 /* tabs */
 @import 'elements/main-tabs.less';
@@ -59,7 +66,7 @@
 /* tree */
 @import 'elements/tree.less';
     @treeview-stripe-mode:          true;
-    @treeview-striped-color:        @panel-color-1;
+    @treeview-striped-color:        @panel-color-5;
     @treeview-hover-color:          @panel-color-2;
     @treeview-hover-text-color:     @color_white;
     @treeview-line-vertical-padding:2px;
@@ -71,3 +78,4 @@
 @panel-color-2: @color_blue;
 @panel-color-3: @color_light_blue;
 @panel-color-4: @color_lighter_blue;
+@panel-color-5: @color_lightest_grey;

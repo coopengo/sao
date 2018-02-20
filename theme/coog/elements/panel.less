@@ -2,7 +2,7 @@
 
 /* attributes */
     @panel-heading-text-color:      none;
-    @panel-heading-color:           @color_lightest_grey;
+    @panel-heading-color:           @color_blue;
     @panel-border-color:            @color_grey;
     @panel-icons-color:             @color_blue;
 
@@ -26,33 +26,39 @@
                 border-radius:      2px;
             }
         }
-        /* toolbar */
-        & >.panel-heading > div > .input-group > .input-group-btn > .btn{
-            background-color:       @panel-heading-color;
-            border:                 0;
-            margin-right:           2px;
+    }
+}
 
+.form {
+    .panel-heading {
+        background-color:       @panel-heading-color;
+        color:                  @panel-heading-text-color;
+    }
+    .panel-heading > div > .input-group > .input-group-btn > .btn{
+        background-color:       @panel-heading-color;
+        border:                 0;
+        margin-right:           2px;
+
+        .glyphicon {
+            color:              @panel-icons-color !important;
+        }
+        &:active {
+            background-color:   @panel-btn-active-color;
             .glyphicon {
-                color:              @panel-icons-color !important;
+                color:          @panel-btn-active-text-color !important;
             }
-            &:active {
-                background-color:   @panel-btn-active-color;
-                .glyphicon {
-                    color:          @panel-btn-active-text-color !important;
-                }
+        }
+        &:focus { outline: 0; }
+        &:hover {
+            background-color:   @panel-btn-hover-color;
+            .glyphicon {
+                color:          @panel-btn-hover-text-color !important;
             }
-            &:focus { outline: 0; }
-            &:hover {
-                background-color:   @panel-btn-hover-color;
-                .glyphicon {
-                    color:          @panel-btn-hover-text-color !important;
-                }
-            }
-            &.disabled, &[disabled] {
-                background-color:   @panel-heading-color !important;
-                .glyphicon{
-                    color:          @color_black !important;
-                }
+        }
+        &.disabled, &[disabled] {
+            background-color:   @panel-heading-color !important;
+            .glyphicon{
+                color:          @color_black !important;
             }
         }
     }
