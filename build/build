@@ -44,6 +44,7 @@ build() {
         && cp -rf /tmp/sao/* "$ROOT_DIR/dist/" \
         && docker rm $DOCKER_CONTAINER \
         && cp "$ROOT_DIR/index.html" "$ROOT_DIR/dist/" \
+        && cp -r "$ROOT_DIR/locale" "$ROOT_DIR/dist/" \
         && sed -i "s/dist\///g" "$ROOT_DIR/dist/index.html") || return 1
 }
 
