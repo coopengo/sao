@@ -13,6 +13,8 @@
   .row-offcanvas-left
   .sidebar-offcanvas {
 
+    left: calc(-15%);
+
     @media (max-width: 1400px){
       left: calc(-25%);
     }
@@ -21,18 +23,20 @@
 
   .main-screen-offcanvas {
 
+    width: 85%;
+
     @media (max-width: 1400px){
       width: 75%;
     }
-    width: 85%;
   }
 
   .row-offcanvas-left.active {
 
+    left: calc(15%);
+
     @media (max-width: 1400px){
       left: calc(25%)
     }
-    left: calc(15%);
   }
 
   .main-screen-offcanvas.full_mode {
@@ -44,9 +48,10 @@
     position: absolute;
     top: 0;
 
+    width: 15%;
+
     @media (max-width: 1400px) {
       width: 25%;
     }
-    width: 15%;
   }
 }
