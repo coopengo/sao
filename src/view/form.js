@@ -5265,9 +5265,10 @@ function eval_pyson(value){
                 var widget = this.fields[key];
                 widget.set_readonly(readonly);
             }
-            // !!!> this.wid_text not defined on on_command attribute
-            if (!this.no_command)
+            // MAB: For extra data
+            if (!this.attributes.no_command) {
                 this.wid_text.prop('disabled', readonly);
+            }
         },
         _set_button_sensitive: function() {
             var create = this.attributes.create;
@@ -5282,13 +5283,13 @@ function eval_pyson(value){
             } else if (typeof delete_ == 'string') {
                 delete_ = Boolean(parseInt(delete_, 10));
             }
-            // !!!> but_add and button are not defined on no_command attr
-            if (!this.no_command){
+            // MAB: For extra data
+            if (!this.attributes.no_command) {
                 this.but_add.prop('disabled', this._readonly || !create);
-                for (var key in this.fields) {
-                    var button = this.fields[key].button;
-                    button.prop('disabled', this._readonly || !delete_);
-                }
+            }
+            for (var key in this.fields) {
+                var button = this.fields[key].button;
+                button.prop('disabled', this._readonly || !delete_);
             }
         },
         add_line: function(key) {
