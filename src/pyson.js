@@ -350,6 +350,8 @@
     Sao.PYSON.Equal.eval_ = function(value, context) {
         if (value.s1 instanceof Array  && value.s2 instanceof Array) {
             return Sao.common.compare(value.s1, value.s2);
+        } else if (moment.isMoment(value.s1) && moment.isMoment(value.s2)) {
+            return value.s1.format() == value.s2.format();
         } else {
             return value.s1 == value.s2;
         }
