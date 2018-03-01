@@ -141,17 +141,11 @@
     });
 
     Sao.PYSON.Eval.eval_ = function(value, context) {
-        var ret;
         if (value.v in context) {
-            ret = context[value.v];
+            return context[value.v];
         } else {
-            ret = value.d;
+            return value.d;
         }
-        if(ret && ret._isAMomentObject){
-            var encoder = new Sao.PYSON.Encoder({});
-            ret = encoder.encode(ret);
-        }
-        return ret;
     };
     Sao.PYSON.Eval.init_from_object = function(obj) {
         return new Sao.PYSON.Eval(obj.v, obj.d);
