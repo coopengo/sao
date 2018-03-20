@@ -10,12 +10,12 @@
 
     Sao.Session = Sao.class_(Object, {
         init: function(database, login) {
-            this.user_id = null;
-            this.session = null;
-            this.prm = jQuery.when();  // renew promise
             this.database = database;
             this.login = login;
+            this.user_id = null;
+            this.session = null;
             this.context = {};
+            this.prm = jQuery.when();  // renew promise
             if (!Sao.Session.current_session) {
                 Sao.Session.current_session = this;
             }
@@ -34,6 +34,7 @@
             new Sao.Login(func, this).run().then(function(result) {
                 this.user_id = result[0];
                 this.session = result[1];
+                this.save();
                 dfd.resolve();
             }.bind(this), function() {
                 this.user_id = null;
@@ -68,6 +69,7 @@
             if (Sao.Session.current_session === this) {
                 Sao.Session.current_session = null;
             }
+            this.drop();
             return prm;
         },
         reload_context: function() {
@@ -76,14 +78,34 @@
                 'params': [true, {}]
             };
             // Call with custom session to not send context
-            var session = jQuery.extend({}, this);
-            session.context = {};
-            var prm = Sao.rpc(args, session);
+            delete this.context;
+            var prm = Sao.rpc(args, this);
             return prm.then(function(context) {
                 this.context = context;
             }.bind(this));
         }
     });
+
+    Sao.Session.prototype.load = function () {
+      var session = window.localStorage.getItem('tryton-session');
+      if (session) {
+          jQuery.extend(this, JSON.parse(session));
+          return true;
+      }
+    };
+
+    Sao.Session.prototype.save = function () {
+      window.localStorage.setItem('tryton-session', JSON.stringify({
+        database: this.database,
+        login: this.login,
+        user_id: this.user_id,
+        session: this.session
+      }));
+    };
+
+    Sao.Session.prototype.drop = function() {
+      window.localStorage.removeItem('tryton-session');
+    };
 
     Sao.Session.login_dialog = function() {
         var dialog = new Sao.Dialog(Sao.i18n.gettext('Login'), 'lg');
@@ -125,6 +147,10 @@
 
     Sao.Session.get_credentials = function() {
         var dfd = jQuery.Deferred();
+        var session = Sao.Session.current_session || new Sao.Session();
+        if (session.load()) {
+            return dfd.resolve(session);
+        }
         var database = window.location.hash.replace(
                 /^(#(!|))/, '') || null;
         var dialog = Sao.Session.login_dialog();
@@ -199,6 +225,7 @@
         }
         var dfd = jQuery.Deferred();
         session.prm = dfd.promise();
+        session.drop();
         if (!session.login) {
             dfd.reject();
             return session.prm;
