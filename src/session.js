@@ -10,12 +10,12 @@
 
     Sao.Session = Sao.class_(Object, {
         init: function(database, login) {
-            this.database = database;
-            this.login = login;
             this.user_id = null;
             this.session = null;
-            this.context = {};
             this.prm = jQuery.when();  // renew promise
+            this.database = database;
+            this.login = login;
+            this.context = {};
             if (!Sao.Session.current_session) {
                 Sao.Session.current_session = this;
             }
