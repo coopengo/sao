@@ -1,81 +1,89 @@
 @import 'elements/colors.less';
 @import 'elements/menu.less';
-@global-font-size: 12px;
+@global-font-size:                  12px;
 
 /* global header */
 @import 'elements/global-header.less';
-    @global-header-color:           @panel-color-2;
-    @global-header-text-color:      @color_white;
+    @global-header-static-top-color:        @color_blue;
+    @global-header-color:                   @color_white;
+    @global-header-text-color:              @color_white;
+    @global-header-static-top-hover-color:  @color_light_blue;
+    @global-header-menu-btn-border-color:   @color_light_blue;
 
 /* menu */
 @import 'offcanva.less';
-    @menu-expander-color:           @color_blue;
-    @menu-line-hover-color:         @panel-color-2;
+    @menu-expander-color:           @color_light_blue;
+    @menu-line-hover-color:         @color_light_blue;
     @menu-line-hover-text-color:    @color_white;
-    @menu-stripe-mode:              true;
-
-    @menu-striped-line-color:       @panel-color-5;
-    @menu-icons-size:               17px;
-    @menu-text-size:                13px;
-    @global-search-text-size:       12px;
-    @global-search-icons-size:      15px;
+    @menu-stripe-mode:              false;
+    @menu-striped-line-color:       @color_lighter_blue;
+    @menu-icons-size:               1.41em;
+    @menu-text-size:                1.01em;
+    @global-search-text-size:       @global-font-size;
+    @global-search-icons-size:      1.25em;
 
 /* main-screen */
 @import 'elements/main-screen.less';
     @main-screen-font-size:         @global-font-size;
-    @main-screen-icons-color:       @panel-color-2;
+    @main-screen-icons-color:       @color_blue;
+    @main-screen-legend-color:      @color_light_blue;
 
 /* inputs */
 @import 'elements/inputs.less';
-    @input-font-size:               12px;
+    @button-color:                  @color_blue;
+    @input-font-size:               @global-font-size;
     @input-multi-color:             @color_white;
-    @input-icons-color:             @panel-color-2;
-    @input-multi-border-color:      @panel-color-2;
+    @input-icons-color:             @color_blue;
+    @input-multi-border-color:      @color_light_blue;
     @input-multi-text-color:        @color_black;
-    @button-hover-color:            @panel-color-2;
+    // @input-btn-size:                1.25rem;
+    @button-hover-color:            @color_light_blue;
     @button-hover-text-color:       @color_white;
-
-    @input-border-radius:           3px;
-    @input-single-border:           1px;
+    @button-border-color:           @color_light_blue;
+    @input-disabled-color:          @color_lightest_blue:
+    @button-text-color:             @color_white;
     @input-multi-border:            1px;
 
 
 /* panel */
 @import 'elements/panel.less';
-    @panel-border-color:            @panel-color-3;
-    @panel-heading-text-color:      @color_white;
-    @panel-btn-hover-color:         @panel-color-2;
+    @panel-border-color:            @color_light_blue;
+    @panel-heading-text-color:      @color_blue;
+    @panel-btn-hover-color:         @color_light_blue;
     @panel-btn-hover-text-color:    @color_white;
-    @panel-btn-active-color:        @panel-color-4;
+    @panel-btn-active-color:        @color_lighter_blue;
     @panel-btn-active-text-color:   none;
-    @panel-icons-color:             @color_white;
+    @panel-icons-color:             @color_blue;
 
 /* tabs */
 @import 'elements/main-tabs.less';
     @main-tabs-color:               @color_white;
     @main-tabs-text-color:          @color_black;
-    @main-tabs-hover-color:         @panel-color-3;
-    @main-tabs-hover-text-color:    @color_black;
-    @main-tabs-active-color:        @panel-color-2;
-    @main-tabs-active-text-color:   @color_white;
+    @main-tabs-hover-color:         @color_light_blue;
+    @main-tabs-hover-text-color:    @color_white;
+    @main-tabs-active-color:        @color_white;
+    @main-tabs-active-text-color:   @color_black;
     @main-tabs-vertical-padding:    4px;
+    @main-tabs-border-color:        @color_light_blue;
+    @main-tabs-active-border-color: @color_blue;
 
 @import 'elements/tabs.less';
     @main-vertical-padding:         4px;
 
 /* tree */
 @import 'elements/tree.less';
-    @treeview-stripe-mode:          true;
-    @treeview-striped-color:        @panel-color-5;
-    @treeview-hover-color:          @panel-color-2;
+    @treeview-header-color:         @color_blue;
+    @treeview-color:                transparent;
+    @treeview-header-text-color:    @color_white;
+    @treeview-stripe-mode:          false;
+    @treeview-striped-color:        @color_blue;
+    @treeview-hover-color:          @color_light_blue;
     @treeview-hover-text-color:     @color_white;
-    @treeview-line-vertical-padding:2px;
-    @treeview-img-size:             17px;
+    @treeview-line-vertical-padding:3px;
+    // @treeview-img-size:             1em;
+    // @treeview-text-size:            1em;
+    // @treeview-header-text-size:     1em;
 
+/* dict */
+@import 'elements/dict.less';
 
-/* PANEL COLOR */
-@panel-color-1: @color_lighter_blue;
-@panel-color-2: @color_blue;
-@panel-color-3: @color_light_blue;
-@panel-color-4: @color_lighter_blue;
-@panel-color-5: @color_lightest_grey;

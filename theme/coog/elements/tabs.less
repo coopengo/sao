@@ -8,17 +8,18 @@
     @tabs-hover-color:          @main-tabs-hover-color;
     @tabs-hover-text-color:     @main-tabs-hover-text-color;
 
-    @tabs-active-color:         @main-tabs-active-color;
+    @tabs-active-color:         @color_light_blue;
     @tabs-active-text-color:    @main-tabs-active-text-color;
 
     @main-vertical-padding:     none;
+    @nav-tabs-border-color:     @color_light_blue;
 
 /* style */
 .main-screen-offcanvas > #tabs > .tab-content > .tab-pane > .tab-form > .screen-container, .modal-body {
     .nav-tabs {
         margin-bottom:          4px;
     }
-    .nav-tabs>li>a {
+    .nav-tabs > li > a {
         border:                 1px solid @color_grey;
         background-color:       @tabs-color;
         color:                  @tabs-text-color;
@@ -31,10 +32,10 @@
         }
     }
 
-    .nav-tabs>li.active>a {
+    .nav-tabs > li .active > a {
         border-style:           solid;
-        border-color:           @color_grey;
-        border-width:           1px 1px 0 1px;
+        border-color:           @tabs-active-color;
+        border-width:           2px 2px 0px 2px;
 
         text-decoration:        none;
         background-color:       @tabs-active-color;
@@ -50,5 +51,10 @@
 
 /* nav tabs padding */
 .main-screen-offcanvas > #tabs .nav-tabs > li > a {
-    padding: 5px 15px;
+    padding:        2.5px 15px;
+    border-color:   @nav-tabs-border-color;
+    margin-top:     5px;
+}
+.nav-tabs {
+    border-bottom:  1px solid @nav-tabs-border-color;
 }
