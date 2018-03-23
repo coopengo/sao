@@ -84,6 +84,11 @@ var Sao = {};
         if (Sao.main_menu_screen) {
             Sao.main_menu_screen.save_tree_state(true);
         }
+        if (Sao.Tab.tabs.length) {
+            var dialog = Sao.i18n.gettext("Are your sure to leave?");
+            e.returnValue = dialog;
+            return dialog;
+        }
     };
 
     Sao.class_ = function(Parent, props) {
