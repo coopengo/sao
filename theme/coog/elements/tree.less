@@ -1,24 +1,23 @@
 @import 'colors.less';
-@import 'main-screen.less';
 
 /* variables */
-    @treeview-header-color:         transparent;
-    @treeview-header-text-size:     @main-screen-font-size;
-    @treeview-header-text-color:    @color_black;
+    @treeview-header-color:         @color_blue;
+    @treeview-header-text-size:     1.1em;
+    @treeview-header-text-color:    @color_white;
 
-    @treeview-color:                none;
-    @treeview-text-size:            @main-screen-font-size;
+    @treeview-color:                transparent;
+    @treeview-text-size:            @global-font-size;
     @treeview-text-color:           @color_black;
 
     @treeview-stripe-mode:          false;
-    @treeview-striped-color:        @color_lightest_grey;
+    @treeview-striped-color:        transparent;
 
-    @treeview-hover-color:          @color_lightest_grey;
-    @treeview-hover-text-color:     @color_black;
+    @treeview-hover-color:          @color_light_blue;
+    @treeview-hover-text-color:     @color_white;
 
-    @treeview-line-vertical-padding:8px;
+    @treeview-line-vertical-padding:3px;
 
-    @treeview-img-size:             2em;
+    @treeview-img-size:             1.5em;
 
     @treeview-select-color:         @color_blue;
     @treeview-select-text-color:    @color_black;
@@ -37,7 +36,8 @@
             padding-bottom:     @treeview-line-vertical-padding;
         }
         img {
-            height:             @treeview-img-size;
+            height:             @treeview-img-size!important;
+            margin-top:         -5px;
         }
     }
 

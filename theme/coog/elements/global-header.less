@@ -1,9 +1,9 @@
 @import 'colors.less';
 
 /* Header */
-    @global-header-static-top-color:        none;
-    @global-header-static-top-hover-color:  none;
-    @global-header-color:                   none;
+    @global-header-static-top-color:        @color_blue;
+    @global-header-static-top-hover-color:  @color_light_blue;
+    @global-header-color:                   @color_white;
     @global-header-text-color:              @color_white;
 
     @global-header-menu-btn-text-mode:      true;
@@ -11,7 +11,7 @@
     @global-header-menu-btn-text-color:     @color_white;
     @global-header-menu-btn-text-size:      none;
     @global-header-menu-btn-color:          @color_light_blue;
-    @global-header-menu-btn-border-color:   @color_lightest_grey;
+    @global-header-menu-btn-border-color:   @color_light_blue;
 
     @global-header-menu-btn-padding:        1px 5px;
     @global-header-menu-btn-margin-top:     10px;
@@ -30,7 +30,7 @@
     min-height:         2em;
 }
 a.navbar-brand.dropdown-toggle {
-    padding:            5px 5px;
+    padding:            15px 5px;
     height:             2em;
 }
 body > .navbar-default {
@@ -98,6 +98,7 @@ nav.navbar.navbar-default.navbar-static-top {
 }
 
 .navbar-default .navbar-brand {
+    font-size:              1.75em;
     color:                  @global-header-static-top-color;
     &:hover {
         color:              @global-header-color;
