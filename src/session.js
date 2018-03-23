@@ -34,6 +34,8 @@
             new Sao.Login(func, this).run().then(function(result) {
                 this.user_id = result[0];
                 this.session = result[1];
+                // AKE: save session to localStorage on login
+                this.save();
                 dfd.resolve();
             }.bind(this), function() {
                 this.user_id = null;
@@ -68,6 +70,8 @@
             if (Sao.Session.current_session === this) {
                 Sao.Session.current_session = null;
             }
+            // AKE: drop session from localStorage on logout
+            this.drop();
             return prm;
         },
         reload_context: function() {
@@ -75,15 +79,38 @@
                 'method': 'model.res.user.get_preferences',
                 'params': [true, {}]
             };
-            // Call with custom session to not send context
-            var session = jQuery.extend({}, this);
-            session.context = {};
-            var prm = Sao.rpc(args, session);
+            // AKE: avoid cloning session, it will be changed anyway
+            delete this.context;
+            var prm = Sao.rpc(args, this);
             return prm.then(function(context) {
                 this.context = context;
             }.bind(this));
         }
     });
+
+    // AKE: method to load session from localStorage
+    Sao.Session.prototype.load = function () {
+      var session = window.localStorage.getItem('tryton-session');
+      if (session) {
+          jQuery.extend(this, JSON.parse(session));
+          return true;
+      }
+    };
+
+    // AKE: method to save session to localStorage
+    Sao.Session.prototype.save = function () {
+      window.localStorage.setItem('tryton-session', JSON.stringify({
+        database: this.database,
+        login: this.login,
+        user_id: this.user_id,
+        session: this.session
+      }));
+    };
+
+    // AKE: method to drop session from localStorage
+    Sao.Session.prototype.drop = function() {
+      window.localStorage.removeItem('tryton-session');
+    };
 
     Sao.Session.login_dialog = function() {
         var dialog = new Sao.Dialog(Sao.i18n.gettext('Login'), 'lg');
@@ -125,6 +152,11 @@
 
     Sao.Session.get_credentials = function() {
         var dfd = jQuery.Deferred();
+        // AKE: try to load session from localStorage before launching login
+        var session = Sao.Session.current_session || new Sao.Session();
+        if (session.load()) {
+            return dfd.resolve(session);
+        }
         var database = window.location.hash.replace(
                 /^(#(!|))/, '') || null;
         var dialog = Sao.Session.login_dialog();
@@ -199,6 +231,8 @@
         }
         var dfd = jQuery.Deferred();
         session.prm = dfd.promise();
+        // AKE: drop session from localStorage on renew
+        session.drop();
         if (!session.login) {
             dfd.reject();
             return session.prm;

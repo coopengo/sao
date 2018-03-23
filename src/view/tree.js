@@ -53,6 +53,7 @@
         init: function(screen, xml, children_field, children_definitions) {
             Sao.View.Tree._super.init.call(this, screen, xml);
             this.view_type = 'tree';
+            this.sum_widgets = {};
             this.selection_mode = (screen.attributes.selection_mode ||
                 Sao.common.SELECTION_MULTIPLE);
             this.el = jQuery('<div/>', {
@@ -95,6 +96,17 @@
             th.append(this.selection);
             tr.append(th);
             this.thead.append(tr);
+
+            this.tfoot = null;
+            var sum_row;
+            if (!jQuery.isEmptyObject(this.sum_widgets)) {
+                sum_row = jQuery('<tr/>');
+                sum_row.append(jQuery('<td/>'));
+                this.tfoot = jQuery('<tfoot/>');
+                this.tfoot.append(sum_row);
+                this.table.append(this.tfoot);
+            }
+
             this.columns.forEach(function(column) {
                 th = jQuery('<th/>', {
                     'class': column.attributes.widget,
@@ -123,26 +135,28 @@
                 }
                 tr.append(th.append(label));
                 column.header = th;
+
+                column.footers = [];
+                if (!jQuery.isEmptyObject(this.sum_widgets)) {
+                    var field_name = column.attributes.name;
+                    var total_cell = jQuery('<td/>', {
+                        'class': column.class_,
+                    });
+                    if (field_name in this.sum_widgets) {
+                        var sum_label = this.sum_widgets[field_name][0];
+                        var sum_value = this.sum_widgets[field_name][1];
+                        total_cell.append(sum_label);
+                        total_cell.append(sum_value);
+                        total_cell.attr('data-title', sum_label.text());
+                    }
+                    sum_row.append(total_cell);
+                    column.footers.push(total_cell);
+                }
             }, this);
             this.tbody = jQuery('<tbody/>');
             this.table.append(this.tbody);
 
-            // Footer for more
-            var footer = jQuery('<div/>', {
-                'class': 'treefooter'
-            });
-            this.more = jQuery('<button/>', {
-                'class': 'btn btn-default',
-                'type': 'button'
-            }).append(Sao.i18n.gettext('More')
-                ).click(function() {
-                this.display_size += Sao.config.display_size;
-                this.display();
-            }.bind(this));
-            footer.append(this.more);
-            this.more.hide();
             this.display_size = Sao.config.display_size;
-            this.el.append(footer);
         },
         create_columns: function(model, xml) {
             xml.find('tree').children().each(function(pos, child) {
@@ -218,13 +232,27 @@
                         column.sortable = true;
                     }
                     this.fields[name] = true;
-                    // TODO sum
+                    this.add_sum(attributes);
                 } else if (child.tagName == 'button') {
                     column = new Sao.View.Tree.ButtonColumn(this.screen,
                             attributes);
                 }
                 this.columns.push(column);
             }.bind(this));
+        },
+        add_sum: function(attributes){
+            if (!attributes.sum) {
+                return;
+            }
+            // TODO RTL
+            var label = attributes.sum + Sao.i18n.gettext(': ');
+            var sum = jQuery('<label/>', {
+                'text': label,
+            });
+            var aggregate = jQuery('<span/>', {
+                'class': 'value',
+            });
+            this.sum_widgets[attributes.name] = [sum, aggregate];
         },
         sort_model: function(e){
             var column = e.data;
@@ -321,6 +349,7 @@
             }
 
             // Set column visibility depending on attributes and domain
+            var visible_columns = 1;  // start at 1 because of the checkbox
             var domain = [];
             if (!jQuery.isEmptyObject(this.screen.domain)) {
                 domain.push(this.screen.domain);
@@ -333,14 +362,20 @@
             domain = inversion.simplify(domain);
             var decoder = new Sao.PYSON.Decoder(this.screen.context);
             this.columns.forEach(function(column) {
+                visible_columns += 1;
                 var name = column.attributes.name;
                 if (!name) {
                     return;
                 }
+                var related_cells = column.footers.slice();
+                related_cells.push(column.header);
                 if ((decoder.decode(column.attributes.tree_invisible || '0')) ||
                         (name === this.screen.exclude_field)) {
-                    column.header.hide();
-                    column.header.addClass('invisible');
+                    visible_columns -= 1;
+                    related_cells.forEach(function(cell) {
+                        cell.hide();
+                        cell.addClass('invisible');
+                    });
                 } else {
                     var inv_domain = inversion.domain_inversion(domain, name);
                     if (typeof inv_domain != 'boolean') {
@@ -348,14 +383,21 @@
                     }
                     var unique = inversion.unique_value(inv_domain)[0];
                     if (unique && jQuery.isEmptyObject(this.children_field)) {
-                        column.header.hide();
-                        column.header.addClass('invisible');
+                        visible_columns -= 1;
+                        related_cells.forEach(function(cell) {
+                            cell.hide();
+                            cell.addClass('invisible');
+                        });
                     } else {
-                        column.header.show();
-                        column.header.removeClass('invisible');
+                        related_cells.forEach(function(cell) {
+                            cell.show();
+                            cell.removeClass('invisible');
+                        });
                     }
                 }
             }.bind(this));
+            this.tbody.find('tr.more-row > td').attr(
+                'colspan', visible_columns);
 
             if (this.columns.filter(function(c) {
                 return c.header.is(':visible');
@@ -367,13 +409,16 @@
                 this.table.removeClass('responsive-header');
             }
 
-            return this.redraw(selected, expanded);
+            return this.redraw(selected, expanded).done(
+                Sao.common.debounce(this.update_sum.bind(this), 250));
         },
         construct: function(selected, expanded, extend) {
             var tbody = this.tbody;
             if (!extend) {
                 this.rows = [];
                 this.tbody = jQuery('<tbody/>');
+            } else {
+                this.tbody.find('tr.more-row').remove();
             }
             var start = this.rows.length;
             var add_row = function(record, pos, group) {
@@ -389,13 +434,26 @@
             };
             this.screen.group.slice(start, this.display_size).forEach(
                     add_row.bind(this));
-            if (this.display_size >= this.screen.group.length) {
-                this.more.hide();
-            } else {
-                this.more.show();
-            }
             if (!extend) {
                 tbody.replaceWith(this.tbody);
+            }
+
+            if (this.display_size < this.screen.group.length) {
+                var more_row = jQuery('<tr/>', {
+                    'class': 'more-row',
+                });
+                var more_cell = jQuery('<td/>');
+                var more_button = jQuery('<button/>', {
+                    'class': 'btn btn-default',
+                    'type': 'button'
+                }).append(Sao.i18n.gettext('More')
+                    ).click(function() {
+                    this.display_size += Sao.config.display_size;
+                    this.display();
+                }.bind(this));
+                more_cell.append(more_button);
+                more_row.append(more_cell);
+                this.tbody.append(more_row);
             }
         },
         redraw: function(selected, expanded) {
@@ -432,6 +490,79 @@
             }
             // TODO update_children
         },
+        update_sum: function() {
+            for (var name in this.sum_widgets) {
+                if (!this.sum_widgets.hasOwnProperty(name)) {
+                    continue;
+                }
+
+                var selected_records = this.selected_records();
+                var aggregate = '-';
+                var aggregate_el = this.sum_widgets[name][1];
+                var sum_ = null;
+                var selected_sum = null;
+                var loaded = true;
+                var digit = 0;
+                var field = this.screen.model.fields[name];
+                var i, record;
+                var records_ids = selected_records.map(function(record){
+                    return record.id;
+                });
+                for (i=0; i < this.screen.group.length; i++){
+                    record = this.screen.group[i];
+                    if (!record.get_loaded([name]) && record.id >=0){
+                        loaded = false;
+                        break;
+                    }
+                    var value = field.get(record);
+                    if (value && value.isTimeDelta) {
+                        value = value.asSeconds();
+                    }
+                    if (value !== null){
+                        if (sum_ === null){
+                            sum_ = value;
+                        }else {
+                            sum_ += value;
+                        }
+                        if (~records_ids.indexOf(record.id) ||
+                            !selected_records){
+                            if (selected_sum === null){
+                                selected_sum = value;
+                            }else {
+                                selected_sum += value;
+                            }
+                        }
+                        if (field.digits) {
+                            var fdigits = field.digits(record);
+                            if (fdigits && digit !== null){
+                                digit = Math.max(fdigits[1], digit);
+                            } else {
+                                digit = null;
+                            }
+                        }
+                    }
+                }
+                if (loaded) {
+                    if (field.description.type == 'timedelta'){
+                        var converter = field.converter(record.group);
+                        selected_sum =  Sao.common.timedelta.format(
+                            Sao.TimeDelta(null, selected_sum), converter);
+                        sum_ = Sao.common.timedelta.format(
+                            Sao.TimeDelta(null, sum_), converter);
+                    } else if (digit !== null){
+                        var options = {};
+                        options.minimumFractionDigits = digit;
+                        options.maximumFractionDigits = digit;
+                        selected_sum = (selected_sum || 0).toLocaleString(
+                            Sao.i18n.getlang(), options);
+                        sum_ = (sum_ || 0).toLocaleString(
+                            Sao.i18n.getlang(), options);
+                    }
+                    aggregate = selected_sum + ' / ' + sum_;
+                }
+                aggregate_el.text(aggregate);
+            }
+        },
         selected_records: function() {
             if (this.selection_mode == Sao.common.SELECTION_NONE) {
                 return [];
@@ -465,8 +596,10 @@
             } else {
                 this.select_changed(null);
             }
+            this.update_sum();
         },
         update_selection: function() {
+            this.update_sum();
             if (this.selection.prop('checked')) {
                 return;
             }
@@ -1426,6 +1559,7 @@
             this.prefixes = [];
             this.suffixes = [];
             this.header = null;
+            this.footers = [];
         },
         get_cell: function() {
             var cell = jQuery('<div/>', {

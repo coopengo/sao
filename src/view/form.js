@@ -1650,23 +1650,6 @@ function eval_pyson(value){
         }
     });
 
-    Sao.View.Form.DATE_OPERATORS = [
-        ['S', moment.duration(-1, 'seconds')],
-        ['s', moment.duration(1, 'seconds')],
-        ['I', moment.duration(-1, 'minutes')],
-        ['i', moment.duration(1, 'minutes')],
-        ['H', moment.duration(-1, 'hours')],
-        ['h', moment.duration(1, 'hours')],
-        ['D', moment.duration(-1, 'days')],
-        ['d', moment.duration(1, 'days')],
-        ['W', moment.duration(-1, 'weeks')],
-        ['w', moment.duration(1, 'weeks')],
-        ['M', moment.duration(-1, 'months')],
-        ['m', moment.duration(1, 'months')],
-        ['Y', moment.duration(-1, 'years')],
-        ['y', moment.duration(1, 'years')]
-    ];
-
     Sao.View.Form.Date = Sao.class_(Sao.View.Form.Widget, {
         class_: 'form-date',
         _width: '12em',
@@ -1687,47 +1670,35 @@ function eval_pyson(value){
                 'class': 'input-group-btn'
             }).append(jQuery('<button/>', {
                 'class': 'datepickerbutton btn btn-default',
-                'type': 'button'
+                'type': 'button',
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-calendar'
             }))).appendTo(this.date);
-            var noop = function () {};
             this.date.datetimepicker({
                 'locale': moment.locale(),
-                'keyBinds': {
-                    up: noop,
-                    down: noop,
-                    'control up': noop,
-                    'control down': noop,
-                    left: noop,
-                    right: noop,
-                    pageUp: noop,
-                    pageDown: noop,
-                    enter: noop,
-                    'control space': noop,
-                    t: noop,
-                }
+                'keyBinds': null,
             });
             this.date.css('width', this._width);
             this.date.on('dp.change', this.focus_out.bind(this));
-            if (typeof Mousetrap != 'undefined') {
-                var mousetrap = new Mousetrap(this.el[0]);
+            var mousetrap = new Mousetrap(this.el[0]);
 
-                mousetrap.bind(['enter', '='], function(e, combo) {
+            mousetrap.bind(['enter', '='], function(e, combo) {
+                if (e.which != Sao.common.RETURN_KEYCODE) {
                     e.preventDefault();
-                    this.date.data('DateTimePicker').date(moment());
-                }.bind(this));
+                }
+                this.date.data('DateTimePicker').date(moment());
+            }.bind(this));
 
-                Sao.View.Form.DATE_OPERATORS.forEach(function(operator) {
-                    mousetrap.bind(operator[0], function(e, combo) {
-                        e.preventDefault();
-                        var dp = this.date.data('DateTimePicker');
-                        var date = dp.date();
-                        date.add(operator[1]);
-                        dp.date(date);
-                    }.bind(this));
+            Sao.common.DATE_OPERATORS.forEach(function(operator) {
+                mousetrap.bind(operator[0], function(e, combo) {
+                    e.preventDefault();
+                    var dp = this.date.data('DateTimePicker');
+                    var date = dp.date();
+                    date.add(operator[1]);
+                    dp.date(date);
                 }.bind(this));
-            }
+            }.bind(this));
         },
         get_format: function(record, field) {
             return field.date_format(record);
@@ -2047,7 +2018,7 @@ function eval_pyson(value){
                 'class': this.class_ + ' panel panel-default'
             });
             if (parseInt(attributes.toolbar || '1', 10)) {
-                this.get_toolbar().appendTo(this.el);
+                this.toolbar = this.get_toolbar().appendTo(this.el);
             }
             this.input = this.labelled = jQuery('<div/>', {
                 'class': 'richtext mousetrap',
@@ -2213,8 +2184,8 @@ function eval_pyson(value){
         },
         set_readonly: function(readonly) {
             this.input.prop('contenteditable', !readonly);
-            if (this.toolbar) {
-                this.toolbar.find('button,select').prop('disabled', readonly);
+            if (this.toolbar && readonly) {
+                this.toolbar.hide();
             }
         }
     });
@@ -2248,7 +2219,8 @@ function eval_pyson(value){
             // Append buttons after the completion to not break layout
             this.but_primary = jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
+                'type': 'button',
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon'
             })).appendTo(jQuery('<span/>', {
@@ -2256,7 +2228,8 @@ function eval_pyson(value){
             }).prependTo(group));
             this.but_secondary = jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
+                'type': 'button',
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon'
             })).appendTo(jQuery('<span/>', {
@@ -2815,7 +2788,8 @@ function eval_pyson(value){
             this.but_switch = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Switch')
+                'aria-label': Sao.i18n.gettext('Switch'),
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-list-alt'
             })).appendTo(buttons);
@@ -2824,7 +2798,8 @@ function eval_pyson(value){
             this.but_previous = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Previous')
+                'aria-label': Sao.i18n.gettext('Previous'),
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-chevron-left'
             })).appendTo(buttons);
@@ -2838,7 +2813,8 @@ function eval_pyson(value){
             this.but_next = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Next')
+                'aria-label': Sao.i18n.gettext('Next'),
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-chevron-right'
             })).appendTo(buttons);
@@ -2851,7 +2827,8 @@ function eval_pyson(value){
                 this.but_add = jQuery('<button/>', {
                     'class': 'btn btn-default btn-sm',
                     'type': 'button',
-                    'aria-label': Sao.i18n.gettext('Add')
+                    'aria-label': Sao.i18n.gettext('Add'),
+                    'tabindex': -1,
                 }).append(jQuery('<span/>', {
                     'class': 'glyphicon glyphicon-plus'
                 })).appendTo(buttons);
@@ -2860,7 +2837,8 @@ function eval_pyson(value){
                 this.but_remove = jQuery('<button/>', {
                     'class': 'btn btn-default btn-sm',
                     'type': 'button',
-                    'aria-label': Sao.i18n.gettext('Remove')
+                    'aria-label': Sao.i18n.gettext('Remove'),
+                    'tabindex': -1,
                 }).append(jQuery('<span/>', {
                     'class': 'glyphicon glyphicon-minus'
                 })).appendTo(buttons);
@@ -2870,7 +2848,8 @@ function eval_pyson(value){
             this.but_new = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('New')
+                'aria-label': Sao.i18n.gettext('New'),
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-edit'
             })).appendTo(buttons);
@@ -2879,7 +2858,8 @@ function eval_pyson(value){
             this.but_open = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Open')
+                'aria-label': Sao.i18n.gettext('Open'),
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-folder-open'
             })).appendTo(buttons);
@@ -2888,7 +2868,8 @@ function eval_pyson(value){
             this.but_del = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Delete')
+                'aria-label': Sao.i18n.gettext('Delete'),
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-trash'
             })).appendTo(buttons);
@@ -2897,7 +2878,8 @@ function eval_pyson(value){
             this.but_undel = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Undelete')
+                'aria-label': Sao.i18n.gettext('Undelete'),
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-repeat'
             })).appendTo(buttons);
@@ -3424,7 +3406,8 @@ function eval_pyson(value){
             this.but_add = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Add')
+                'aria-label': Sao.i18n.gettext('Add'),
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-plus'
             })).appendTo(buttons);
@@ -3433,7 +3416,8 @@ function eval_pyson(value){
             this.but_remove = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Remove')
+                'aria-label': Sao.i18n.gettext('Remove'),
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-minus'
             })).appendTo(buttons);
@@ -4523,7 +4507,8 @@ function eval_pyson(value){
             var group = this.button.parent();
             jQuery('<button/>', {
                 'class': 'datepickerbutton btn btn-default',
-                'type': 'button'
+                'type': 'button',
+                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-calendar'
             })).prependTo(group);
@@ -4566,17 +4551,15 @@ function eval_pyson(value){
             this.encoder = new Sao.PYSON.Encoder({});
             this.decoder = new Sao.PYSON.Decoder({}, true);
             this.el.keyup(this.validate_pyson.bind(this));
-            var button = jQuery('<button/>', {
-                'class': 'btn btn-default',
-                'type': 'button'
-            });
             this.icon = jQuery('<span/>', {
-                'class': 'glyphicon'
-            });
-            button.append(this.icon);
-            button.appendTo(jQuery('<span/>', {
-                'class': 'input-group-btn'
+                'class': 'glyphicon',
+            }).appendTo(jQuery('<span/>', {
+                'class': 'input-group-addon',
             }).appendTo(this.group));
+        },
+        display: function(record, field) {
+            Sao.View.Form.PYSON._super.display.call(this, record, field);
+            this.validate_pyson();
         },
         get_encoded_value: function() {
             var value = this.input.val();
