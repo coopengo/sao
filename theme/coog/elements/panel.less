@@ -40,7 +40,7 @@
     }
     .panel-heading > div > .input-group > .input-group-btn > .btn{
         background-color:       @panel-heading-color;
-        border:                 0;
+        border:                 0!important;
         margin-right:           2px;
 
         .glyphicon {
@@ -55,6 +55,7 @@
         &:focus { outline: 0; }
         &:hover {
             background-color:   @panel-btn-hover-color;
+            color:              @panel-btn-hover-text-color;
             .glyphicon {
                 color:          @panel-btn-hover-text-color !important;
             }
