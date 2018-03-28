@@ -1,20 +1,20 @@
 @import 'colors.less';
 
 /* attributes */
-    @panel-heading-text-color:      none;
-    @panel-heading-color:           @color_blue;
-    @panel-border-color:            @color_grey;
+    @panel-heading-text-color:      @color_black;
+    @panel-heading-color:           transparent;
+    @panel-border-color:            @color_light_blue;
     @panel-icons-color:             @color_blue;
 
-    @panel-btn-hover-color:         @color_grey;
-    @panel-btn-hover-text-color:    none;
-    @panel-btn-active-color:        @color_lightest_grey;
+    @panel-btn-hover-color:         @color_light_blue;
+    @panel-btn-hover-text-color:    @color_white;
+    @panel-btn-active-color:        @color_lighter_blue;
     @panel-btn-active-text-color:   none;
     @panel-btn-color:               @color_white;
 
 
 /* style */
-.main-screen-offcanvas > #tabs > .tab-content > .tab-pane > .tab-form > .screen-container, .modal-body {
+.screen-container, .modal-body {
     .panel-default {
         border-color:               @panel-border-color;
         /* header */
@@ -30,13 +30,17 @@
 }
 
 .form {
+    .panel-default {
+        border: 0px;
+    }
     .panel-heading {
         background-color:       @panel-heading-color;
         color:                  @panel-heading-text-color;
+        border-color:           @panel-border-color;
     }
     .panel-heading > div > .input-group > .input-group-btn > .btn{
         background-color:       @panel-heading-color;
-        border:                 0;
+        border:                 0!important;
         margin-right:           2px;
 
         .glyphicon {
@@ -51,6 +55,7 @@
         &:focus { outline: 0; }
         &:hover {
             background-color:   @panel-btn-hover-color;
+            color:              @panel-btn-hover-text-color;
             .glyphicon {
                 color:          @panel-btn-hover-text-color !important;
             }
@@ -61,6 +66,9 @@
                 color:          @color_black !important;
             }
         }
+    }
+    .panel-body {
+        padding: 5px;
     }
     .form-control {
         border: 1px solid @color_light_blue;

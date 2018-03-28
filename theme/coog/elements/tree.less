@@ -1,39 +1,32 @@
 @import 'colors.less';
-@import 'main-screen.less';
 
 /* variables */
-    @treeview-header-color:         none;
-    @treeview-header-text-size:     @main-screen-font-size;
-    @treeview-header-text-color:    @color_black;
+    @treeview-header-color:         @color_blue;
+    @treeview-header-text-size:     1.1em;
+    @treeview-header-text-color:    @color_white;
 
-    @treeview-color:                none;
-    @treeview-text-size:            @main-screen-font-size;
+    @treeview-color:                transparent;
+    @treeview-text-size:            @global-font-size;
     @treeview-text-color:           @color_black;
 
-    @treeview-stripe-mode:          true;
-    @treeview-striped-color:        @color_lightest_grey;
+    @treeview-stripe-mode:          false;
+    @treeview-striped-color:        transparent;
 
-    @treeview-hover-color:          @color_lightest_grey;
-    @treeview-hover-text-color:     @color_black;
+    @treeview-hover-color:          @color_light_blue;
+    @treeview-hover-text-color:     @color_white;
 
-    @treeview-line-vertical-padding:8px;
+    @treeview-line-vertical-padding:3px;
 
-    @treeview-img-size:             2em;
+    @treeview-img-size:             1.5em;
 
     @treeview-select-color:         @color_blue;
-    @treeview-select-text-color:    @treeview-hover-text-color;
+    @treeview-select-text-color:    @color_black;
 
 /* style */
-.main-screen-offcanvas > #tabs > .tab-content > .tab-pane > .tab-form > .screen-container .treeview, .modal-body {
+.treeview, .modal-body {
     font-size:                  @treeview-text-size;
     color:                      @treeview-text-color;
-
-    /* header */
-    .treeview > .table > thead > tr {
-        background-color:       @treeview-header-color;
-        color:                  @treeview-header-text-color;
-        font-size:              @treeview-header-text-size;
-    }
+    margin-top:                 5px;
 
     /* body */
     .table > tbody > tr {
@@ -43,7 +36,9 @@
             padding-bottom:     @treeview-line-vertical-padding;
         }
         img {
-            height:             @treeview-img-size;
+            height:             @treeview-img-size!important;
+            width:              @treeview-img-size!important;
+            margin-top:         -5px;
         }
     }
 
@@ -51,7 +46,7 @@
     .table-striped>tbody>tr:nth-of-type(odd) {
         background-color:       @treeview-color;
         & when (@treeview-stripe-mode = true) {
-            background-color:   @treeview-striped-color;
+            background-color:   @treeview-striped-color;opacity: 0.2;
         }
     }
 
@@ -80,7 +75,15 @@
     }
 
     .row-active {
-        background-color:   @treeview-select-color !important;
+        background-color:   transparent;
         color:              @treeview-select-text-color;
+        border:             2px solid @treeview-select-color;
     }
+}
+
+/* header */
+thead {
+    background-color:       @treeview-header-color;
+    color:                  @treeview-header-text-color;
+    font-size:              @treeview-header-text-size;
 }

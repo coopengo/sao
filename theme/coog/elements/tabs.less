@@ -1,24 +1,98 @@
 @import 'colors.less';
-@import 'main-tabs.less';
 
 /* attributes */
+    @main-tabs-color:                       @color_white;
+    @main-tabs-text-color:                  @color_black;
+
+    @main-tabs-hover-color:                 @color_light_blue;
+    @main-tabs-hover-text-color:            @color_white;
+
+    @main-tabs-active-color:                @color_white;
+    @main-tabs-active-border-color:         @color_blue;
+    @main-tabs-active-text-color:           @color_black;
+
+    @main-tabs-back-color:                  none;
+    @main-tabs-border-color:                @color_light_blue;
+    @main-tabs-padding-left:                none;
+    @main-tabs-vertical-padding:            4px;
+
+    @main-tabs-hide-borders:                false;
+
     @tabs-color:                @main-tabs-color;
     @tabs-text-color:           @main-tabs-text-color;
 
     @tabs-hover-color:          @main-tabs-hover-color;
     @tabs-hover-text-color:     @main-tabs-hover-text-color;
 
-    @tabs-active-color:         @main-tabs-active-color;
+    @tabs-active-color:         @color_light_blue;
     @tabs-active-text-color:    @main-tabs-active-text-color;
 
-    @main-vertical-padding:     none;
+    @main-vertical-padding:     4px;
+    @nav-tabs-border-color:     @color_light_blue;
 
 /* style */
+.main-screen-offcanvas > #tabs {
+    & > .nav-tabs {
+        background-color:       @main-tabs-back-color;
+        padding-left:           @main-tabs-padding-left;
+        padding-top:            3px;
+        padding-bottom:         1px;
+        border-bottom:          1px solid @main-tabs-border-color;
+        & > li > a {
+            padding-top:        @main-tabs-vertical-padding;
+            padding-bottom:     @main-tabs-vertical-padding;
+        }
+    }
+
+    .nav-tabs>li>a {
+        border:                 1px solid @main-tabs-border-color;
+        background-color:       @main-tabs-color;
+        color:                  @main-tabs-text-color;
+
+        &:hover, &:active {
+            text-decoration:    none;
+            background-color:   @main-tabs-hover-color;
+            color:              @main-tabs-hover-text-color;
+            & when (@main-tabs-hide-borders = true) {
+                border-color:   @main-tabs-hover-color !important;
+            }
+        }
+    }
+
+    .nav-tabs>li.active>a {
+        border-style:           solid;
+        border-color:           @main-tabs-active-border-color;
+        border-width:           2px 2px 0 2px;
+        text-decoration:        none;
+        background-color:       @main-tabs-active-color;
+        color:                  @main-tabs-active-text-color;
+        & when (@main-tabs-hide-borders = true) {
+            border-color:       @main-tabs-active-color;
+        }
+        &:hover, &:active {
+            text-decoration:    none;
+            background-color:   @main-tabs-hover-color;
+            border-color:       @main-tabs-hover-color;
+            color:              @main-tabs-hover-text-color;
+        }
+
+    }
+}
+
+#tablist > li > a {
+    border: solid   @main-tabs-active-color;
+    border-width:   0px 0px 0px 2px;
+    border-radius:  0px;
+}
+.navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:focus, .navbar-default .navbar-nav>.active>a:hover {
+    background-color: @main-tabs-active-color;
+}
+
 .main-screen-offcanvas > #tabs > .tab-content > .tab-pane > .tab-form > .screen-container, .modal-body {
     .nav-tabs {
         margin-bottom:          4px;
     }
-    .nav-tabs>li>a {
+    .nav-tabs > li > a {
         border:                 1px solid @color_grey;
         background-color:       @tabs-color;
         color:                  @tabs-text-color;
@@ -31,10 +105,10 @@
         }
     }
 
-    .nav-tabs>li.active>a {
+    .nav-tabs > li .active > a {
         border-style:           solid;
-        border-color:           @color_grey;
-        border-width:           1px 1px 0 1px;
+        border-color:           @tabs-active-color;
+        border-width:           2px 2px 0px 2px;
 
         text-decoration:        none;
         background-color:       @tabs-active-color;
@@ -50,5 +124,10 @@
 
 /* nav tabs padding */
 .main-screen-offcanvas > #tabs .nav-tabs > li > a {
-    padding: 5px 15px;
+    padding:        2.5px 15px;
+    border-color:   @nav-tabs-border-color;
+    margin-top:     5px;
+}
+.nav-tabs {
+    border-bottom:  1px solid @nav-tabs-border-color;
 }

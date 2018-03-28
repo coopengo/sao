@@ -1,15 +1,18 @@
 @import 'colors.less';
 
 /* Header */
-    @global-header-color:                   none;
+    @global-header-static-top-color:        @color_blue;
+    @global-header-static-top-hover-color:  @color_light_blue;
+    @global-header-color:                   @color_white;
     @global-header-text-color:              @color_white;
 
     @global-header-menu-btn-text-mode:      true;
+    @hr-border-top-color:                   @color_light_blue;
 
     @global-header-menu-btn-text-color:     @color_white;
     @global-header-menu-btn-text-size:      none;
     @global-header-menu-btn-color:          @color_light_blue;
-    @global-header-menu-btn-border-color:   @color_blue;
+    @global-header-menu-btn-border-color:   @color_light_blue;
 
     @global-header-menu-btn-padding:        1px 5px;
     @global-header-menu-btn-margin-top:     10px;
@@ -24,13 +27,13 @@
 
 
 /* style */
+a.navbar-brand.dropdown-toggle {
+    padding:            15px 5px;
+    height:             2em;
+}
 body > .navbar-default {
     margin-bottom: 0px!important;
     border-bottom-width: 0px;
-    color:          @global-header-text-color;
-
-    /* colors */
-    background-color:   @global-header-color;
     .navbar-header > a {
         color:          @global-header-text-color;
     }
@@ -76,3 +79,43 @@ body > .navbar-default {
         color:          @global-header-text-color;
     }
 }
+nav.navbar.navbar-default.navbar-static-top {
+    background-color: @global-header-static-top-color;
+}
+.navbar-default .navbar-nav > li > a:focus, .navbar-default .navbar-nav>li>a:hover {
+        background-color:   @global-header-static-top-hover-color;
+        color:              @global-header-text-color;
+    }
+
+.navbar-default {
+    /* colors */
+    background-color:   @global-header-color;
+    border-color:       @global-header-menu-btn-border-color;
+    margin-bottom:      0px;
+    border:             0px;
+}
+
+.navbar-default .navbar-brand {
+    font-size:              1.75em;
+    color:                  @global-header-static-top-color;
+    &:hover {
+        color:              @global-header-color;
+        background-color:   @global-header-static-top-hover-color;
+        border-radius:      3px;
+    }
+}
+
+.close {
+    color:              unset;
+    text-shadow:        none;
+    margin-left:        10px;
+    margin-top:         -10px;
+    opacity:            unset;
+}
+
+hr {
+    border-top-width: 1px;
+    border-top-style: solid;
+    border-top-color: @hr-border-top-color;
+}
+

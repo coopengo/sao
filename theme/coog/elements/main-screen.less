@@ -1,19 +1,20 @@
 @import 'colors.less';
 
 /* attributes */
-    @main-screen-font-size:     14px;
+    @main-screen-font-size:     @global-font-size;
     @main-screen-font-color:    @color_black;
-    @main-screen-icons-color:   @color_median_grey;
+    @main-screen-icons-color:   @color_blue;
 
     @header-nav-color:          @color_lightest_grey;
     @header-nav-icons-color:    @main-screen-icons-color;
 
-    @filter-box-font-size:      14px;
-    @filter-box-height:         34px;
+    @filter-box-font-size:      1.16em;
+    @filter-box-height:         2.8em;
 
 /* custom */
-    @filter-box-font-size:      12px;
-    @filter-box-height:         31px;
+    @filter-box-font-size:      @global-font-size;
+    @filter-box-height:         3em;
+    @main-screen-legend-color:  @color_light_blue;
 
 /* style */
 .main-screen-offcanvas > #tabs > .tab-content > .tab-pane > .tab-form, .modal-body {
@@ -26,17 +27,21 @@
     }
 
     .navbar-btn {
+        border:             0px;
+        font-size:          2.5rem;
         .glyphicon {
             color:          @header-nav-icons-color;
         }
     }
-
+img.toolbar-menu {
+    height:                 1.25em;
+}
 /* body */
     & > .screen-container {
-        font-size:      @main-screen-font-size;
-        color:      @main-screen-font-color;
+        font-size:          @main-screen-font-size;
+        color:              @main-screen-font-color;
         .glyphicon {
-            color:      @main-screen-icons-color;
+            color:          @main-screen-icons-color;
         }
     }
 
@@ -51,22 +56,11 @@
         }
 
     }
-
-/* filter-box */
-    .filter-box {
-        input.form-control {
-            font-size:      @filter-box-font-size;
-            height:         @filter-box-height;
-        }
-        button.btn.btn-default {
-            font-size:      @filter-box-font-size;
-        }
-    }
+}
+.form fieldset.form-group_ > legend {
+  border-bottom:            1px solid @main-screen-legend-color;
 }
 
-.modal-footer {
-    .btn {
-        font-size:          @main-screen-font-size;
-        color:      @main-screen-font-color;
-    }
+.filter-box {
+  margin:                   0px 0px;
 }
