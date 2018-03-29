@@ -28,6 +28,11 @@
     color:                      @treeview-text-color;
     margin-top:                 5px;
 
+    > table.tree {
+        // Remove 1px to tree view to hide scroll bar by default
+        width:                  calc(100% - 1px);
+    }
+
     /* body */
     .table > tbody > tr {
         background-color:       @treeview-color;
