@@ -1,3 +1,4 @@
+* FIX#8605 Fix extra-data selection readonly
 * FEA#8297 iteration on theme
 * FEA#8296 Reduce menu width for big screens
 
