@@ -1261,7 +1261,9 @@
             return row;
         },
         n_children: function(row) {
-            if (!row || !this.children_field || row.is_leaf()) {
+            // [Coog specific]
+            //      > used for multi_mixed_view
+            if (!row || !this.children_field || row.is_leaf() || !row.record._values[this.children_field] ) {
                     return this.rows.length;
             }
             return row.record._values[this.children_field].length;
