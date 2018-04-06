@@ -160,7 +160,8 @@
                     'type': 'button',
                     'aria-label': Sao.i18n.gettext('New')
                 }).append(jQuery('<span/>', {
-                    'class': 'glyphicon glyphicon-edit'
+                    // Coog Override Icon
+                    'class': 'glyphicon glyphicon-plus'
                 })).appendTo(buttons);
                 this.but_new.click(this.new_.bind(this));
                 this.but_new.prop('disabled', !access.create || readonly);
@@ -213,7 +214,8 @@
                     'type': 'button',
                     'aria-label': Sao.i18n.gettext('Switch')
                 }).append(jQuery('<span/>', {
-                    'class': 'glyphicon glyphicon-list-alt'
+                    // Coog Override Icon
+                    'class': 'glyphicon glyphicon-resize-full'
                 })).appendTo(buttons);
                 this.but_switch.click(this.switch_.bind(this));
             }
@@ -1512,7 +1514,7 @@
                 }, this.session).done(function(exports) {
                     var arr = [];
                     exports.forEach(function(o) {
-                        for (var i = 0; i < o.export_fields.length; 
+                        for (var i = 0; i < o.export_fields.length;
                             arr.push(o.export_fields[i++]));
                     });
                     Sao.rpc({
