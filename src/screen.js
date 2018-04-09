@@ -1289,20 +1289,22 @@
             return this.__current_record;
         },
         set current_record(record) {
+            // [Coog specific] multi_mixed_view
+            var changed = this.current_record !== record;
             this.__current_record = record;
-            var pos = null;
+            this.position = null;
             var record_id = null;
             if (record) {
                 var i = this.group.indexOf(record);
                 if (i >= 0) {
-                    pos = i + this.offset + 1;
+                    this.position = i + this.offset + 1;
                 } else {
-                    pos = record.get_index_path();
+                    this.position = record.get_index_path();
                 }
                 record_id = record.id;
             }
             this.record_message(
-                pos || 0, this.group.length + this.offset, this.search_count,
+                this.position || 0, this.group.length + this.offset, this.search_count,
                 record_id);
             if (this.switch_callback) {
                 this.switch_callback();
@@ -1314,6 +1316,10 @@
                 } else {
                     this.update_resources();
                 }
+            }
+            // [Coog specific] multi_mixed_view
+            if (this.parent && changed){
+                this.parent.group_sync(this, this.current_record);
             }
         },
         load: function(ids, set_cursor=true, modified=false, position=-1) {

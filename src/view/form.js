@@ -3528,7 +3528,8 @@ function eval_pyson(value){
                 pre_validate: attributes.pre_validate,
                 breadcrumb: breadcrumb,
             });
-            // !!!> group_sync
+            // [Coog specific]
+            // > multi_mixed_view see tryton/8fa02ed59d03aa52600fb8332973f6a88d46d8c0
             if (attributes.group)
                 this.screen.parent = this;
             this.screen.pre_validate = attributes.pre_validate == 1;
