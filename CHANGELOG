@@ -1,3 +1,4 @@
+* BUG#8651 Remove right blank space
 * FEA#8643 Allow to open in new tab Many2One and Reference
 * FEA#8643 Allow to edit Many2One from tree view
 * BUG#7227 Fix view changes in processes
