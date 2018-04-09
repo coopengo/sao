@@ -1705,7 +1705,7 @@
             }
             return value;
         },
-        apply_factor: function(value, factor) {
+        apply_factor: function(record, value, factor) {
             if (value !== null) {
                 value /= factor;
             }
@@ -1715,7 +1715,7 @@
             if (factor === undefined) {
                 factor = 1;
             }
-            value = this.apply_factor(this.convert(value), factor);
+            value = this.apply_factor(record, this.convert(value), factor);
             Sao.field.Float._super.set_client.call(this, record, value,
                 force_change);
         },
@@ -1748,9 +1748,15 @@
             }
             return value;
         },
-        apply_factor: function(value, factor) {
-            value = Sao.field.Numeric._super.apply_factor(value, factor);
+        apply_factor: function(record, value, factor) {
+            value = Sao.field.Numeric._super.apply_factor(record, value, factor);
             if (value !== null) {
+                var digits = this.digits(record);
+                if (digits) {
+                    // Round to avoid float precision error
+                    // after the division by factor
+                    value = value.toFixed(digits[1]);
+                }
                 value = new Sao.Decimal(value);
             }
             return value;
@@ -1947,7 +1953,7 @@
                 }
                 return jQuery.when.apply(jQuery, promises);
             };
-            return prm.then(set_value);
+            return prm.then(set_value.bind(this));
         },
         set: function(record, value, _default) {
             if (_default === undefined) {
@@ -2203,7 +2209,7 @@
             for (var i = 0, len = record._values[this.name].length; i < len;
                     i++) {
                 var record2 = group[i];
-                if (!record2.deleted() || !record2.removed())
+                if (!record2.deleted() && !record2.removed())
                     result.push(record2.get_on_change_value(
                                 [this.description.relation_field || '']));
             }

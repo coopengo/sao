@@ -523,3 +523,21 @@ msgstr "Surcharger la définition %s ?"
 
 msgid "Wizard"
 msgstr "Assistant"
+
+msgid "Open the calendar"
+msgstr "Ouvrir le calendrier"
+
+msgid "Open the record <F2>"
+msgstr "Ouvrir l'enregistrement <F2>"
+
+msgid "Clear the field <Del>"
+msgstr "Effacer le champ <Del>"
+
+msgid "Search a record <F2>"
+msgstr "Chercher un enregistrement <F2>"
+
+msgid "From"
+msgstr "De"
+
+msgid "To"
+msgstr "À"

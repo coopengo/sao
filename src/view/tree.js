@@ -122,9 +122,7 @@
                     }
                 }
                 if (column.attributes.help) {
-                    label.data('toggle', 'tooltip');
                     label.attr('title', column.attributes.help);
-                    label.tooltip();
                 }
                 if (column.sortable) {
                     var arrow = jQuery('<span/>');
@@ -339,12 +337,14 @@
             if (this.children_field) {
                 this.construct(selected, expanded);
             } else if ((min_display_size > this.rows.length) &&
-                    (Sao.common.compare(
-                            this.screen.group.slice(0, this.rows.length),
-                            row_records()))) {
+                Sao.common.compare(
+                    this.screen.group.slice(0, this.rows.length),
+                    row_records())) {
                 this.construct(selected, expanded, true);
             } else if ((min_display_size != this.rows.length) ||
-                    !Sao.common.compare(this.screen.group, row_records())){
+                !Sao.common.compare(
+                    this.screen.group.slice(0, this.rows.length),
+                    row_records())){
                 this.construct(selected, expanded);
             }
 
@@ -677,7 +677,7 @@
         n_children: function(row) {
             // [Coog specific]
             //      > used for multi_mixed_view
-            if (!row || !this.children_field || row.is_leaf()) {
+            if (!row || !this.children_field || row.is_leaf() | !row.record._values[this.children_field] ) {
                     return this.rows.length;
             }
             return row.record._values[this.children_field].length;
@@ -1531,7 +1531,7 @@
                         } else {
                             img_tag = cell;
                         }
-                        img_tag.attr('src', url);
+                        img_tag.attr('src', url || '');
                     }.bind(this));
                 } else {
                     value = this.attributes.string || '';
@@ -1627,7 +1627,28 @@
     });
 
     Sao.View.Tree.Many2OneColumn = Sao.class_(Sao.View.Tree.CharColumn, {
-        class_: 'column-many2one'
+        class_: 'column-many2one',
+        get_cell: function() {
+            var cell = Sao.View.Tree.Many2OneColumn._super.get_cell.call(this);
+            cell.append(jQuery('<a/>', {
+                'href': '#',
+            }));
+            return cell;
+        },
+        update_text: function(cell, record) {
+            cell = cell.children('a');
+            cell.unbind('click');
+            Sao.View.Tree.Many2OneColumn._super.update_text.call(this, cell, record);
+            cell.click(function(event) {
+                event.stopPropagation();
+                var params = {};
+                params.model = this.attributes.relation;
+                params.res_id = this.field.get(record);
+                params.mode = ['form'];
+                params.name = this.attributes.string;
+                Sao.Tab.create(params);
+            }.bind(this));
+        }
     });
 
     Sao.View.Tree.One2OneColumn = Sao.class_(Sao.View.Tree.Many2OneColumn, {

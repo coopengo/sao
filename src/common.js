@@ -803,10 +803,8 @@
                         tip = Sao.i18n.gettext('By: ') +
                             users.join(Sao.i18n.gettext(', '));
                     }
-                    counter.data('toggle', 'tooltip');
                     counter.text(users.length || '');
                     counter.attr('title', tip);
-                    counter.tooltip();
                 }.bind(this));
             }
 
@@ -2083,6 +2081,9 @@
                     context_field = Sao.Date.min;
                 }
             }
+            if ((context_field instanceof Array) & (value === null)) {
+                value = [];
+            }
             if ((typeof context_field == 'string') &&
                     (value instanceof Array) && value.length == 2) {
                 value = value.join(',');
@@ -2524,7 +2525,7 @@
         },
         register_icon: function(icon_name) {
             if (!icon_name) {
-                return jQuery.Deferred().reject();
+                return jQuery.when();
             } else if ((icon_name in this.loaded_icons) ||
                     ~Sao.common.LOCAL_ICONS.indexOf(icon_name)) {
                 return jQuery.when(this.get_icon_url(icon_name));
@@ -3062,12 +3063,22 @@
             this.input.keydown(function(evt) {
                 if (evt.which == Sao.common.ESC_KEYCODE) {
                     if (this.dropdown.hasClass('open')) {
+                        evt.preventDefault();
+                        evt.stopPropagation();
                         this.menu.dropdown('toggle');
                     }
-                } else if (evt.which == Sao.common.RETURN_KEYCODE) {
-                    if (!this.dropdown.hasClass('open')) {
-                        this.menu.dropdown('toggle');
+                } else if (evt.which == Sao.common.DOWN_KEYCODE) {
+                    if (this.dropdown.hasClass('open')) {
+                        evt.preventDefault();
+                        this.menu.find('li > a').first().focus();
                     }
+                }
+            }.bind(this));
+            this.menu.keydown(function(evt) {
+                if (evt.which == Sao.common.ESC_KEYCODE) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    this.menu.dropdown('toggle');
                 }
             }.bind(this));
             // We must set the overflow of the treeview containing the input to

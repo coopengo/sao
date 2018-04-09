@@ -142,7 +142,6 @@ function eval_pyson(value){
         },
         _parse_label: function(model, node, container, attributes) {
             var name = attributes.name;
-            var text = attributes.string;
             if (attributes.xexpand === undefined) {
                 attributes.xexpand = 0;
             }
@@ -154,20 +153,17 @@ function eval_pyson(value){
                 if (!attributes.states && (name in model.fields)) {
                     attributes.states = model.fields[name].description.states;
                 }
-                if (!text) {
+                if (attributes.string === undefined) {
                     // TODO RTL and translation
-                    text = model.fields[name]
+                    attributes.string = model.fields[name]
                         .description.string + ': ';
                 }
-                if (attributes.xalign === undefined) {
-                    attributes.xalign = 1.0;
-                }
             }
-            var label;
-            if (text) {
-                label = new Sao.View.Form.Label(text, attributes);
-                this.state_widgets.push(label);
+            if (attributes.xalign === undefined) {
+                attributes.xalign = 1.0;
             }
+            var label = new Sao.View.Form.Label(attributes.string, attributes);
+            this.state_widgets.push(label);
             container.add(attributes, label);
             return label;
         },
@@ -522,9 +518,7 @@ function eval_pyson(value){
             }
 
             if (attributes.help) {
-                widget.el.data('toggle', 'tooltip');
                 widget.el.attr('title', attributes.help);
-                widget.el.tooltip();
             }
         },
         resize: function() {
@@ -674,12 +668,12 @@ function eval_pyson(value){
             if (this.attributes.name && record) {
                 field = record.model.fields[this.attributes.name];
             }
-            if ((this.attributes.string === undefined) && field) {
+            if (!this.attributes.string && field) {
                 var text = '';
                 if (record) {
                     text = field.get_client(record) || '';
                 }
-                this.label_el.val(text);
+                this.label_el.text(text);
             }
             var state_changes;
             if (record) {
@@ -1671,6 +1665,8 @@ function eval_pyson(value){
             }).append(jQuery('<button/>', {
                 'class': 'datepickerbutton btn btn-default',
                 'type': 'button',
+                'aria-label': Sao.i18n.gettext("Open the calendar"),
+                'title': Sao.i18n.gettext("Open the calendar"),
                 'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-calendar'
@@ -2180,7 +2176,9 @@ function eval_pyson(value){
                 }
             });
             var value = this.input.html() || '';
-            field.set_client(record, value);
+            if (this.toolbar.is(':visible')) {
+            	field.set_client(record, value);
+            }
         },
         set_readonly: function(readonly) {
             this.input.prop('contenteditable', !readonly);
@@ -2303,26 +2301,31 @@ function eval_pyson(value){
                 return;
             }
             this.set_text(field.get_client(record));
-            var primary, secondary;
+            var primary, tooltip1, secondary, tooltip2;
             value = field.get(record);
             if (this.has_target(value)) {
                 // Coog Override Icon
                 primary = 'glyphicon-pencil';
+                tooltip1 = Sao.i18n.gettext("Open the record <F2>");
                 // Coog Override Icon
                 secondary = 'glyphicon-trash';
+                tooltip2 = Sao.i18n.gettext("Clear the field <Del>");
             } else {
                 primary = null;
+                tooltip1 = '';
                 secondary = 'glyphicon-search';
+                tooltip2 = Sao.i18n.gettext("Search a record <F2>");
             }
             if (this.entry.prop('readonly')) {
                 secondary = null;
             }
             [
-                [primary, this.but_primary],
-                [secondary, this.but_secondary]
+                [primary, tooltip1, this.but_primary],
+                [secondary, tooltip2, this.but_secondary]
             ].forEach(function(items) {
                 var icon_name = items[0];
-                var button = items[1];
+                var tooltip = items[1];
+                var button = items[2];
                 var icon = button.find('.glyphicon');
                 icon.removeClass().addClass('glyphicon');
                 // don't use .hide/.show because the display value is not
@@ -2333,6 +2336,8 @@ function eval_pyson(value){
                     button.parent().css('display', 'table-cell');
                     icon.addClass(icon_name);
                 }
+                button.attr('aria-label', tooltip);
+                button.attr('title', tooltip);
             });
         },
         focus: function() {
@@ -2393,9 +2398,18 @@ function eval_pyson(value){
                 return;
             }
             if (this.has_target(value)) {
-                var screen = this.get_screen();
                 var m2o_id =
                     this.id_from_value(record.field_get(this.field_name));
+                if (evt && evt.ctrlKey) {
+                    var params = {};
+                    params.model = this.get_model();
+                    params.res_id = m2o_id;
+                    params.mode = ['form'];
+                    params.name = this.attributes.string;
+                    Sao.Tab.create(params);
+                    return;
+                }
+                var screen = this.get_screen();
                 screen.new_group([m2o_id]);
                 callback = function(result) {
                     if (result) {
@@ -2606,7 +2620,8 @@ function eval_pyson(value){
             this.el.addClass('form-inline');
             this.select = jQuery('<select/>', {
                 'class': 'form-control input-sm',
-                'aria-label': attributes.string
+                'aria-label': attributes.string,
+                'title': attributes.string,
             });
             this.el.prepend(jQuery('<span/>').text('-'));
             this.el.prepend(this.select);
@@ -2791,6 +2806,7 @@ function eval_pyson(value){
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
                 'aria-label': Sao.i18n.gettext('Switch'),
+                'title': Sao.i18n.gettext("Switch"),
                 'tabindex': -1,
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
@@ -2802,6 +2818,7 @@ function eval_pyson(value){
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
                 'aria-label': Sao.i18n.gettext('Previous'),
+                'title': Sao.i18n.gettext("Previous"),
                 'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-chevron-left'
@@ -2817,6 +2834,7 @@ function eval_pyson(value){
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
                 'aria-label': Sao.i18n.gettext('Next'),
+                'title': Sao.i18n.gettext("Next"),
                 'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-chevron-right'
@@ -2831,6 +2849,7 @@ function eval_pyson(value){
                     'class': 'btn btn-default btn-sm',
                     'type': 'button',
                     'aria-label': Sao.i18n.gettext('Add'),
+                    'title': Sao.i18n.gettext("Add"),
                     'tabindex': -1,
                 }).append(jQuery('<span/>', {
                     // Coog Override Icon
@@ -2854,6 +2873,7 @@ function eval_pyson(value){
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
                 'aria-label': Sao.i18n.gettext('New'),
+                'title': Sao.i18n.gettext("New"),
                 'tabindex': -1,
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
@@ -2865,6 +2885,7 @@ function eval_pyson(value){
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
                 'aria-label': Sao.i18n.gettext('Open'),
+                'title': Sao.i18n.gettext("Open"),
                 'tabindex': -1,
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
@@ -2876,6 +2897,7 @@ function eval_pyson(value){
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
                 'aria-label': Sao.i18n.gettext('Delete'),
+                'title': Sao.i18n.gettext("Delete"),
                 'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-trash'
@@ -2886,6 +2908,7 @@ function eval_pyson(value){
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
                 'aria-label': Sao.i18n.gettext('Undelete'),
+                'title': Sao.i18n.gettext("Undelete"),
                 'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-repeat'
@@ -3414,6 +3437,7 @@ function eval_pyson(value){
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
                 'aria-label': Sao.i18n.gettext('Add'),
+                'title': Sao.i18n.gettext("Add"),
                 'tabindex': -1,
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
@@ -3425,6 +3449,7 @@ function eval_pyson(value){
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
                 'aria-label': Sao.i18n.gettext('Remove'),
+                'title': Sao.i18n.gettext("Remove"),
                 'tabindex': -1,
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
@@ -3636,7 +3661,9 @@ function eval_pyson(value){
 
             this.but_save_as = jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
+                'type': 'button',
+                'aria-label': Sao.i18n.gettext("Save As"),
+                'title': Sao.i18n.gettext("Save As..."),
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-save'
             })).appendTo(group);
@@ -3644,7 +3671,9 @@ function eval_pyson(value){
 
             this.but_select = jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
+                'type': 'button',
+                'aria-label': Sao.i18n.gettext("Select"),
+                'title': Sao.i18n.gettext("Select..."),
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-search'
             })).appendTo(group);
@@ -3652,7 +3681,9 @@ function eval_pyson(value){
 
             this.but_clear = jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
+                'type': 'button',
+                'aria-label': Sao.i18n.gettext("Clear"),
+                'title': Sao.i18n.gettext("Clear"),
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
                 'class': 'glyphicon glyphicon-trash'
@@ -4474,6 +4505,11 @@ function eval_pyson(value){
         },
         set_value: function(value) {
             this.input.val(JSON.stringify(value));
+        },
+        // Remove method before merge sao
+        set_readonly: function(readonly) {
+            this._readonly = readonly;
+            this.input.prop('disabled', readonly);
         }
     });
 

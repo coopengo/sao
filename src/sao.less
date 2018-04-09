@@ -58,6 +58,12 @@ input[type='color'] {
     }
 }
 
+/* Hide empty image displayed as broken image */
+[src=''] {
+    visibility: hidden;
+}
+
+
 button {
    & img.icon {
        height: unit(@line-height-base, em);

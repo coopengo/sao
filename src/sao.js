@@ -139,6 +139,18 @@ var Sao = {};
             year = undefined;
         }
         else {
+            if (hour === undefined) {
+                hour = 0;
+            }
+            if (minute === undefined) {
+                minute = 0;
+            }
+            if (second === undefined) {
+                second = 0;
+            }
+            if (millisecond === undefined) {
+                millisecond = 0;
+            }
             datetime = moment();
         }
         if (utc) {
@@ -563,6 +575,14 @@ var Sao = {};
                     this.update.bind(this),
                     this.match_selected.bind(this),
                     this.format.bind(this));
+            completion.input.keydown(function(evt) {
+                if (evt.which == Sao.common.RETURN_KEYCODE) {
+                    if (!completion.dropdown.hasClass('open')) {
+                        evt.preventDefault();
+                        completion.menu.dropdown('toggle');
+                    }
+                }
+            });
         },
         format: function(content) {
             var el = jQuery('<div/>');
