@@ -14,12 +14,12 @@
   }
 
   .row-offcanvas.active .main-screen-offcanvas {
-    width: 70%;
+    width: 50%;
   }
 
   .sidebar-offcanvas {
     top: 0;
-    width: 30%;
+    width: 50%;
   }
 }
 
