@@ -89,6 +89,7 @@ this repository contains the full copyright notices and license terms. -->
         <script type="text/javascript">
             jQuery(function() {
                     jQuery('[data-toggle="offcanvas"]').click(function() {
+                        jQuery('#menu').toggleClass('hidden');
                         jQuery('.row-offcanvas').toggleClass('active');
                         jQuery('.main-screen-offcanvas').toggleClass('full_mode');
                         jQuery(window).trigger('resize');
