@@ -102,6 +102,7 @@ this repository contains the full copyright notices and license terms. -->
                 jQuery(function() {
                     jQuery('.body').show();
                     jQuery('[data-toggle="offcanvas"]').click(function() {
+                        jQuery('#menu').toggleClass('hidden');
                         jQuery('.row-offcanvas').toggleClass('active');
                     });
                     jQuery('#tabs').on('ready', function() {
