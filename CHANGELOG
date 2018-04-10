@@ -1,3 +1,4 @@
+* BUG#8706 Remove link when line is not selected
 * BUG#7226 Hide selection state
 * BUG#8474 Add position and count label on one2many widget and tree view : http://hg.tryton.org/sao/rev/e19282c20d57
 * BUG#7226 Refactor the editable tree process  : http://hg.tryton.org/sao/rev/cf989f7a944e/ 
