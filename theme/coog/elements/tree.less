@@ -28,6 +28,15 @@
     color:                      @treeview-text-color;
     margin-top:                 5px;
 
+    /* block line when not active */
+    *:link {
+        pointer-events: none;
+    }
+
+    .row-active *:link{
+        pointer-events: auto;
+    }
+
     > table.tree {
         // Remove 1px to tree view to hide scroll bar by default
         width:                  calc(100% - 1px);
@@ -69,6 +78,7 @@
     .treefooter > .btn {
         font-size:              @treeview-text-size!important;
     }
+
 }
 
 /* tree view selections */
