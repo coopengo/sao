@@ -1,3 +1,42 @@
 #!/bin/sh
 
-yarn && grunt
+move_res() {
+    local base
+    base=$(basename "$1")
+    cp "$1" dist/ && sed -i "s;$1;$base;g" dist/index.html
+}
+
+# pick the files needed to run and flatten them on dist folder
+# in dev mode, these files are referenced from their original path
+pack() {
+    cp index.html dist/ \
+        && cp offcanvas.css dist/ \
+        && cp -r locale dist/ \
+        && cp -r images dist/ \
+        && cp -r bower_components/bootstrap/dist/fonts dist/ \
+        && move_res bower_components/jquery/dist/jquery.min.js \
+        && move_res bower_components/bootstrap/dist/js/bootstrap.min.js \
+        && move_res bower_components/moment/min/moment.min.js \
+        && move_res bower_components/moment/min/locales.min.js \
+        && move_res bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js \
+        && move_res bower_components/gettext.js/dist/gettext.min.js \
+        && move_res bower_components/d3/d3.min.js \
+        && move_res bower_components/c3/c3.min.js \
+        && move_res bower_components/papaparse/papaparse.min.js \
+        && move_res bower_components/fullcalendar/dist/fullcalendar.min.js \
+        && move_res bower_components/fullcalendar/dist/locale-all.js \
+        && move_res bower_components/mousetrap/mousetrap.min.js \
+        && move_res bower_components/bootstrap/dist/css/bootstrap.min.css \
+        && move_res bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css \
+        && move_res bower_components/c3/c3.min.css \
+        && move_res bower_components/fullcalendar/dist/fullcalendar.min.css \
+        && rm dist/tryton-sao.js dist/tryton-sao.css dist/coog-sao.css \
+        && sed -i "s;dist/tryton-sao.js;tryton-sao.js;g" dist/index.html \
+        && sed -i "s;dist/tryton-sao.min.js;tryton-sao.min.js;g" dist/index.html \
+        && sed -i "s;dist/tryton-sao.css;tryton-sao.css;g" dist/index.html \
+        && sed -i "s;dist/tryton-sao.min.css;tryton-sao.min.css;g" dist/index.html \
+        && sed -i "s;dist/coog-sao.css;coog-sao.css;g" dist/index.html \
+        && sed -i "s;dist/coog-sao.min.css;coog-sao.min.css;g" dist/index.html
+}
+
+yarn && grunt && pack
