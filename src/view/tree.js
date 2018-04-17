@@ -1334,7 +1334,7 @@
             }
             if (!this.group.parent) {
                 prm = this.edited_row.record.save();
-            } else if (this.screen.attributes.pre_validate) {
+            } else if (this.screen.attributes.pre_validate && this.record) {
                 prm = this.record.pre_validate();
             } else {
                 prm = jQuery.when();
