@@ -1,3 +1,4 @@
+* BUG#8839 Allow link inside modal
 * BUG#8810 Prevent crash on selection of m2m in form view
 * BUG#8779 Use input number and toLocaleString for numeric fields
 * BUG#8720 Prevent call to focus when not defined on widget
