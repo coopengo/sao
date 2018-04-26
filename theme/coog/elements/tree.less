@@ -22,12 +22,7 @@
     @treeview-select-color:         @color_blue;
     @treeview-select-text-color:    @color_black;
 
-/* style */
-.treeview, .modal-body {
-    font-size:                  @treeview-text-size;
-    color:                      @treeview-text-color;
-    margin-top:                 5px;
-
+.treeview {
     /* block link when not active */
     *:link {
         pointer-events: none;
@@ -36,6 +31,14 @@
     .row-active *:link{
         pointer-events: auto;
     }
+}
+
+/* style */
+.treeview, .modal-body {
+    font-size:                  @treeview-text-size;
+    color:                      @treeview-text-color;
+    margin-top:                 5px;
+
 
     > table.tree {
         // Remove 1px to tree view to hide scroll bar by default
