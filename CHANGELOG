@@ -1,3 +1,4 @@
+* BUG#8817 Fix width of selection input
 * BUG#8840 Show scrollbar on modal
 * BUG#8839 Allow link inside modal
 * BUG#8810 Prevent crash on selection of m2m in form view
