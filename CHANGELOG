@@ -1,3 +1,4 @@
+* OTH#0000 Correct grunt installation steps in README
 * BUG#8817 Fix width of selection input
 * BUG#8840 Show scrollbar on modal
 * BUG#8839 Allow link inside modal
@@ -9,7 +10,7 @@
 * BUG#8706 Remove link when line is not selected
 * BUG#7226 Hide selection state
 * BUG#8474 Add position and count label on one2many widget and tree view : http://hg.tryton.org/sao/rev/e19282c20d57
-* BUG#7226 Refactor the editable tree process  : http://hg.tryton.org/sao/rev/cf989f7a944e/ 
+* BUG#7226 Refactor the editable tree process  : http://hg.tryton.org/sao/rev/cf989f7a944e/
 * BUG#8474 Ensure consistent treeview rendering by using fixed table-layout : http://hg.tryton.org/sao/rev/60d4cde3ed8f
 
 * BUG#8651 Remove right blank space
@@ -67,7 +68,7 @@ Version 4.2.0 - 2016-11-28
 * Manage confirm attribute on buttons
 * Call autocompletion when setting record value
 * Limit readonly state for xxx2Many
-* Simplify login with single database 
+* Simplify login with single database
 * Show records names in relate window title
 * Add support for count on Action Window Domains
 * Manage custom login process

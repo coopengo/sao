@@ -5,7 +5,6 @@ Prerequisites
 -------------
 
  * Node.js 0.8.0 or later (http://nodejs.org/)
- * grunt-cli: npm install -g grunt-cli
 
 Installation
 ------------
@@ -14,6 +13,13 @@ Once you've downloaded and unpacked the sao source release, enter the directory
 where the archive was unpacked, and run:
 
     # npm install --production
+
+Make sure you have grunt installed:
+
+ * grunt-cli: npm install grunt-cli
+
+Then, run:
+
     # grunt
 
 Note that the entry `root` in the section `[web]` of `trytond.conf` must be set
