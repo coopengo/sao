@@ -3255,15 +3255,16 @@
         build_dialog: function(message, title, prm) {
             var dialog = Sao.common.UserWarningDialog._super.build_dialog.call(
                 this, message, title, prm);
-            var always = jQuery('<input/>', {
-                'type': 'checkbox'
-            });
-            dialog.body.append(jQuery('<div/>', {
-                'class': 'checkbox',
-            }).append(jQuery('<label/>')
-                .text(Sao.i18n.gettext("Always ignore this warning."))
-                .prepend(always))
-            );
+            // Coog specific : do not display this warning button cf bug #9035
+            // var always = jQuery('<input/>', {
+            //     'type': 'checkbox'
+            // });
+            // dialog.body.append(jQuery('<div/>', {
+            //     'class': 'checkbox',
+            // }).append(jQuery('<label/>')
+            //     .text(Sao.i18n.gettext("Always ignore this warning."))
+            //     .prepend(always))
+            // );
             dialog.body.append(jQuery('<p/>')
                     .text(Sao.i18n.gettext('Do you want to proceed?')));
             dialog.footer.empty();
