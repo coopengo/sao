@@ -608,9 +608,11 @@ var Sao = {};
         Sao.i18n.setlang().always(function() {
             Sao.Session.get_credentials()
                 .then(function(session) {
+                    console.log('set session');
                     Sao.Session.current_session = session;
                     return session.reload_context();
                 }).then(Sao.get_preferences).then(function(preferences) {
+                    console.log('set preferences');
                     Sao.menu(preferences);
                     Sao.user_menu(preferences);
                     Sao.open_url();

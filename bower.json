@@ -24,7 +24,8 @@
     "fullcalendar": "^3.10.2",
     "mousetrap": "^1.6",
     "bootstrap-rtl-ondemand": "^3.3.4-ondemand",
-    "Sortable": "sortablejs#^1.8.4"
+    "Sortable": "sortablejs#^1.8.4",
+    "codemirror": "^5.38"
   },
   "devDependencies": {
     "qunit": "^1.18"

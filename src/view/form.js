@@ -1420,8 +1420,15 @@ function eval_pyson(value){
             });
             this.tree_data_field = attributes.context_tree || null;
 
-            this.init_tree(4);
-            this.init_editor(8);
+            var editor_width;
+            if (this.tree_data_field) {
+                this.init_tree(4);
+                editor_width = 8;
+            }
+            else {
+                editor_width = 12;
+            }
+            this.init_editor(editor_width);
 
             this.tree_data = [];
             this.tree_elements = [];
@@ -1430,10 +1437,20 @@ function eval_pyson(value){
         },
         init_editor: function(width){
             var button_apply_command = function(evt) {
-                var success = document.execCommand(evt.data);
-                // if (!success)
-                //     my_custom_exec(evt.data);
-            };
+                console.log(evt.data);
+                var cmDoc = this.codeMirror.getDoc();
+                switch (evt.data) {
+                    case 'undo':
+                        cmDoc.undo();
+                        break;
+                    case 'redo':
+                        cmDoc.redo();
+                        break;
+                    case 'check':
+                        console.log('todo');
+                        break;
+                }
+            }.bind(this);
 
             var add_buttons = function(buttons) {
                 var i, properties, button;
@@ -1476,15 +1493,20 @@ function eval_pyson(value){
                         'command': 'check'
                     }]);
 
-            this.input = jQuery('<div/>', {
-                'class': 'richtext pre',
-                'contenteditable': true
+            var input = jQuery('<textarea/>', {
             }).appendTo(jQuery('<div/>', {
                 'class': 'panel-body'
             }).appendTo(this.sc_editor).css('padding', '5px'));
-            this.input.css({
-                'height': '33em',
-                'overflow': 'auto'
+            this.codeMirror = CodeMirror.fromTextArea(input[0], {
+                mode: {
+                    name: 'python',
+                    version: 2,
+                    singleLineStringErrors: false
+                },
+                lineNumbers: true,
+                indentUnit: 4,
+                indentWithTabs: false,
+                matchBrackets: true
             });
         },
         init_tree: function(width){
@@ -1509,13 +1531,10 @@ function eval_pyson(value){
             Sao.View.Form.Source._super.display.call(this, record, field);
 
             var display_code = function(str){
-                var lines = str.split('\n');
-                var ret = [];
-                for (var i in lines){
-                    jQuery('<div/>').appendTo(this.input).text(lines[i]).css(
-                        'font-family', 'monospace'
-                    );
-                }
+                this.codeMirror.setValue(str);
+                // Call refresh because when codemirror is initialized it's not
+                // displayed and its computation are off
+                this.codeMirror.refresh();
             }.bind(this);
 
             var display_tree = function(){
@@ -1537,7 +1556,6 @@ function eval_pyson(value){
             var value = field.get_client(record);
             if (value != this.value){
                 this.value = value;
-                this.input.empty();
                 display_code(this.value);
             }
 
@@ -1582,13 +1600,10 @@ function eval_pyson(value){
             }
         },
         set_value: function(record, field){
-            var content = [];
-            this.input.children('div').each(function(){
-                if (content.length > 0)
-                    content[content.length -1] = content[content.length -1] + '\n';
-                content.push(jQuery(this).text());
-            });
-            field.set_client(record, content.join(''));
+            field.set_client(record, this.codeMirror.getValue());
+        },
+        set_readonly: function(readonly) {
+            this.codeMirror.setOption('readOnly', readonly);
         }
     });
 
