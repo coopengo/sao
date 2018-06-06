@@ -1603,6 +1603,11 @@ function eval_pyson(value){
             field.set_client(record, this.codeMirror.getValue());
         },
         set_readonly: function(readonly) {
+            if (readonly) {
+                this.sc_editor.addClass('readonly');
+            } else {
+                this.sc_editor.removeClass('readonly');
+            }
             this.codeMirror.setOption('readOnly', readonly);
         }
     });
