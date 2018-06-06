@@ -1437,7 +1437,6 @@ function eval_pyson(value){
         },
         init_editor: function(width){
             var button_apply_command = function(evt) {
-                console.log(evt.data);
                 var cmDoc = this.codeMirror.getDoc();
                 switch (evt.data) {
                     case 'undo':
@@ -1447,7 +1446,7 @@ function eval_pyson(value){
                         cmDoc.redo();
                         break;
                     case 'check':
-                        console.log('todo');
+                        this.codeMirror.performLint();
                         break;
                 }
             }.bind(this);
@@ -1506,7 +1505,13 @@ function eval_pyson(value){
                 lineNumbers: true,
                 indentUnit: 4,
                 indentWithTabs: false,
-                matchBrackets: true
+                matchBrackets: true,
+                gutters: ["CodeMirror-lint-markers"],
+                lint: {
+                    lintOnChange: false,
+                    getAnnotations: this.pythonLinter,
+                    async: true
+                }
             });
         },
         init_tree: function(width){
@@ -1609,6 +1614,20 @@ function eval_pyson(value){
                 this.sc_editor.removeClass('readonly');
             }
             this.codeMirror.setOption('readOnly', readonly);
+        },
+        pythonLinter: function(doc, updateLint, options, editor) {
+            console.log('pythonLinter called');
+            updateLint([{
+                message: 'Error',
+                severity: 'error',
+                from: CodeMirror.Pos(0, 0), // First Line, First column
+                to: CodeMirror.Pos(0, 4) // First Line, 4th column
+            }, {
+                message: 'Warning',
+                severity: 'warning',
+                from: CodeMirror.Pos(1, 0),
+                to: CodeMirror.Pos(1, 1)
+            }]);
         }
     });
 
