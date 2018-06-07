@@ -471,13 +471,14 @@ function eval_pyson(value){
             this.el = jQuery('<table/>', {
                 'class': 'form-container responsive responsive-noheader'
             });
+            this.body = jQuery('<tbody/>').appendTo(this.el);
             this.add_row();
         },
         add_row: function() {
-            this.el.append(jQuery('<tr/>'));
+            this.body.append(jQuery('<tr/>'));
         },
         rows: function() {
-            return this.el.children().children('tr');
+            return this.body.children('tr');
         },
         row: function() {
             return this.rows().last();
