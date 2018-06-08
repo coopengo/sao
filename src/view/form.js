@@ -4711,7 +4711,10 @@ function eval_pyson(value){
         },
         set_value: function(value) {
             var digits = this.digits();
-            value = value.toFixed(digits[1]);
+            if (value === null) {
+            } else {
+              value = value.toFixed(digits[1]);
+            }
             Sao.View.Form.Dict.Float._super.set_value.call(this, value);
         },
     });
