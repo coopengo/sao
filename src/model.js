@@ -34,18 +34,6 @@
             };
             return Sao.rpc(args, this.session, async);
         },
-        find: function(condition, offset, limit, order, context) {
-            if (!offset) offset = 0;
-            var self = this;
-            var prm = this.execute('search',
-                    [condition, offset, limit, order], context);
-            var instanciate = function(ids) {
-                return Sao.Group(self, context, ids.map(function(id) {
-                    return new Sao.Record(self, id);
-                }));
-            };
-            return prm.pipe(instanciate);
-        },
         delete_: function(records) {
             if (jQuery.isEmptyObject(records)) {
                 return jQuery.when();
@@ -262,6 +250,11 @@
             this.record_deleted.splice(this.record_deleted.indexOf(record), 1);
             record.group.changed();
         };
+        array.clear = function() {
+            this.splice(0, this.length);
+            this.record_removed = [];
+            this.record_deleted = [];
+        };
         array.changed = function() {
             if (!this.parent) {
                 return jQuery.when.apply(jQuery,
@@ -393,7 +386,7 @@
             }
         };
         array.context = function() {
-            var context = jQuery.extend({}, this._context);
+            var context = jQuery.extend({}, this.model.session.context);
             if (this.parent) {
                 jQuery.extend(context, this.parent.get_context());
                 if (this.child_name in this.parent.model.fields) {
@@ -472,8 +465,10 @@
                 this.forEach(function(record) {
                     id2record[record.id] = record;
                 });
-                ids.forEach(function(ordered_record, i){
-                    this[i] = id2record[ordered_record.id];
+                ids.filter(function(id) {
+                    return id in id2record;
+                }).forEach(function(id, i){
+                    this[i] = id2record[id];
                 }.bind(this));
         };
         return array;
@@ -518,11 +513,8 @@
             var values = this.get();
             if ((this.id < 0) || !jQuery.isEmptyObject(values)) {
                 if (this.id < 0) {
-                    prm = this.model.execute('create', [[values]], context);
-                    var created = function(ids) {
-                        this.id = ids[0];
-                    };
-                    prm.done(created.bind(this));
+                    // synchronous call to avoid multiple creation
+                    this.id = this.model.execute('create', [[values]], context,  false)[0];
                 } else {
                     if (!jQuery.isEmptyObject(values)) {
                         context._timestamp = this.get_timestamp();
@@ -570,11 +562,9 @@
                 return jQuery.when();
             }
             if (this.group.prm.state() == 'pending') {
-                prm = jQuery.Deferred();
-                this.group.prm.then(function() {
-                    this.load(name).then(prm.resolve, prm.reject);
+                return this.group.prm.then(function() {
+                    return this.load(name);
                 }.bind(this));
-                return prm;
             }
             var id2record = {};
             id2record[this.id] = this;
@@ -749,6 +739,7 @@
                 validate = true;
             }
             var name, value;
+            var promises = [];
             var rec_named_fields = ['many2one', 'one2one', 'reference'];
             var later = {};
             var fieldnames = [];
@@ -783,19 +774,22 @@
                         delete this._values[field_rec_name];
                     }
                 }
-                this.model.fields[name].set(this, value);
-                this._loaded[name] = true;
+                promises.push(this.model.fields[name].set(this, value));
                 fieldnames.push(name);
             }
             for (name in later) {
                 value = later[name];
-                this.model.fields[name].set(this, value);
-                this._loaded[name] = true;
+                promises.push(this.model.fields[name].set(this, value));
             }
-            if (validate) {
-                return this.validate(fieldnames, true);
-            }
-            return jQuery.when();
+            return jQuery.when.apply(jQuery, promises.filter(Boolean))
+                .then(function() {
+                    for (name in values) {
+                        this._loaded[name] = true;
+                    }
+                    if (validate) {
+                        return this.validate(fieldnames, true);
+                    }
+                }.bind(this));
         },
         get: function() {
             var value = {};
@@ -1105,15 +1099,25 @@
                 this.autocompletion[fieldname] = result;
             }.bind(this));
         },
+        reset: function(value) {
+            this.cancel();
+            return this.set(value, true).then(function() {
+                var promises = [];
+                if (this.group.parent) {
+                    promises.push(this.group.parent.on_change(
+                        [this.group.child_name]));
+                    promises.push(this.group.parent.on_change_with(
+                        [this.group.child_name]));
+                }
+                return jQuery.when.apply(jQuery, promises);
+            }.bind(this));
+        },
         expr_eval: function(expr) {
             if (typeof(expr) != 'string') return expr;
-            var ctx = jQuery.extend({}, this.model.session.context);
-            ctx.context = jQuery.extend({}, ctx);
-            jQuery.extend(ctx.context, this.get_context());
-            jQuery.extend(ctx, this.get_eval());
+            var ctx = this.get_eval();
+            ctx.context = this.get_context();
             ctx.active_model = this.model.name;
             ctx.active_id = this.id;
-            ctx._user = this.model.session.user_id;
             if (this.group.parent && this.group.parent_name) {
                 var parent_env = Sao.common.EvalEnvironment(this.group.parent);
                 ctx['_parent_' + this.group.parent_name] = parent_env;
@@ -1421,24 +1425,31 @@
             record._changed[this.name] = true;
         },
         changed: function(record) {
-            var prms = [];
-            prms.push(record.on_change([this.name]));
-            prms.push(record.on_change_with([this.name]));
-            prms.push(record.autocomplete_with(this.name));
-            record.set_field_context();
-            return jQuery.when.apply(jQuery, prms);
+            return record.on_change([this.name]).then(function() {
+                return record.on_change_with([this.name]).then(function() {
+                    return record.autocomplete_with(this.name).then(function() {
+                        record.set_field_context();
+                    });
+                }.bind(this));
+            }.bind(this));
         },
         get_timestamp: function(record) {
             return {};
         },
         get_context: function(record) {
-            var context = jQuery.extend({}, record.get_context());
-            if (record.group.parent) {
-                jQuery.extend(context, record.group.parent.get_context());
-            }
+            var context = record.get_context();
             jQuery.extend(context,
                 record.expr_eval(this.description.context || {}));
             return context;
+        },
+        get_search_context: function(record) {
+            var context = this.get_context(record);
+            jQuery.extend(context,
+                record.expr_eval(this.description.search_context || {}));
+            return context;
+        },
+        get_search_order: function(record) {
+            return record.expr_eval(this.description.search_order || null);
         },
         get_domains: function(record, pre_validate) {
             var inversion = new Sao.common.DomainInversion();
@@ -1665,13 +1676,13 @@
 
     Sao.field.TimeDelta = Sao.class_(Sao.field.Field, {
         _default: null,
-        converter: function(record) {
-            // TODO allow local context converter
-            return record.model.session.context[this.description.converter];
+        converter: function(group) {
+            return group.context()[this.description.converter];
         },
         set_client: function(record, value, force_change) {
             if (typeof(value) == 'string') {
-                value = Sao.common.timedelta.parse(value, this.converter(record));
+                value = Sao.common.timedelta.parse(
+                    value, this.converter(record.group));
             }
             Sao.field.TimeDelta._super.set_client.call(
                 this, record, value, force_change);
@@ -1679,7 +1690,8 @@
         get_client: function(record) {
             var value = Sao.field.TimeDelta._super.get_client.call(
                 this, record);
-            return Sao.common.timedelta.format(value, this.converter(record));
+            return Sao.common.timedelta.format(
+                value, this.converter(record.group));
         }
     });
 
@@ -1709,7 +1721,7 @@
             return true;
         },
         convert: function(value) {
-            if (!value) {
+            if (!value && (value !== 0)) {
                 return null;
             }
             value = Number(value);
@@ -1744,7 +1756,8 @@
                     options.minimumFractionDigits = digits[1];
                     options.maximumFractionDigits = digits[1];
                 }
-                return (value * factor).toLocaleString(Sao.i18n.getlang(), options);
+                return (value * factor).toLocaleString(
+                    Sao.i18n.BC47(Sao.i18n.getlang()), options);
             } else {
                 return '';
             }
@@ -1753,7 +1766,7 @@
 
     Sao.field.Numeric = Sao.class_(Sao.field.Float, {
         convert: function(value) {
-            if (!value) {
+            if (!value && (value !== 0)) {
                 return null;
             }
             value = new Sao.Decimal(value);
@@ -1943,7 +1956,6 @@
                 if (!jQuery.isEmptyObject(fields)) {
                     group.add_fields(fields);
                 }
-                record._values[this.name] = group;
                 if (mode == 'list ids') {
                     for (var i = 0, len = group.length; i < len; i++) {
                         var old_record = group[i];

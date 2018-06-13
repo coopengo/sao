@@ -32,7 +32,11 @@
             this.id = attributes.data.id;
             this.ids = attributes.data.ids;
             this.model = attributes.data.model;
-            this.context = attributes.context;
+            this.context = jQuery.extend({}, attributes.context);
+            this.context.active_id = this.id;
+            this.context.active_ids = this.ids;
+            this.context.active_model = this.model;
+            this.context.action_id = this.action_id;
             Sao.rpc({
                 'method': 'wizard.' + this.action + '.create',
                 'params': [this.session.context]
@@ -55,10 +59,6 @@
                     return;
                 }
                 var ctx = jQuery.extend({}, this.context);
-                ctx.active_id = this.id;
-                ctx.active_ids = this.ids;
-                ctx.active_model = this.model;
-                ctx.action_id = this.action_id;
                 var data = {};
                 if (this.screen) {
                     data[this.screen_state] = this.screen.get_on_change_value();
@@ -81,8 +81,14 @@
                     var execute_actions = function execute_actions() {
                         if (result.actions) {
                             result.actions.forEach(function(action) {
+                                var context = jQuery.extend({}, this.context);
+                                // Remove wizard keys added by run
+                                delete context.active_id;
+                                delete context.active_ids;
+                                delete context.active_model;
+                                delete context.action_id;
                                 Sao.Action.exec_action(action[0], action[1],
-                                    jQuery.extend({}, this.context));
+                                    context);
                             }.bind(this));
                         }
                     }.bind(this);
@@ -209,7 +215,7 @@
                 name = Sao.i18n.gettext('Wizard');
             }
             Sao.Wizard.Dialog._super.init.call(this);
-            var dialog = new Sao.Dialog(name, 'wizard-dialog', 'lg');
+            var dialog = new Sao.Dialog(name, 'wizard-dialog', 'lg', false);
             this.dialog = dialog.modal;
             this.content = dialog.content;
             this.footer = dialog.footer;
@@ -242,6 +248,14 @@
             Sao.Wizard.Dialog._super.update.call(this, view, defaults,
                     buttons);
             this.dialog.modal('show');
+            this.dialog.on('keydown', function(e) {
+                if (e.which == Sao.common.ESC_KEYCODE) {
+                    e.preventDefault();
+                    if (this.end_state in this.states) {
+                        this.response(this.end_state);
+                    }
+                }
+            }.bind(this));
         },
         destroy: function(action) {
             Sao.Wizard.Dialog._super.destroy.call(this);
@@ -267,6 +281,7 @@
                     screen = dialog.screen;
                 }
                 if (screen) {
+                    var prm = jQuery.when();
                     if (screen.current_record && !is_menu) {
                         var ids;
                         if (screen.model_name == this.model) {
@@ -276,10 +291,12 @@
                             // parent record
                             ids = [screen.current_record.id];
                         }
-                        screen.reload(ids, true);
+                        prm = screen.reload(ids, true);
                     }
                     if (action) {
-                        screen.client_action(action);
+                        prm.then(function() {
+                            screen.client_action(action);
+                        });
                     }
                 }
             }.bind(this);

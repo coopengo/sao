@@ -372,6 +372,42 @@
                 "decode(Equal(['foo'], ['bar']))");
         QUnit.strictEqual(new Sao.PYSON.Equal('foo', 'bar').toString(),
                 "Equal(\"foo\", \"bar\")");
+
+        eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.Equal(
+                new Sao.PYSON.Date(2017, 1, 1), new Sao.PYSON.Date(2017, 1, 1)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            "decode(Equal(Date(2017, 1, 1), Date(2017, 1, 1)))");
+
+        eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.Equal(
+                new Sao.PYSON.Date(2017, 1, 1), new Sao.PYSON.Date(2017, 1, 2)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+            "decode(Equal(Date(2017, 1, 1), Date(2017, 1, 2)))");
+
+        eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.Equal(
+                new Sao.PYSON.DateTime(2017, 1, 1, 12, 0, 0, 0),
+                new Sao.PYSON.DateTime(2017, 1, 1, 12, 0, 0, 0)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            "decode(Equal(DateTime(2017, 1, 1, 12, 0, 0, 0), " +
+            "DateTime(2017, 1, 1, 12, 0, 0, 0)))");
+
+        eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.Equal(
+                new Sao.PYSON.DateTime(2017, 1, 1, 12, 0, 0, 0),
+                new Sao.PYSON.DateTime(2017, 1, 1, 14, 0, 0, 0)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+            "decode(Equal(DateTime(2017, 1, 1, 12, 0, 0, 0), " +
+            "DateTime(2017, 1, 1, 14, 0, 0, 0)))");
+
+        eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.Equal(
+                new Sao.PYSON.DateTime(2017, 1, 1, 0, 0, 0, 0),
+                new Sao.PYSON.Date(2017, 1, 1)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+            "decode(Equal(DateTime(2017, 1, 1, 0, 0, 0, 0), " +
+            "Date(2017, 1, 1)))");
     });
 
     QUnit.test('PYSON Greater', function() {
@@ -568,7 +604,7 @@
                 "decode(Get({}, 'foo', 'default'))");
         QUnit.strictEqual(new Sao.PYSON.Get(
                 {'foo': 'bar'}, 'foo', 'default').toString(),
-            "Get({\"foo\":\"bar\"}, \"foo\", \"default\")");
+            'Get({"foo": "bar"}, "foo", "default")');
     });
 
     QUnit.test('PYSON In', function() {
@@ -631,7 +667,7 @@
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
                 "decode(In('test', []))");
         QUnit.strictEqual(new Sao.PYSON.In('foo', ['foo', 'bar']).toString(),
-                "In(\"foo\", [\"foo\",\"bar\"])");
+                'In("foo", ["foo", "bar"])');
     });
 
     QUnit.test('PYSON Date', function() {
@@ -898,7 +934,7 @@
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), 7,
             "decode(Len('foo bar'))");
         QUnit.strictEqual(new Sao.PYSON.Len([1, 2, 3]).toString(),
-            'Len([1,2,3])');
+            'Len([1, 2, 3])');
     });
     QUnit.test('PYSON Composite', function() {
         var expr = new Sao.PYSON.If(new Sao.PYSON.Not(
@@ -943,6 +979,15 @@
                 Sao.common.compare(decoder.decode(encoder.encode(instance)),
                     instance));
         });
+    });
+
+    QUnit.test('PYSON toString', function() {
+        var value = {
+            'test': ['foo', 'bar'],
+            'pyson': new Sao.PYSON.Eval('test'),
+        };
+        QUnit.strictEqual(Sao.PYSON.toString(value),
+            '{"test": ["foo", "bar"], "pyson": Eval("test", "")}');
     });
 
     QUnit.test('DomainParser.group_operator', function() {
@@ -1434,10 +1479,11 @@
         [[c(['Reference', null, ['foo', 'bar']])], [
             c(['reference', 'in', ['foo', 'bar']])
             ]],
-        [[['OR', c(['Name', null, 'John']), c(['Name', null, 'Jane'])]],
+        [['OR', c(['Name', null, 'John']), c(['Name', null, 'Jane'])],
             ['OR', c(['name', 'ilike', '%John%']),
                 c(['name', 'ilike', '%Jane%'])
-                ]]
+            ]],
+        [[[c(['John'])]], [[['rec_name', 'ilike', '%John%']]]],
         ].forEach(function(test) {
             var value = test[0];
             var result = test[1];
@@ -2188,6 +2234,9 @@
         [[['x', '=', 1]], {'x': [1, 2]}, true],
         [[['x', '=', 1]], {'x': [2]}, false],
         [[['x', '=', null]], {'x': []}, true],
+        [[['x', '=', ['foo', 1]]], {'x': 'foo,1'}, true],
+        [[['x', '=', ['foo', 1]]], {'x': ['foo', 1]}, true],
+        [[['x', '=', 'foo,1']], {'x': ['foo', 1]}, true],
         ].forEach(function(test) {
             var domain = test[0];
             var context = test[1];

@@ -435,7 +435,6 @@
             this._access = {};
         },
         load_models: function(refresh) {
-            var prm = jQuery.Deferred();
             if (!refresh) {
                 this._access = {};
             }
@@ -451,6 +450,7 @@
             var idx = this._models.indexOf(model);
             if (idx < 0) {
                 this.load_models(false);
+                idx = this._models.indexOf(model);
             }
             var to_load = this._models.slice(
                 Math.max(0, idx - Math.floor(this.batchnum / 2)),
@@ -782,7 +782,7 @@
             } else {
                 this.el.show();
             }
-            this.el.prop('disabled', states.readonly);
+            this.el.prop('disabled', Boolean(states.readonly));
             this.set_icon(states.icon || this.attributes.icon);
 
             if (this.attributes.rule) {
@@ -813,7 +813,7 @@
                 var parent = record.group.parent;
                 while (parent) {
                     if (parent.has_changed()) {
-                        this.el.prop('disabled', false);
+                        this.el.prop('disabled', true);
                         break;
                     }
                     parent = parent.group.parent;
@@ -1610,7 +1610,7 @@
             var result = [];
             tokens.forEach(function(clause) {
                 if (this.is_generator(clause)) {
-                    jQuery.merge(result, this.parse_clause(clause));
+                    result.push(this.parse_clause(clause));
                 } else if ((clause == 'OR') || (clause == 'AND')) {
                     result.push(clause);
                 } else if ((clause.length == 1) &&
@@ -1810,11 +1810,6 @@
                             Sao.common.date_format(),
                             this.time_format(field),
                             value);
-                    if (!result) {
-                        result = Sao.common.parse_date(
-                                Sao.common.date_format(),
-                                value);
-                    }
                     return result;
                 }.bind(this),
                 'date': function() {
@@ -2001,6 +1996,8 @@
             '=': function(a, b) {
                 if ((a instanceof Array) && (b instanceof Array)) {
                     return Sao.common.compare(a, b);
+                } else if ((a instanceof Number) || (b instanceof Number)) {
+                    return (Number(a) === Number(b));
                 } else {
                     return (a === b);
                 }
@@ -2012,6 +2009,8 @@
             '!=': function(a, b) {
                 if ((a instanceof Array) && (b instanceof Array)) {
                     return !Sao.common.compare(a, b);
+                } else if ((a instanceof Number) || (b instanceof Number)) {
+                    return (Number(a) !== Number(b));
                 } else {
                     return (a !== b);
                 }
@@ -3204,12 +3203,13 @@
         if (domain === undefined) {
             domain = field.get_domain(record);
         }
-        var context = field.get_context(record);
+        var context = field.get_search_context(record);
         domain = [['rec_name', 'ilike', '%' + search_text + '%'], domain];
 
+        var order = field.get_search_order(record);
         var sao_model = new Sao.Model(model);
         return sao_model.execute('search_read',
-                [domain, 0, Sao.config.limit, null, ['rec_name']], context);
+                [domain, 0, Sao.config.limit, order, ['rec_name']], context);
     };
 
     Sao.common.Paned = Sao.class_(Object, {
@@ -3322,6 +3322,12 @@
         var type = Sao.common.guess_mimetype(
             name ? name.split('.').pop() : undefined);
         var blob = new Blob([data], {type: type});
+
+        if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+            window.navigator.msSaveOrOpenBlob(blob, name);
+            return;
+        }
+
         var blob_url = window.URL.createObjectURL(blob);
 
         var dialog = new Sao.Dialog(Sao.i18n.gettext('Download'));

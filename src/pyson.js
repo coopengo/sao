@@ -5,6 +5,20 @@
 
     Sao.PYSON = {};
     Sao.PYSON.eval = {};
+    Sao.PYSON.toString = function(value) {
+        if (value instanceof Sao.PYSON.PYSON) {
+            return value.toString();
+        } else if (value instanceof Array) {
+            return '[' + value.map(Sao.PYSON.toString).join(', ') + ']';
+        } else if (value instanceof Object) {
+            return '{' + Object.keys(value).map(function(key) {
+                return Sao.PYSON.toString(key) + ': ' +
+                    Sao.PYSON.toString(value[key]);
+            }).join(', ') + '}';
+        } else {
+            return JSON.stringify(value);
+        }
+    };
 
     Sao.PYSON.PYSON = Sao.class_(Object, {
         init: function() {
@@ -17,13 +31,7 @@
         },
         toString: function() {
             var klass = this.pyson().__class__;
-            var args = this.__string_params__().map(function(p){
-                if (p instanceof Sao.PYSON.PYSON) {
-                    return p.toString();
-                } else {
-                    return JSON.stringify(p);
-                }
-            });
+            var args = this.__string_params__().map(Sao.PYSON.toString);
             return klass + '(' + args.join(', ') + ')';
         },
         __string_params__: function() {
@@ -351,7 +359,9 @@
         if (value.s1 instanceof Array  && value.s2 instanceof Array) {
             return Sao.common.compare(value.s1, value.s2);
         } else if (moment.isMoment(value.s1) && moment.isMoment(value.s2)) {
-            return value.s1.format() == value.s2.format();
+            return ((value.s1.isDate == value.s2.isDate) &&
+                (value.s1.isDateTime == value.s2.isDateTime) &&
+                (value.s1.valueOf() == value.s2.valueOf()));
         } else {
             return value.s1 == value.s2;
         }

@@ -5,7 +5,8 @@
 // Must be defined in non strict context otherwise is invalid
 function eval_pyson(value){
     with (Sao.PYSON.eval) {
-        return eval(value);
+        // Add parenthesis to parse as object instead of statement
+        return eval('(' + value + ')');
     }
 }
 /* jshint ignore:end */
@@ -201,7 +202,9 @@ function eval_pyson(value){
             }
             var page = this.parse(model, node);
             page = new Sao.View.Form.Page(
-                    container.add(page.el, attributes.string), attributes);
+                    container.add(
+                        page.el, attributes.string, attributes.icon),
+                attributes);
             this.state_widgets.push(page);
         },
         _parse_field: function(model, node, container, attributes) {
@@ -245,6 +248,19 @@ function eval_pyson(value){
             return widget;
         },
         _parse_group: function(model, node, container, attributes) {
+            if (attributes.name !== undefined) {
+                var field = model.fields[attributes.name];
+                if (attributes.name == this.screen.exclude_field) {
+                    container.add(attributes);
+                    return;
+                }
+                ['states', 'string'].forEach(function(attr) {
+                    if (!(attr in attributes) && (attr in field.description)) {
+                        attributes[attr] = field.description[attr];
+                    }
+                });
+            }
+
             var widget;
             if (attributes.expandable !== undefined) {
                 widget = new Sao.View.Form.Expander(attributes);
@@ -372,11 +388,9 @@ function eval_pyson(value){
         button_clicked: function(event) {
             var button = event.data;
             button.el.prop('disabled', true);
-            try {
-                this.screen.button(button.attributes);
-            } finally {
+            this.screen.button(button.attributes).always(function() {
                 button.el.prop('disabled', false);
-            }
+            });
         },
         selected_records: function() {
             if (this.screen.current_record) {
@@ -471,13 +485,19 @@ function eval_pyson(value){
             this.el = jQuery('<table/>', {
                 'class': 'form-container responsive responsive-noheader'
             });
+            this.body = jQuery('<tbody/>').appendTo(this.el);
+            if (this.col <= 0) {
+                this.el.addClass('form-hcontainer');
+            } else if (this.col == 1) {
+                this.el.addClass('form-vcontainer');
+            }
             this.add_row();
         },
         add_row: function() {
-            this.el.append(jQuery('<tr/>'));
+            this.body.append(jQuery('<tr/>'));
         },
         rows: function() {
-            return this.el.children().children('tr');
+            return this.body.children('tr');
         },
         row: function() {
             return this.rows().last();
@@ -753,12 +773,15 @@ function eval_pyson(value){
             }).appendTo(this.el);
             this.selected = false;
         },
-        add: function(tab, text) {
+        add: function(tab, text, icon) {
             var pane = jQuery('<div/>', {
                 'role': 'tabpanel',
                 'class': 'tab-pane',
             }).uniqueId();
             var tab_id = pane.attr('id');
+            var img = jQuery('<img/>', {
+                'class': 'icon',
+            });
             var page = jQuery('<li/>', {
                 'role': 'presentation'
             }).append(
@@ -768,6 +791,7 @@ function eval_pyson(value){
                     'data-toggle': 'tab',
                     'href': '#' + tab_id
                 })
+                .append(img)
                 .append(text))
                 .appendTo(this.nav);
             pane.html(tab).appendTo(this.panes);
@@ -777,6 +801,10 @@ function eval_pyson(value){
                 pane.addClass('active');
                 this.selected = true;
             }
+            Sao.common.ICONFACTORY.register_icon(icon)
+                .done(function(url) {
+                    img.attr('src', url);
+                });
             return page;
         },
         set_current_page: function(page_index) {
@@ -1380,11 +1408,10 @@ function eval_pyson(value){
     });
 
     Sao.View.Form.TranslateDialog = Sao.class_(Object,  {
+        class_: 'form',
         init: function(languages, widget) {
-            var dialog = new Sao.Dialog(Sao.i18n.gettext('Translate'),
-                    this.class_, this, languages);
-            dialog.modal.find('.modal-dialog')
-                .removeClass('modal-sm').addClass('modal-lg');
+            var dialog = new Sao.Dialog(
+                Sao.i18n.gettext('Translate'), this.class_, 'lg');
             this.languages = languages;
             this.read(widget, dialog);
             jQuery('<button/>', {
@@ -1466,19 +1493,22 @@ function eval_pyson(value){
                         value = fuzzy_value[0][widget.field_name];
                         widget.translate_widget_set(
                             input, value);
+                        widget.translate_widget_set_readonly(
+                            input, true);
                         fuzzy_box.attr('checked',
                                fuzzy_value[0].name != value);
                     }.bind(this));
                 }.bind(this));
                 checkbox.click(function() {
-                    widget.translate_widget_set_readonly(input);
+                    widget.translate_widget_set_readonly(
+                        input, !jQuery(this).prop('checked'));
                 });
                 dialog.body.append(row);
                 row.append(jQuery('<div/>', {
-                    'class':'col-sm-3'
+                    'class':'col-sm-2'
                 }).append(lang.name));
                 row.append(jQuery('<div/>', {
-                    'class':'col-sm-6'
+                    'class':'col-sm-8'
                 }).append(input));
                 row.append(jQuery('<div/>', {
                     'class':'col-sm-1'
@@ -1499,7 +1529,7 @@ function eval_pyson(value){
                     context.language = lang.code;
                     context.fuzzy_translation = false;
                     var values =  {};
-                    values[widget.field_name] = input.val();
+                    values[widget.field_name] = widget.translate_widget_get(input);
                     var params = [
                         [widget.record().id],
                         values,
@@ -1509,30 +1539,36 @@ function eval_pyson(value){
                         'method': 'model.' + widget.model.name  + '.write',
                         'params': params
                     };
-                    var prm = Sao.rpc(args, widget.model.session)
-                            .then(function() {
-                                if (lang.code == current_language) {
-                                    widget.view.display();
-                                }
-                    });
+                    var prm = Sao.rpc(args, widget.model.session);
                     promises.push(prm);
                 }
             }.bind(this));
             this.close(dialog);
             jQuery.when.apply(jQuery, promises).then(function() {
                 widget.record().cancel();
+                widget.view.display();
             });
         }
     });
 
     Sao.View.Form.TranslateMixin = {};
     Sao.View.Form.TranslateMixin.init = function() {
-        this.translate = Sao.View.Form.TranslateMixin.translate.bind(this);
-        this.translate_widget_set_readonly =
-            Sao.View.Form.TranslateMixin.translate_widget_set_readonly
-                .bind(this);
-        this.translate_widget_set =
-            Sao.View.Form.TranslateMixin.translate_widget_set.bind(this);
+        if (!this.translate) {
+            this.translate = Sao.View.Form.TranslateMixin.translate.bind(this);
+        }
+        if (!this.translate_widget_set_readonly) {
+            this.translate_widget_set_readonly =
+                Sao.View.Form.TranslateMixin.translate_widget_set_readonly
+                    .bind(this);
+        }
+        if (!this.translate_widget_set) {
+            this.translate_widget_set =
+                Sao.View.Form.TranslateMixin.translate_widget_set.bind(this);
+        }
+        if (!this.translate_widget_get) {
+            this.translate_widget_get =
+                Sao.View.Form.TranslateMixin.translate_widget_get.bind(this);
+        }
     };
     Sao.View.Form.TranslateMixin.translate = function() {
         if (this.record().id < 0 || this.record().has_changed()) {
@@ -1570,14 +1606,13 @@ function eval_pyson(value){
     };
     Sao.View.Form.TranslateMixin.translate_widget_set_readonly =
             function(el, value) {
-        if (el.attr('readonly')) {
-            el.removeAttr('readonly');
-        } else {
-            el.attr('readonly', true);
-        }
+        el.prop('readonly', value);
     };
     Sao.View.Form.TranslateMixin.translate_widget_set = function(el, value) {
         el.val(value || '');
+    };
+    Sao.View.Form.TranslateMixin.translate_widget_get = function(el) {
+        return el.val();
     };
 
     Sao.View.Form.Char = Sao.class_(Sao.View.Form.Widget, {
@@ -1716,7 +1751,7 @@ function eval_pyson(value){
 
     Sao.View.Form.Date = Sao.class_(Sao.View.Form.Widget, {
         class_: 'form-date',
-        _width: '12em',
+        _width: '10em',
         init: function(field_name, model, attributes) {
             Sao.View.Form.Date._super.init.call(this, field_name, model,
                 attributes);
@@ -1726,27 +1761,37 @@ function eval_pyson(value){
             this.date = this.labelled = jQuery('<div/>', {
                 'class': 'input-group input-group-sm'
             }).appendTo(this.el);
-            this.input = jQuery('<input/>', {
-                'type': 'text',
-                'class': 'form-control input-sm mousetrap'
-            }).appendTo(this.date);
             jQuery('<span/>', {
                 'class': 'input-group-btn'
             }).append(jQuery('<button/>', {
                 'class': 'datepickerbutton btn btn-default',
                 'type': 'button',
+                'tabindex': -1,
                 'aria-label': Sao.i18n.gettext("Open the calendar"),
                 'title': Sao.i18n.gettext("Open the calendar"),
-                'tabindex': -1,
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-calendar'
             }))).appendTo(this.date);
+            this.input = jQuery('<input/>', {
+                'type': 'text',
+                'class': 'form-control input-sm mousetrap'
+            }).appendTo(this.date);
             this.date.datetimepicker({
                 'locale': moment.locale(),
                 'keyBinds': null,
             });
-            this.date.css('width', this._width);
+            this.date.css('max-width', this._width);
             this.date.on('dp.change', this.focus_out.bind(this));
+            // We must set the overflow of the treeview containing the input to
+            // visible to prevent vertical scrollbar inherited from the auto
+            // overflow-x
+            // (see http://www.w3.org/TR/css-overflow-3/#overflow-properties)
+            this.date.on('dp.hide', function() {
+                this.date.closest('.treeview').css('overflow', '');
+            }.bind(this));
+            this.date.on('dp.show', function() {
+                this.date.closest('.treeview').css('overflow', 'visible');
+            }.bind(this));
             var mousetrap = new Mousetrap(this.el[0]);
 
             mousetrap.bind(['enter', '='], function(e, combo) {
@@ -1788,7 +1833,12 @@ function eval_pyson(value){
             } else {
                 value = null;
             }
-            this.date.data('DateTimePicker').date(value);
+            this.date.off('dp.change');
+            try {
+                this.date.data('DateTimePicker').date(value);
+            } finally {
+                this.date.on('dp.change', this.focus_out.bind(this));
+            }
         },
         focus: function() {
             this.input.focus();
@@ -1804,7 +1854,7 @@ function eval_pyson(value){
 
     Sao.View.Form.DateTime = Sao.class_(Sao.View.Form.Date, {
         class_: 'form-datetime',
-        _width: '25em',
+        _width: '20em',
         get_format: function(record, field) {
             return field.date_format(record) + ' ' + field.time_format(record);
         },
@@ -2109,6 +2159,11 @@ function eval_pyson(value){
             if (record) {
                 var value = record.field_get_client(this.field_name);
                 this.input.val(value);
+                if(this.attributes.spell) {
+                    this.input.attr('lang',
+                        Sao.i18n.BC47(record.expr_eval(this.attributes.spell)));
+                    this.input.attr('spellcheck', 'true');
+                }
             } else {
                 this.input.val('');
             }
@@ -2136,6 +2191,7 @@ function eval_pyson(value){
         init: function(field_name, model, attributes) {
             Sao.View.Form.RichText._super.init.call(
                     this, field_name, model, attributes);
+            Sao.View.Form.TranslateMixin.init.call(this);
             this.el = jQuery('<div/>', {
                 'class': this.class_ + ' panel panel-default'
             });
@@ -2149,6 +2205,19 @@ function eval_pyson(value){
                 'class': 'panel-body'
             }).appendTo(this.el));
             this.el.focusout(this.focus_out.bind(this));
+            if (this.attributes.translate) {
+                var button = jQuery('<button/>', {
+                    'class': 'btn btn-default btn-sm form-control',
+                    'type': 'button',
+                    'aria-label': Sao.i18n.gettext("Translate"),
+                }).appendTo(jQuery('<span/>', {
+                    'class': 'input-group-btn',
+                }).appendTo(this.el));
+                button.append(jQuery('<span/>', {
+                    'class': 'glyphicon glyphicon-flag',
+                }));
+                button.click(this.translate.bind(this));
+            }
         },
         get_toolbar: function() {
             var i, properties, button;
@@ -2279,6 +2348,11 @@ function eval_pyson(value){
             var value = '';
             if (record) {
                 value = record.field_get_client(this.field_name);
+                if(this.attributes.spell) {
+                    this.input.attr('lang',
+                        Sao.i18n.BC47(record.expr_eval(this.attributes.spell)));
+                    this.input.attr('spellcheck', 'true');
+                }
             }
             this.input.html(value);
         },
@@ -2286,8 +2360,20 @@ function eval_pyson(value){
             this.input.focus();
         },
         set_value: function(record, field) {
+            // avoid modification of not normalized value
+            this._normalize(this.input);
+            var value = this.input.html() || '';
+            var previous = field.get_client(record);
+            var previous_el = jQuery('<div/>').html(previous || '');
+            this._normalize(previous_el);
+            if (value == previous_el.html()) {
+                value = previous;
+            }
+            field.set_client(record, value);
+        },
+        _normalize: function(el) {
             // TODO order attributes
-            this.input.find('div').each(function(i, el) {
+            el.find('div').each(function(i, el) {
                 el = jQuery(el);
                 // Not all browsers respect the styleWithCSS
                 if (el.css('text-align')) {
@@ -2301,16 +2387,42 @@ function eval_pyson(value){
                     el.attr('align', 'left');
                 }
             });
-            var value = this.input.html() || '';
-            if (this.toolbar.is(':visible')) {
-            	field.set_client(record, value);
-            }
         },
         set_readonly: function(readonly) {
             this.input.prop('contenteditable', !readonly);
-            if (this.toolbar && readonly) {
-                this.toolbar.hide();
+            if (this.toolbar) {
+                this.toolbar.find('button,input,select')
+                    .prop('disabled', readonly);
             }
+        },
+        translate_widget: function() {
+            var widget = jQuery('<div/>', {
+                'class': this.class_ + ' panel panel-default',
+            });
+            if (parseInt(this.attributes.toolbar || '1', 10)) {
+                this.get_toolbar().appendTo(widget);
+            }
+            var input = jQuery('<div/>', {
+                'class': 'richtext mousetrap',
+                'contenteditable': true
+            }).appendTo(jQuery('<div/>', {
+                'class': 'panel-body'
+            }).appendTo(widget));
+            return widget;
+        },
+        translate_widget_set_readonly: function(el, value) {
+            Sao.View.Form.TranslateMixin.translate_widget_set_readonly.call(
+                this, el, value);
+            el.find('button,input,select').prop('disabled', value);
+            el.find('div[contenteditable]').prop('contenteditable', !value);
+        },
+        translate_widget_set: function(el, value) {
+            el.find('div[contenteditable]').html(value);
+        },
+        translate_widget_get: function(el) {
+            var input = el.find('div[contenteditable]');
+            this._normalize(input);
+            return input.html();
         }
     });
 
@@ -2435,6 +2547,7 @@ function eval_pyson(value){
                 tooltip1 = Sao.i18n.gettext("Open the record <F2>");
                 // Coog Override Icon
                 secondary = 'glyphicon-trash';
+                tooltip1 = Sao.i18n.gettext("Open the record <F2>");
                 tooltip2 = Sao.i18n.gettext("Clear the field <Del>");
             } else {
                 primary = null;
@@ -2548,16 +2661,20 @@ function eval_pyson(value){
                         }.bind(this));
                     }
                 };
-                win = new Sao.Window.Form(screen, callback.bind(this), {
-                    save_current: true,
-                    title: this.attributes.string
-                });
+                screen.switch_view().done(function() {
+                    screen.load([m2o_id]);
+                    win = new Sao.Window.Form(screen, callback.bind(this), {
+                        save_current: true,
+                        title: this.attributes.string
+                    });
+                }.bind(this));
                 return;
             }
             if (model) {
                 var dom;
                 var domain = this.field().get_domain(record);
-                var context = this.field().get_context(record);
+                var context = this.field().get_search_context(record);
+                var order = this.field().get_search_order(record);
                 var text = this.entry.val();
                 callback = function(result) {
                     if (!jQuery.isEmptyObject(result)) {
@@ -2573,6 +2690,7 @@ function eval_pyson(value){
                             sel_multi: false,
                             context: context,
                             domain: domain,
+                            order: order,
                             view_ids: (this.attributes.view_ids ||
                                 '').split(','),
                             views_preload: (this.attributes.views || {}),
@@ -2599,12 +2717,15 @@ function eval_pyson(value){
                     }.bind(this));
                 }
             };
-            var win = new Sao.Window.Form(screen, callback.bind(this), {
-                new_: true,
-                save_current: true,
-                title: this.attributes.string,
-                rec_name: this.entry.val()
-            });
+            var rec_name = this.entry.val();
+            screen.switch_view().done(function() {
+                var win = new Sao.Window.Form(screen, callback.bind(this), {
+                    new_: true,
+                    save_current: true,
+                    title: this.attributes.string,
+                    rec_name: rec_name
+                });
+            }.bind(this));
         },
         key_press: function(event_) {
             var editable = !this.entry.prop('readonly');
@@ -2659,7 +2780,8 @@ function eval_pyson(value){
                             .required)) {
                     var dom;
                     var domain = this.field().get_domain(record);
-                    var context = this.field().get_context(record);
+                    var context = this.field().get_search_context(record);
+                    var order = this.field().get_search_order(record);
 
                     var callback = function(result) {
                         if (!jQuery.isEmptyObject(result)) {
@@ -2677,6 +2799,7 @@ function eval_pyson(value){
                                 sel_multi: false,
                                 context: context,
                                 domain: domain,
+                                order: order,
                                 view_ids: (this.attributes.view_ids ||
                                     '').split(','),
                                 views_preload: (this.attributes.views ||
@@ -2933,9 +3056,9 @@ function eval_pyson(value){
             this.but_switch = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Switch'),
-                'title': Sao.i18n.gettext("Switch"),
                 'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Switch"),
+                'title': Sao.i18n.gettext("Switch"),
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
                 'class': 'glyphicon glyphicon-resize-full'
@@ -2945,9 +3068,9 @@ function eval_pyson(value){
             this.but_previous = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Previous'),
-                'title': Sao.i18n.gettext("Previous"),
                 'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Previous"),
+                'title': Sao.i18n.gettext("Previous"),
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-chevron-left'
             })).appendTo(buttons);
@@ -2962,9 +3085,9 @@ function eval_pyson(value){
             this.but_next = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Next'),
-                'title': Sao.i18n.gettext("Next"),
                 'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Next"),
+                'title': Sao.i18n.gettext("Next"),
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-chevron-right'
             })).appendTo(buttons);
@@ -2977,9 +3100,9 @@ function eval_pyson(value){
                 this.but_add = jQuery('<button/>', {
                     'class': 'btn btn-default btn-sm',
                     'type': 'button',
-                    'aria-label': Sao.i18n.gettext('Add'),
-                    'title': Sao.i18n.gettext("Add"),
                     'tabindex': -1,
+                    'aria-label': Sao.i18n.gettext("Add"),
+                    'title': Sao.i18n.gettext("Add"),
                 }).append(jQuery('<span/>', {
                     // Coog Override Icon
                     'class': 'glyphicon glyphicon-search'
@@ -2989,8 +3112,9 @@ function eval_pyson(value){
                 this.but_remove = jQuery('<button/>', {
                     'class': 'btn btn-default btn-sm',
                     'type': 'button',
-                    'aria-label': Sao.i18n.gettext('Remove'),
                     'tabindex': -1,
+                    'aria-label': Sao.i18n.gettext("Remove"),
+                    'title': Sao.i18n.gettext("Remove"),
                 }).append(jQuery('<span/>', {
                     // Coog Override Icon
                     'class': 'glyphicon glyphicon-remove'
@@ -3001,9 +3125,9 @@ function eval_pyson(value){
             this.but_new = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('New'),
-                'title': Sao.i18n.gettext("New"),
                 'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("New"),
+                'title': Sao.i18n.gettext("New"),
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
                 'class': 'glyphicon glyphicon-plus'
@@ -3013,9 +3137,9 @@ function eval_pyson(value){
             this.but_open = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Open'),
-                'title': Sao.i18n.gettext("Open"),
                 'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Open"),
+                'title': Sao.i18n.gettext("Open"),
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
                 'class': 'glyphicon glyphicon-pencil'
@@ -3025,9 +3149,9 @@ function eval_pyson(value){
             this.but_del = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Delete'),
-                'title': Sao.i18n.gettext("Delete"),
                 'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Delete"),
+                'title': Sao.i18n.gettext("Delete"),
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-trash'
             })).appendTo(buttons);
@@ -3036,9 +3160,9 @@ function eval_pyson(value){
             this.but_undel = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Undelete'),
-                'title': Sao.i18n.gettext("Undelete"),
                 'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Undelete"),
+                'title': Sao.i18n.gettext("Undelete"),
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-repeat'
             })).appendTo(buttons);
@@ -3293,7 +3417,7 @@ function eval_pyson(value){
             // > multi_mixed_view see tryton/8fa02ed59d03aa52600fb8332973f6a88d46d8c0
             // this.view.set_value();
             var domain = this.field().get_domain(this.record());
-            var context = this.field().get_context(this.record());
+            var context = this.field().get_search_context(this.record());
             domain = [domain,
                 this.record().expr_eval(this.attributes.add_remove)];
             var removed_ids = this.field().get_removed_ids(this.record());
@@ -3319,11 +3443,13 @@ function eval_pyson(value){
                 this.wid_text.val('');
             }.bind(this);
             var parser = new Sao.common.DomainParser();
+            var order = this.field().get_search_order(this.record());
             var win = new Sao.Window.Search(this.attributes.relation,
                     callback, {
                         sel_multi: true,
                         context: context,
                         domain: domain,
+                        order: order,
                         view_ids: (this.attributes.view_ids ||
                                 '').split(','),
                         views_preload: this.attributes.views || {},
@@ -3392,7 +3518,8 @@ function eval_pyson(value){
                         }
 
                         var domain = field.get_domain(first);
-                        var context = field.get_context(first);
+                        var context = field.get_search_context(first);
+                        var order = field.get_search_order(first);
 
                         var callback = function(result) {
                             if (!jQuery.isEmptyObject(result)) {
@@ -3405,6 +3532,7 @@ function eval_pyson(value){
                                     sel_multi: true,
                                     context: context,
                                     domain: domain,
+                                    order: order,
                                     search_filter: '',
                                     title: this.attributes.string
 
@@ -3582,9 +3710,9 @@ function eval_pyson(value){
             this.but_add = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Add'),
-                'title': Sao.i18n.gettext("Add"),
                 'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Add"),
+                'title': Sao.i18n.gettext("Add"),
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
                 'class': 'glyphicon glyphicon-search'
@@ -3594,9 +3722,9 @@ function eval_pyson(value){
             this.but_remove = jQuery('<button/>', {
                 'class': 'btn btn-default btn-sm',
                 'type': 'button',
-                'aria-label': Sao.i18n.gettext('Remove'),
-                'title': Sao.i18n.gettext("Remove"),
                 'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Remove"),
+                'title': Sao.i18n.gettext("Remove"),
             }).append(jQuery('<span/>', {
                 // Coog Override Icon
                 'class': 'glyphicon glyphicon-remove'
@@ -3688,7 +3816,8 @@ function eval_pyson(value){
         add: function() {
             var dom;
             var domain = this.field().get_domain(this.record());
-            var context = this.field().get_context(this.record());
+            var context = this.field().get_search_context(this.record());
+            var order = this.field().get_search_order(this.record());
             var value = this.entry.val();
 
             var callback = function(result) {
@@ -3709,6 +3838,7 @@ function eval_pyson(value){
                         sel_multi: true,
                         context: context,
                         domain: domain,
+                        order: order,
                         view_ids: (this.attributes.view_ids ||
                             '').split(','),
                         views_preload: this.attributes.views || {},
@@ -3764,7 +3894,6 @@ function eval_pyson(value){
             // Create a new screen that is not linked to the parent otherwise
             // on the save of the record will trigger the save of the parent
             var screen = this._get_screen_form();
-            screen.new_group([this.screen.current_record.id]);
             var callback = function(result) {
                 if (result) {
                     screen.current_record.save().done(function() {
@@ -3774,6 +3903,7 @@ function eval_pyson(value){
                 }
             }.bind(this);
             screen.switch_view().done(function() {
+                screen.load([this.screen.current_record.id]);
                 new Sao.Window.Form(screen, callback,
                     {title: this.attributes.string});
             }.bind(this));
@@ -4670,6 +4800,12 @@ function eval_pyson(value){
 
     Sao.View.Form.Dict.Integer = Sao.class_(Sao.View.Form.Dict.Entry, {
         class_: 'dict-integer',
+        create_widget: function() {
+            Sao.View.Form.Dict.Integer._super.create_widget.call(this);
+            this.input.attr('type', 'number');
+            this.input.attr('step', 1);
+            this.input.attr('lang', Sao.i18n.getlang());
+        },
         get_value: function() {
             var value = parseInt(this.input.val(), 10);
             if (isNaN(value)) {
@@ -4713,6 +4849,7 @@ function eval_pyson(value){
             var digits = this.digits();
             value = value.toFixed(digits[1]);
             Sao.View.Form.Dict.Float._super.set_value.call(this, value);
+            this.input.attr('step', Math.pow(10, -digits[1]));
         },
     });
 
@@ -4732,30 +4869,59 @@ function eval_pyson(value){
         format: '%x',
         create_widget: function() {
             Sao.View.Form.Dict.Date._super.create_widget.call(this);
-            var group = this.button.parent();
-            jQuery('<button/>', {
+            this.date = this.input.parent();
+            jQuery('<span/>', {
+                'class': 'input-group-btn',
+            }).append(jQuery('<button/>', {
                 'class': 'datepickerbutton btn btn-default',
                 'type': 'button',
                 'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Open the calendar"),
+                'title': Sao.i18n.gettext("Open the calendar"),
             }).append(jQuery('<span/>', {
                 'class': 'glyphicon glyphicon-calendar'
-            })).prependTo(group);
-            this.input.datetimepicker({
+            }))).prependTo(this.date);
+            this.date.datetimepicker({
                 'format': Sao.common.moment_format(this.format),
-                'locale': moment.locale()
+                'locale': moment.locale(),
+                'keyBinds': null,
             });
-            this.input.on('dp.change',
+            this.date.on('dp.change',
                     this.parent_widget.focus_out.bind(this.parent_widget));
+            var mousetrap = new Mousetrap(this.el[0]);
+
+            mousetrap.bind(['enter', '='], function(e, combo) {
+                if (e.which != Sao.common.RETURN_KEYCODE) {
+                    e.preventDefault();
+                }
+                this.date.data('DateTimePicker').date(moment());
+            }.bind(this));
+
+            Sao.common.DATE_OPERATORS.forEach(function(operator) {
+                mousetrap.bind(operator[0], function(e, combo) {
+                    e.preventDefault();
+                    var dp = this.date.data('DateTimePicker');
+                    var date = dp.date();
+                    date.add(operator[1]);
+                    dp.date(date);
+                }.bind(this));
+            }.bind(this));
         },
         get_value: function() {
-            var value = this.input.data('DateTimePicker').date();
+            var value = this.date.data('DateTimePicker').date();
             if (value) {
                 value.isDate = true;
             }
             return value;
         },
         set_value: function(value) {
-            this.input.data('DateTimePicker').date(value);
+            this.date.off('dp.change');
+            try {
+                this.date.data('DateTimePicker').date(value);
+            } finally {
+                this.date.on('dp.change',
+                    this.parent_widget.focus_out.bind(this.parent_widget));
+            }
         }
     });
 
@@ -4763,7 +4929,7 @@ function eval_pyson(value){
         class_: 'dict-datetime',
         format: '%x %X',
         get_value: function() {
-            var value = this.input.data('DateTimePicker').date();
+            var value = this.date.data('DateTimePicker').date();
             if (value) {
                 value.isDateTime = true;
             }
@@ -4802,13 +4968,20 @@ function eval_pyson(value){
             }
         },
         set_value: function(record, field) {
-            field.set_client(record, this.get_encoded_value());
+            // avoid modification because different encoding
+            var value = this.get_encoded_value();
+            var previous = field.get_client(record);
+            if (previous && Sao.common.compare(
+                value, this.encoder.encode(this.decoder.decode(previous)))) {
+                value = previous;
+            }
+            field.set_client(record, value);
         },
         get_client_value: function(record, field) {
             var value = Sao.View.Form.PYSON._super.get_client_value.call(
                     this, record, field);
             if (value) {
-                value = this.decoder.decode(value).toString();
+                value = Sao.PYSON.toString(this.decoder.decode(value));
             }
             return value;
         },

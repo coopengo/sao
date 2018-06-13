@@ -115,12 +115,22 @@ var Sao = {};
     Sao.Decimal = Number;
 
     Sao.Date = function(year, month, day) {
-        var date = moment();
+        var date;
+        if (month === undefined) {
+            date = moment(year);
+            year = undefined;
+        }
+        else {
+            date = moment();
+        }
         date.year(year);
         date.month(month);
         date.date(day);
         date.set({hour: 0, minute: 0, second: 0, millisecond: 0});
         date.isDate = true;
+        date.toString = function() {
+            return this.format('YYYY-MM-DD');
+        };
         return date;
     };
 
@@ -166,6 +176,13 @@ var Sao = {};
             datetime.milliseconds(millisecond);
         }
         datetime.isDateTime = true;
+        datetime.toString = function() {
+            if (this.milliseconds()) {
+                return this.format('YYYY-MM-DD HH:mm:ss.SSSSSS');
+            } else {
+                return this.format('YYYY-MM-DD HH:mm:ss');
+            }
+        };
         datetime.local();
         return datetime;
     };
@@ -246,7 +263,9 @@ var Sao = {};
     Sao.i18n.getlang = function() {
         return Sao.i18n.getLocale();
     };
-    Sao.i18n.setlang();
+    Sao.i18n.BC47 = function(lang) {
+        return lang.replace('_', '-');
+    };
     Sao.i18n.locale = {};
 
     Sao.get_preferences = function() {
@@ -383,10 +402,10 @@ var Sao = {};
                     a.append(menu_item[1]);
                     a.click(function() {
                         clear_menu();
+                        // ids is not defined to prevent to add suffix
                         Sao.Action.exec_keyword('tree_open', {
                             'model': Sao.main_menu_screen.model_name,
                             'id': id,
-                            'ids': [id],
                         });
                     });
                     menu.append(li);
@@ -428,7 +447,24 @@ var Sao = {};
         }).click(Sao.favorites_menu).append(Sao.i18n.gettext('Favorites')));
     };
 
+    Sao.main_menu_row_activate = function() {
+        var screen = Sao.main_menu_screen;
+        // ids is not defined to prevent to add suffix
+        return Sao.Action.exec_keyword('tree_open', {
+            'model': screen.model_name,
+            'id': screen.get_id(),
+        }, null, false);
+    };
+
     Sao.menu = function(preferences) {
+        if (!preferences) {
+            var session = Sao.Session.current_session;
+            Sao.rpc({
+                'method': 'model.res.user.get_preferences',
+                'params': [false, {}],
+            }, session).then(Sao.menu);
+            return;
+        }
         var decoder = new Sao.PYSON.Decoder();
         var action = decoder.decode(preferences.pyson_menu);
         var view_ids = false;
@@ -449,7 +485,8 @@ var Sao = {};
             'context': action_ctx,
             // [Coog Specific] dbclick on menu entries
             'selection_mode': Sao.common.SELECTION_SINGLE,
-            'limit': null
+            'limit': null,
+            'row_activate': Sao.main_menu_row_activate,
         });
         Sao.Tab.tabs.splice(Sao.Tab.tabs.indexOf(form), 1);
         form.view_prm.done(function() {
@@ -531,12 +568,16 @@ var Sao = {};
     });
 
     Sao.Dialog = Sao.class_(Object, {
-        init: function(title, class_, size) {
+        init: function(title, class_, size, keyboard) {
             size = size || 'sm';
+            if (keyboard === undefined) {
+                keyboard = true;
+            }
             this.modal = jQuery('<div/>', {
                 'class': class_ + ' modal fade',
                 'role': 'dialog',
                 'data-backdrop': 'static',
+                'data-keyboard': keyboard,
             });
             this.content = jQuery('<form/>', {
                 'class': 'modal-content'
@@ -562,7 +603,7 @@ var Sao = {};
                 if (!has_focus) {
                     jQuery(this).find(':input:visible' +
                         ':not([readonly]):not([tabindex^="-"]):first')
-                   .focus();
+                        .focus();
                 }
             });
         },
@@ -616,7 +657,8 @@ var Sao = {};
             var ir_model = new Sao.Model('ir.model');
             return ir_model.execute('global_search',
                     [text, Sao.config.limit, Sao.main_menu_screen.model_name],
-                    Sao.main_menu_screen.context).then(function(s_results) {
+                    Sao.main_menu_screen.context())
+                .then(function(s_results) {
                 var results = [];
                 for (var i=0, len=s_results.length; i < len; i++) {
                     results.push({
@@ -632,11 +674,11 @@ var Sao = {};
         },
         match_selected: function(item) {
             if (item.model == Sao.main_menu_screen.model_name) {
+                // ids is not defined to prevent to add suffix
                 Sao.Action.exec_keyword('tree_open', {
                     'model': item.model,
                     'id': item.record_id,
-                    'ids': [item.record_id]
-                }, Sao.main_menu_screen.context);
+                });
             } else {
                 var params = {
                     'model': item.model,

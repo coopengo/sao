@@ -230,7 +230,7 @@
                 search_context._user = Sao.Session.current_session.user_id;
                 decoder = new Sao.PYSON.Decoder(search_context);
                 search_value = decoder.decode(
-                        this.action.pyson_search_value || '{}');
+                        this.action.pyson_search_value || '[]');
 
                 screen_attributes = {
                     mode: this.action.mode,
@@ -280,7 +280,7 @@
                     model: this.screen.model_name,
                     id: this.screen.current_record.id,
                     ids: record_ids
-                }, jQuery.extend({}, this.context), false);
+                }, jQuery.extend({}, this.screen.group._context), false);
             } else {
                 win = new Sao.Window.Form(this.screen, function(result) {
                     if (result) {

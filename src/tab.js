@@ -144,7 +144,7 @@
                 } else if (!item && previous) {
                     menuitem = jQuery('<li/>', {
                         'role': 'separator',
-                        'class': 'divider',
+                        'class': 'divider hidden-xs',
                     });
                 } else {
                     return;
@@ -218,7 +218,15 @@
                     'aria-hidden': 'true'
                 }))
                 .appendTo(group);
-                this.buttons[item.id].click(this[item.id].bind(this));
+                this.buttons[item.id].click(item, function(event) {
+                    var item = event.data;
+                    var button = this.buttons[item.id];
+                    button.prop('disabled', true);
+                    (this[item.id](this) || jQuery.when())
+                        .always(function() {
+                            button.prop('disabled', false);
+                        });
+                }.bind(this));
             };
             this.menu_def().forEach(add_button.bind(this));
             this.status_label = jQuery('<span/>', {
@@ -453,7 +461,7 @@
             var screen = this.screen;
             var buttons = this.buttons;
             var prm = screen.model.execute('view_toolbar_get', [],
-                    screen.context);
+                screen.context());
             prm.done(function(toolbars) {
                 [
                 ['action', 'glyphicon-cog',
@@ -554,7 +562,7 @@
                                     ids: record_ids
                                 };
                                 Sao.Action.exec_action(exec_action, data,
-                                    screen.context);
+                                    screen.context());
                             });
                         })
                         .appendTo(menu);
@@ -649,10 +657,10 @@
         },
         new_: function() {
             if (!Sao.common.MODELACCESS.get(this.screen.model_name).create) {
-                return;
+                return jQuery.when();
             }
-            this.modified_save().done(function() {
-                this.screen.new_().then(function() {
+            return this.modified_save().then(function() {
+                return this.screen.new_().then(function() {
                     this.info_bar.message();
                 }.bind(this));
                 // TODO activate_save
@@ -675,7 +683,7 @@
                     }.bind(this));
         },
         switch_: function() {
-            this.modified_save().done(function() {
+            return this.modified_save().done(function() {
                 this.screen.switch_view();
             }.bind(this));
         },
@@ -706,10 +714,10 @@
         },
         copy: function() {
             if (!Sao.common.MODELACCESS.get(this.screen.model_name).create) {
-                return;
+                return jQuery.when();
             }
-            this.modified_save().done(function() {
-                this.screen.copy().then(function() {
+            return this.modified_save().then(function() {
+                return this.screen.copy().then(function() {
                     this.info_bar.message(
                             Sao.i18n.gettext(
                                 'Working now on the duplicated record(s).'),
@@ -720,7 +728,7 @@
         },
         delete_: function() {
             if (!Sao.common.MODELACCESS.get(this.screen.model_name)['delete']) {
-                return;
+                return jQuery.when();
             }
             var msg;
             if (this.screen.current_view.view_type == 'form') {
@@ -728,8 +736,8 @@
             } else {
                 msg = Sao.i18n.gettext('Are you sure to remove those records?');
             }
-            Sao.common.sur.run(msg).done(function() {
-                this.screen.remove(true, false, true).then(
+            return Sao.common.sur.run(msg).then(function() {
+                return this.screen.remove(true, false, true).then(
                         function() {
                             this.info_bar.message(
                                     Sao.i18n.gettext('Records removed.'),
@@ -743,14 +751,14 @@
             }.bind(this));
         },
         previous: function() {
-            this.modified_save().done(function() {
+            return this.modified_save().then(function() {
                 this.screen.display_previous();
                 this.info_bar.message();
                 // TODO activate_save
             }.bind(this));
         },
         next: function() {
-            this.modified_save().done(function() {
+            return this.modified_save().then(function() {
                 this.screen.display_next();
                 this.info_bar.message();
                 // TODO activate_save
@@ -763,6 +771,7 @@
                     search_entry.focus();
                 }, 0);
             }
+            return jQuery.when();
         },
         logs: function() {
             var record = this.screen.current_record;
@@ -770,7 +779,7 @@
                 this.info_bar.message(
                         Sao.i18n.gettext('You have to select one record.'),
                         'info');
-                return;
+                return jQuery.when();
             }
             var fields = [
                 ['id', Sao.i18n.gettext('ID:')],
@@ -782,10 +791,10 @@
                 ['write_date', Sao.i18n.gettext('Latest Modification Date:')]
                 ];
 
-            this.screen.model.execute('read', [[record.id],
+            return this.screen.model.execute('read', [[record.id],
                     fields.map(function(field) {
                         return field[0];
-                    })], this.screen.context)
+                    })], this.screen.context())
             .then(function(result) {
                 result = result[0];
                 var message = '';
@@ -821,37 +830,38 @@
                             (revision < revisions[revisions.length - 1][0])) {
                         revision = revisions[revisions.length - 1][0];
                     }
-                    if (revision != this.screen.context._datetime) {
-                        // Update screen context that will be propagated by
+                    if (revision != this.screen.context()._datetime) {
+                        // Update group context that will be propagated by
                         // recreating new group
-                        this.screen.context._datetime = revision;
+                        this.screen.group._context._datetime = revision;
                         if (this.screen.current_view.view_type != 'form') {
                             this.screen.search_filter(
                                     this.screen.screen_container
                                     .search_entry.val());
                         } else {
                             // Test if record exist in revisions
-                            this.screen.new_group([current_id]);
+                            this.screen.new_group();
+                            this.screen.group.load([current_id]);
                         }
                         this.screen.display(true);
                         this.update_revision();
                     }
                 }.bind(this);
             }.bind(this);
-            this.modified_save().done(function() {
+            return this.modified_save().then(function() {
                 var ids = this.screen.current_view.selected_records().map(
                     function(record) {
                         return record.id;
                     });
-                this.screen.model.execute('history_revisions',
-                    [ids], this.screen.context)
+                return this.screen.model.execute('history_revisions',
+                    [ids], this.screen.context())
                     .then(function(revisions) {
                         new Sao.Window.Revision(revisions, set_revision(revisions));
                     });
             }.bind(this));
         },
         update_revision: function() {
-            var revision = this.screen.context._datetime;
+            var revision = this.screen.context()._datetime;
             var label;
             if (revision) {
                 var date_format = Sao.common.date_format();
@@ -926,6 +936,8 @@
                 text = '99+';
             }
             badge.text(text);
+            this.buttons.attach.attr(
+                'title', Sao.i18n.gettext("Attachment(%1)", count));
             var record_id = this.screen.get_id();
             this.buttons.attach.prop('disabled',
                 record_id < 0 || record_id === null);
@@ -960,6 +972,8 @@
                 text = '99+';
             }
             badge.text(text);
+            this.buttons.note.attr(
+                'title', Sao.i18n.gettext("Note(%1)", unread));
             var record_id = this.screen.get_id();
             this.buttons.note.prop('disabled',
                     record_id < 0 || record_id === null);
@@ -1010,7 +1024,7 @@
                     return r.id;
                 }),
                 this.screen.current_view.get_fields(),
-                this.screen.context);
+                this.screen.context());
         },
         import: function(){
             new Sao.Window.Import(this.screen);

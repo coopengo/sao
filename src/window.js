@@ -72,21 +72,34 @@
                     }
                 }.bind(this));
             }.bind(this));
-            var dialog = new Sao.Dialog('', 'window-form', 'lg');
+            var dialog = new Sao.Dialog('', 'window-form', 'lg', false);
             this.el = dialog.modal;
+            this.el.on('keydown', function(e) {
+                if (e.which == Sao.common.ESC_KEYCODE) {
+                    e.preventDefault();
+                    this.response('RESPONSE_CANCEL');
+                }
+            }.bind(this));
 
             var readonly = (this.screen.attributes.readonly ||
                     this.screen.group.get_readonly());
 
+            this._initial_value = null;
             if (view_type == 'form') {
+                var button_text;
+                if (kwargs.new_) {
+                    button_text = Sao.i18n.gettext('Delete');
+                } else {
+                    button_text = Sao.i18n.gettext('Cancel');
+                    this._initial_value = this.screen.current_record.get_eval();
+                }
+
                 dialog.footer.append(jQuery('<button/>', {
                     'class': 'btn btn-link',
                     'type': 'button'
-                }).append(!kwargs.new_ && this.screen.current_record.id < 0 ?
-                    Sao.i18n.gettext('Delete') : Sao.i18n.gettext('Cancel'))
-                        .click(function() {
-                            this.response('RESPONSE_CANCEL');
-                        }.bind(this)));
+                }).append(button_text).click(function() {
+                    this.response('RESPONSE_CANCEL');
+                }.bind(this)));
             }
 
             if (kwargs.new_ && this.many) {
@@ -237,7 +250,6 @@
             this.el.on('hidden.bs.modal', function(event) {
                 jQuery(this).remove();
             });
-
         },
         add: function() {
             var domain = jQuery.extend([], this.domain);
@@ -272,6 +284,7 @@
         },
         new_: function() {
             this.screen.new_();
+            this._initial_value = null;
         },
         delete_: function() {
             this.screen.remove(false, false, false);
@@ -357,25 +370,25 @@
                 return;
             }
 
+            var cancel_prm = null;
             if (response_id == 'RESPONSE_CANCEL' &&
                     !readonly &&
                     this.screen.current_record) {
                 result = false;
                 if ((this.screen.current_record.id < 0) || this.save_current) {
-                    this.screen.cancel_current();
+                    cancel_prm = this.screen.cancel_current(
+                        this._initial_value);
                 } else if (this.screen.current_record.has_changed()) {
                     this.screen.current_record.cancel();
-                    this.screen.current_record.reload().always(function() {
-                        this.callback(result);
-                        this.destroy();
-                    }.bind(this));
-                    return;
+                    cancel_prm = this.screen.current_record.reload();
                 }
             } else {
                 result = response_id != 'RESPONSE_CANCEL';
             }
-            this.callback(result);
-            this.destroy();
+            (cancel_prm || jQuery.when()).done(function() {
+                this.callback(result);
+                this.destroy();
+            }.bind(this));
         },
         destroy: function() {
             this.screen.screen_container.alternate_view = false;
@@ -398,7 +411,6 @@
                 domain: [['resource', '=', this.resource]],
                 mode: ['tree', 'form'],
                 context: context,
-                exclude_field: 'resource'
             });
             screen.switch_view().done(function() {
                 screen.search_filter();
@@ -412,10 +424,6 @@
         callback: function(result) {
             var prm = jQuery.when();
             if (result) {
-                var resource = this.screen.group.model.fields.resource;
-                this.screen.group.forEach(function(record) {
-                    resource.set_client(record, this.resource);
-                }.bind(this));
                 prm = this.screen.save_current();
             }
             if (this.attachment_callback) {
@@ -433,7 +441,6 @@
                 domain: [['resource', '=', this.resource]],
                 mode: ['tree', 'form'],
                 context: context,
-                exclude_field: 'resource'
             });
             screen.switch_view().done(function() {
                 screen.search_filter();
@@ -447,11 +454,9 @@
         callback: function(result) {
             var prm = jQuery.when();
             if (result) {
-                var resource = this.screen.group.model.fields.resource;
                 var unread = this.screen.group.model.fields.unread;
                 this.screen.group.forEach(function(record) {
                     if (record.get_loaded() || record.id < 0) {
-                        resource.set_client(record, this.resource);
                         if (!record._changed.unread) {
                             unread.set_client(record, false);
                         }
@@ -472,6 +477,7 @@
             this.model_name = model;
             this.domain = kwargs.domain || [];
             this.context = kwargs.context || {};
+            this.order = kwargs.order || null;
             this.view_ids = kwargs.view_ids;
             this.views_preload = views_preload;
             this.sel_multi = kwargs.sel_multi;
@@ -514,6 +520,7 @@
                 mode: ['tree'],
                 context: this.context,
                 domain: this.domain,
+                order: this.order,
                 view_ids: kwargs.view_ids,
                 views_preload: views_preload,
                 row_activate: this.activate.bind(this),
@@ -560,6 +567,7 @@
                 var screen = new Sao.Screen(this.model_name, {
                     domain: this.domain,
                     context: this.context,
+                    order: this.order,
                     mode: ['form'],
                     view_ids: view_ids,
                     views_preload: this.views_preload,
@@ -929,8 +937,8 @@
             });
 
             var separator = ',';
-            if (navigator.platform == 'Win32' ||
-                navigator.platform == 'Windows') {
+            if (navigator.platform &&
+                    navigator.platform.slice(0, 3) == 'Win') {
                 separator = ';';
             }
             this.el_csv_delimiter = jQuery('<input/>', {
@@ -988,8 +996,8 @@
             }
 
             var enc = 'utf-8';
-            if (navigator.platform == 'Win32' ||
-                navigator.platform == 'Windows') {
+            if (navigator.platform &&
+                    navigator.platform.slice(0, 3) == 'Win') {
                 enc = 'cp1252';
             }
             this.el_csv_encoding.children('option[value="' + enc + '"]')
@@ -1330,8 +1338,17 @@
             this.context = context;
             Sao.Window.Export._super.init.call(this,
                 Sao.i18n.gettext('Export to CSV')).then(function() {
+                    var fields = this.screen.model.fields;
                     names.forEach(function(name) {
-                        this.sel_field(name);
+                        var type = fields[name].description.type;
+                        if (type == 'selection') {
+                            this.sel_field(name + '.translated');
+                        } else if (type == 'reference') {
+                            this.sel_field(name + '.translated');
+                            this.sel_field(name + '/rec_name');
+                        } else {
+                            this.sel_field(name);
+                        }
                     }.bind(this));
                 }.bind(this));
 

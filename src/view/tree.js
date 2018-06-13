@@ -89,6 +89,9 @@
             var col = jQuery('<col/>', {
                 'class': 'selection-state',
             }).appendTo(colgroup);
+            if (this.selection_mode == Sao.common.SELECTION_NONE) {
+                col.css('width', 0);
+            }
             this.thead = jQuery('<thead/>').appendTo(this.table);
             var tr = jQuery('<tr/>');
             var th = jQuery('<th/>', {
@@ -294,10 +297,11 @@
             var search_string = this.screen.screen_container.get_text();
             if ((!jQuery.isEmptyObject(unsaved_records)) ||
                     (this.screen.search_count == this.screen.group.length) ||
-                    (this.screen.parent)) {
+                    (this.screen.group.parent)) {
                 this.screen.search_filter(search_string, true).then(
                 function(ids) {
                     this.screen.group.sort(ids);
+                    this.screen.display();
                 }.bind(this));
             } else {
                 this.screen.search_filter(search_string);
@@ -370,7 +374,7 @@
             }
             var inversion = new Sao.common.DomainInversion();
             domain = inversion.simplify(domain);
-            var decoder = new Sao.PYSON.Decoder(this.screen.context);
+            var decoder = new Sao.PYSON.Decoder(this.screen.context());
             this.columns.forEach(function(column) {
                 visible_columns += 1;
                 var name = column.attributes.name;
@@ -513,7 +517,8 @@
 
                 var selected_records = this.selected_records();
                 var aggregate = '-';
-                var aggregate_el = this.sum_widgets[name][1];
+                var sum_label = this.sum_widgets[name][0];
+                var sum_value = this.sum_widgets[name][1];
                 var sum_ = null;
                 var selected_sum = null;
                 var loaded = true;
@@ -559,7 +564,7 @@
                 }
                 if (loaded) {
                     if (field.description.type == 'timedelta'){
-                        var converter = field.converter(record.group);
+                        var converter = field.converter(this.screen.group);
                         selected_sum =  Sao.common.timedelta.format(
                             Sao.TimeDelta(null, selected_sum), converter);
                         sum_ = Sao.common.timedelta.format(
@@ -569,13 +574,15 @@
                         options.minimumFractionDigits = digit;
                         options.maximumFractionDigits = digit;
                         selected_sum = (selected_sum || 0).toLocaleString(
-                            Sao.i18n.getlang(), options);
+                            Sao.i18n.BC47(Sao.i18n.getlang()), options);
                         sum_ = (sum_ || 0).toLocaleString(
-                            Sao.i18n.getlang(), options);
+                            Sao.i18n.BC47(Sao.i18n.getlang()), options);
                     }
                     aggregate = selected_sum + ' / ' + sum_;
                 }
-                aggregate_el.text(aggregate);
+                sum_value.text(aggregate);
+                sum_value.parent().attr(
+                    'title', sum_label.text() + ' ' + sum_value.text());
             }
         },
         selected_records: function() {
@@ -1071,9 +1078,14 @@
                 delete this.tree.expanded[this.path];
                 this.collapse_children();
             } else {
-                this.update_expander(true);
-                this.tree.expanded[this.path] = this;
-                this.expand_children();
+                if (this.tree.n_children(this) > Sao.config.limit) {
+                    this.tree.screen.set_current_record(this.record);
+                    this.tree.screen.switch_view('form');
+                } else {
+                    this.update_expander(true);
+                    this.tree.expanded[this.path] = this;
+                    this.expand_children();
+                }
             }
             return false;
         },
@@ -1144,6 +1156,7 @@
                 row.set_multi_level_selection(value);
             });
         },
+        // end
         select_column: function(event_) {
         },
         select_row: function(event_) {
@@ -1357,8 +1370,7 @@
                     }
                 }
             }
-            // JMO: work around BUG#8720
-            if (focus_widget && focus_widget.focus) {
+            if (focus_widget) {
                 focus_widget.focus();
             }
         },
@@ -1451,6 +1463,7 @@
                             }.bind(this), 0);
                         }.bind(this));
                 } else if (event_.which == Sao.common.ESC_KEYCODE) {
+                    this.tree.edit_row(null);
                     this.get_static_el().show().find('[tabindex=0]').focus();
                 } else if (event_.which == Sao.common.RETURN_KEYCODE) {
                     var focus_cell = function(row) {
@@ -1996,11 +2009,9 @@
                 return;
             }
             button.el.prop('disabled', true);
-            try {
-                this.screen.button(this.attributes);
-            } finally {
+            this.screen.button(this.attributes).always(function() {
                 button.el.prop('disabled', false);
-            }
+            });
         }
     });
 

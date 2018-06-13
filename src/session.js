@@ -162,7 +162,7 @@
         var dialog = Sao.Session.login_dialog();
 
         var empty_field = function() {
-            return dialog.modal.find('input,select').filter(':visible')
+            return dialog.modal.find('input,select').filter(':visible:not([readonly])')
                 .filter(function() {
                     return !jQuery(this).val();
                 });
@@ -206,7 +206,9 @@
             var el;
             databases = databases || [];
             if (databases.length <= 1 ) {
-                database = databases[0];
+                if (databases.length == 1) {
+                    database = databases[0];
+                }
                 el = dialog.database_input;
             } else {
                 el = dialog.database_select;
@@ -220,7 +222,6 @@
             el.prop('readonly', databases.length == 1);
             el.show();
             el.val(database || '');
-            empty_field().first().focus();
         });
         return dfd.promise();
     };
@@ -301,8 +302,8 @@
                     dfd.resolve(data.result);
                 }
             };
-            ajax_prm.success(ajax_success.bind(this));
-            ajax_prm.error(dfd.reject);
+            ajax_prm.done(ajax_success.bind(this));
+            ajax_prm.fail(dfd.reject);
             return dfd.promise();
         },
         get_char: function(message) {
