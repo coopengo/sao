@@ -1678,13 +1678,16 @@
             cell.unbind('click');
             Sao.View.Tree.Many2OneColumn._super.update_text.call(this, cell, record);
             cell.click(function(event) {
+                event.preventDefault();
                 event.stopPropagation();
-                var params = {};
-                params.model = this.attributes.relation;
-                params.res_id = this.field.get(record);
-                params.mode = ['form'];
-                params.name = this.attributes.string;
-                Sao.Tab.create(params);
+                if (event && event.ctrlKey) {
+                    var params = {};
+                    params.model = this.attributes.relation;
+                    params.res_id = this.field.get(record);
+                    params.mode = ['form'];
+                    params.name = this.attributes.string;
+                    Sao.Tab.create(params);
+                }
             }.bind(this));
         }
     });
