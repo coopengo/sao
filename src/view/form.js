@@ -1619,17 +1619,17 @@ function eval_pyson(value){
         },
         pythonLinter: function(doc, updateLint, options, editor) {
             console.log('pythonLinter called');
-            updateLint([{
-                message: 'Error',
-                severity: 'error',
-                from: CodeMirror.Pos(0, 0), // First Line, First column
-                to: CodeMirror.Pos(0, 4) // First Line, 4th column
-            }, {
-                message: 'Warning',
-                severity: 'warning',
-                from: CodeMirror.Pos(1, 0),
-                to: CodeMirror.Pos(1, 1)
-            }]);
+            //updateLint([{
+            //    message: 'Error',
+            //    severity: 'error',
+            //    from: CodeMirror.Pos(0, 0), // First Line, First column
+            //    to: CodeMirror.Pos(0, 4) // First Line, 4th column
+            //}, {
+            //    message: 'Warning',
+            //    severity: 'warning',
+            //    from: CodeMirror.Pos(1, 0),
+            //    to: CodeMirror.Pos(1, 1)
+            //}]);
         }
     });
 
