@@ -1,3 +1,4 @@
+* BUG#9446 Only set width 100 to inputfrom inside dict
 * BUG#8756 Only open link when using ctrl key
 * BUG#9035 Remove checkbox for always ignoring warnings
 * FEA#8271 Add support of expand attribute on group tag
