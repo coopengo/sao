@@ -29,6 +29,8 @@ pack() {
         && move_res bower_components/bootstrap/dist/css/bootstrap.min.css \
         && move_res bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css \
         && move_res bower_components/c3/c3.min.css \
+        && move_res bower_components/codemirror/lib/codemirror.css \
+        && move_res bower_components/codemirror/lib/codemirror.js \
         && move_res bower_components/fullcalendar/dist/fullcalendar.min.css \
         && rm dist/tryton-sao.js dist/tryton-sao.css dist/coog-sao.css \
         && sed -i "s;dist/tryton-sao.js;tryton-sao.js;g" dist/index.html \
