@@ -159,6 +159,7 @@
                         total_cell.append(sum_label);
                         total_cell.append(sum_value);
                         total_cell.attr('data-title', sum_label.text());
+                        total_cell.css('overflow', 'visible');
                     }
                     sum_row.append(total_cell);
                     column.footers.push(total_cell);
