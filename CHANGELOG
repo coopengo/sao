@@ -1,4 +1,5 @@
 * BUG#9504 Load CodeMiror inside Docker
+* BUG#9468 Fix file extension missing when using excel export from tree view
 * BUG#9467 Display total sum of commission
 * BUG#9446 Only set width 100 to inputfrom inside dict
 * BUG#8756 Only open link when using ctrl key

@@ -1737,12 +1737,20 @@
                 delimiter: this.el_csv_delimiter.val()
             });
             var blob = new Blob([csv], {type: 'text/csv;charset=' + encoding});
-            var blob_url = window.URL.createObjectURL(blob);
-            if (this.blob_url) {
-                window.URL.revokeObjectURL(this.blob_url);
+            var blobElement = document.createElement('a');
+            if (navigator.msSaveOrOpenBlob) {
+                navigator.msSaveOrOpenBlob(blob, "export.csv");
+            } else {
+                blobElement.href = window.URL.createObjectURL(blob);
+                var splittedUrl = blobElement.href.split('/');
+                blobElement.setAttribute('download', splittedUrl[splittedUrl.length-1] + '.csv');
+                document.body.appendChild(blobElement);
+                blobElement.click();
+                document.body.removeChild(blobElement);
             }
-            this.blob_url = blob_url;
-            window.open(blob_url);
+            if (this.blobElement) {
+                window.URL.revokeObjectURL(this.blobElement.href);
+            }
 
             return Sao.common.message.run(
                 Sao.i18n.ngettext('%1 record saved', '%1 records saved',
