@@ -1243,12 +1243,12 @@ function eval_pyson(value){
             else {
                 editor_width = 12;
             }
-            this.init_editor(editor_width);
 
             this.tree_data = [];
             this.tree_elements = [];
             this.value = '';
             this.json_data = '';
+            this.init_editor(editor_width);
         },
         init_editor: function(width){
             var button_apply_command = function(evt) {
@@ -1326,7 +1326,7 @@ function eval_pyson(value){
                 gutters: ["CodeMirror-lint-markers"],
                 lint: {
                     lintOnChange: false,
-                    getAnnotations: this.pythonLinter,
+                    getAnnotations: this.pythonLinter.bind(this),
                     async: true
                 }
             });
@@ -1374,6 +1374,12 @@ function eval_pyson(value){
                     this.clear_tree();
                 }
             }.bind(this);
+
+            if (!field || !record) {
+                this.codeMirror.setValue('');
+                this.clear_tree();
+                return;
+            }
 
             var value = field.get_client(record);
             if (value != this.value){
@@ -1433,18 +1439,40 @@ function eval_pyson(value){
             this.codeMirror.setOption('readOnly', readonly);
         },
         pythonLinter: function(doc, updateLint, options, editor) {
-            console.log('pythonLinter called');
-            //updateLint([{
-            //    message: 'Error',
-            //    severity: 'error',
-            //    from: CodeMirror.Pos(0, 0), // First Line, First column
-            //    to: CodeMirror.Pos(0, 4) // First Line, 4th column
-            //}, {
-            //    message: 'Warning',
-            //    severity: 'warning',
-            //    from: CodeMirror.Pos(1, 0),
-            //    to: CodeMirror.Pos(1, 1)
-            //}]);
+            var known_funcs;
+            var linter = new Sao.Model('linter.Linter');
+            var code = editor.getValue();
+
+            var populate_funcs = function (context) {
+                var element;
+                for (var cnt in tree_data) {
+                    element = tree_data[cnt];
+                    known_funcs.push(element.description);
+                    if (element.childrent && element.children.length > 0) {
+                        populate_funcs(element.children);
+                    }
+                }
+            };
+            try {
+                known_funcs = populate_funcs(JSON.parse(this.json_data));
+            }
+            catch (err) {
+                known_funcs = [];
+            }
+
+            linter.execute('lint', [code, known_funcs]).done(function(errors) {
+                var codeMirrorErrors = [];
+                for (var idx in errors) {
+                    var error = errors[idx];
+                    codeMirrorErrors.push({
+                        message: error[2],
+                        severity: 'error',
+                        from: CodeMirror.Pos(error[0] - 1, error[1]),
+                        to: CodeMirror.Pos(error[0] - 1, error[1]),
+                    });
+                }
+                updateLint(codeMirrorErrors);
+            }.bind(this));
         }
     });
 
