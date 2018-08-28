@@ -1624,26 +1624,25 @@ function eval_pyson(value){
             this.codeMirror.setOption('readOnly', readonly);
         },
         pythonLinter: function(doc, updateLint, options, editor) {
-            var known_funcs;
+            var known_funcs = [];
             var linter = new Sao.Model('linter.Linter');
             var code = editor.getValue();
 
-            var populate_funcs = function (context) {
+            var populate_funcs = function (tree_data) {
+                if (!tree_data) { return ;}
                 var element;
                 for (var cnt in tree_data) {
                     element = tree_data[cnt];
-                    known_funcs.push(element.description);
-                    if (element.childrent && element.children.length > 0) {
+                    known_funcs.push(element.translated);
+                    if (element.children && element.children.length > 0) {
                         populate_funcs(element.children);
                     }
                 }
             };
-            try {
-                known_funcs = populate_funcs(JSON.parse(this.json_data));
-            }
-            catch (err) {
-                known_funcs = [];
-            }
+
+            var to_parse = "[]";
+            if (this.json_data) { to_parse = this.json_data ;}
+            populate_funcs(JSON.parse(to_parse));
 
             linter.execute('lint', [code, known_funcs]).done(function(errors) {
                 var codeMirrorErrors = [];
