@@ -1,4 +1,6 @@
 * BUG#9680 Remove text color change on dropdown menu when hover element
+* BUG#9678 Set default color on btn-primary
+* BUG#9457 Apply factor on domain parser
 * BUG#9504 Load CodeMiror inside Docker
 * BUG#9468 Fix file extension missing when using excel export from tree view
 * BUG#9467 Display total sum of commission
