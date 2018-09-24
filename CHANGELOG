@@ -1,3 +1,4 @@
+* BUG#9960 Correctly set operand for M2M and O2M size_limt
 * BUG#9293 Add linting to rule algorithms
 * BUG#9680 Remove text color change on dropdown menu when hover element
 * BUG#9678 Set default color on btn-primary
