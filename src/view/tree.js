@@ -1371,7 +1371,9 @@
                     }
                 }
             }
-            if (focus_widget) {
+            // JMO BUG#8720
+            // Workaround
+            if (focus_widget && focus_widget.focus) {
                 focus_widget.focus();
             }
         },
