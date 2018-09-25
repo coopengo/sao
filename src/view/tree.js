@@ -1286,9 +1286,6 @@
                 }
             }
         },
-        select_column: function(event_) {
-            this.edited_column = event_.data.index;
-        },
         select_row: function(event_) {
             var body, listener;
             event_.stopPropagation();
