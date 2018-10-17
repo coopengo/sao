@@ -77,7 +77,7 @@
                         .then(Sao.Session.get_credentials()
                             .then(function(session) {
                                 Sao.Session.current_session = session;
-                                return session.reload_context();
+                                dfd.resolve();
                             })
                         );
                 } else {
