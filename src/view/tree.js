@@ -1701,7 +1701,7 @@
                     var params = {};
                     params.model = this.attributes.relation;
                     params.res_id = this.field.get(record);
-                    params.mode = ['form'];
+                    params.mode = ['form', 'tree'];
                     params.name = this.attributes.string;
                     Sao.Tab.create(params);
                 }

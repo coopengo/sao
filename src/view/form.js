@@ -2714,7 +2714,7 @@ function eval_pyson(value){
                     var params = {};
                     params.model = this.get_model();
                     params.res_id = m2o_id;
-                    params.mode = ['form'];
+                    params.mode = ['form', 'tree'];
                     params.name = this.attributes.string;
                     Sao.Tab.create(params);
                     return;
