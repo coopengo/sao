@@ -1,3 +1,4 @@
+* BUG#10127 Clean session if local session is wrong and we got a ir.session error
 
 Version 4.8.6 - 2018-09-22
 * Bug fixes (see mercurial logs for details)
