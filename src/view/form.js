@@ -1334,7 +1334,6 @@ function eval_pyson(value){
                     async: true
                 }
             });
-            console.log(this.codeMirror.getOption('autoRefresh'));
         },
         init_tree: function(width){
             var container = jQuery('<div/>', {
