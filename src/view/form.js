@@ -1326,6 +1326,7 @@ function eval_pyson(value){
                 indentUnit: 4,
                 indentWithTabs: false,
                 matchBrackets: true,
+                autoRefresh: true,
                 gutters: ["CodeMirror-lint-markers"],
                 lint: {
                     lintOnChange: false,
@@ -1333,6 +1334,7 @@ function eval_pyson(value){
                     async: true
                 }
             });
+            console.log(this.codeMirror.getOption('autoRefresh'));
         },
         init_tree: function(width){
             var container = jQuery('<div/>', {
