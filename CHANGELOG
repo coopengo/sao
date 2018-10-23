@@ -1,4 +1,5 @@
 * BUG#10098 Allow list view when Ctrl+click
+* BUG#9909 Autorefresh modal codeMirror using addon
 
 Version 4.8.6 - 2018-09-22
 * Bug fixes (see mercurial logs for details)
