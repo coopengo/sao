@@ -1508,6 +1508,7 @@ function eval_pyson(value){
                 indentUnit: 4,
                 indentWithTabs: false,
                 matchBrackets: true,
+                autoRefresh: true,
                 gutters: ["CodeMirror-lint-markers"],
                 lint: {
                     lintOnChange: false,
