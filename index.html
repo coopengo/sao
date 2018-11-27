@@ -109,10 +109,10 @@ this repository contains the full copyright notices and license terms. -->
                 jQuery(function() {
                     jQuery('.body').show();
                     jQuery('[data-toggle="offcanvas"]').click(function() {
-                        jQuery('#menu').toggleClass('hidden');
                         jQuery('.row-offcanvas').toggleClass('active');
                     });
                     jQuery('#tabs').on('ready', function() {
+                        // MAB: I removed b08b13cb commit code in this script as it seems contradictory with what b2ck do
                         var mq = window.matchMedia('(max-width: 991px)');
                         if (mq.matches) {
                             if (jQuery('#tablist').children().length) {

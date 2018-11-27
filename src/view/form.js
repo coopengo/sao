@@ -1309,7 +1309,6 @@ function eval_pyson(value){
             this.childs     = [];
             this.visible    = true;
             this.is_parent  = false;
-            this.expanded   = false;
 
             if (this.parent){
                 this.parent.append_children(this);
@@ -1323,7 +1322,7 @@ function eval_pyson(value){
         this.set_visibility = function(visible){
             if (visible){
                 this.el.show();
-                if (this.is_parent && this.expanded)
+                if (this.is_parent)
                     for (var j in this.childs)
                         this.childs[j].set_visibility(visible);
             } else{
@@ -1371,34 +1370,12 @@ function eval_pyson(value){
             }.bind(this));
 
             tr_container[0].addEventListener('click', function(event){
-                if (this.is_parent)
-                    this.set_expander(!this.expanded);
-                for (var i in this.childs){
-                    this.childs[i].set_visibility(this.expanded);
-                }
             }.bind(this));
 
             return tr_container;
         };
         this.get_element = function(){
             return this.el;
-        };
-        this.set_expander = function(expanded){
-            var icon = '';
-            if (expanded)
-                icon = 'minus';
-            else
-                icon = 'plus';
-
-            this.expander.empty();
-            var span = jQuery('<span/>', {
-                'class': 'glyphicon glyphicon-' + icon
-            }).appendTo(this.expander);
-            span.html('&nbsp;');
-            span.css({
-                'float': 'right'
-            });
-            this.expanded = expanded;
         };
         this.append_children = function(children){
             this.childs.push(children);

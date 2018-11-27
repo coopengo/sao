@@ -1012,6 +1012,7 @@
                             .then(set_current_view);
                     } else {
                         var i = this.views.indexOf(this.current_view);
+
                         this.current_view = this.views[
                             (i + 1) % this.views.length];
                     }
@@ -1353,11 +1354,13 @@
                 deferreds.push(search_prm);
                 // [Coog specific]
                 // JMO: report https://github.com/coopengo/tryton/pull/13
-                //for (var i = 0; i < this.views.length; i++) {
-                //    if (this.views[i]) {
-                //        deferreds.push(this.views[i].display());
-                //    }
-                //}
+                // for (const view of this.views) {
+                //     if (view &&
+                //         ((view == this.current_view) ||
+                //             view.el.parent().length)) {
+                //         deferreds.push(view.display());
+                //     }
+                // }
                 deferreds.push(this.current_view.display());
             }
             return jQuery.when.apply(jQuery, deferreds).then(
