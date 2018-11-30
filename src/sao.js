@@ -970,7 +970,7 @@ var Sao = {};
         format: function(content) {
             var el = jQuery('<div/>');
             Sao.common.ICONFACTORY.get_icon_img(
-                content.icon, {'class': 'global_search-icon'})
+                content.icon, {'class': 'global-search-icon'})
                 .appendTo(el);
             jQuery('<span/>', {
                 'class': 'global-search-text'
