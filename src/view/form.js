@@ -1203,19 +1203,25 @@ function eval_pyson(value){
             } else {
                 this.el.removeClass('readonly');
             }
-            var required_el = this._required_el();
-            this.set_required(required);
-            if (!readonly && required) {
-                required_el.addClass('required');
-            } else {
-                required_el.removeClass('required');
+            // MAB: For extra data
+            if (!this.attributes.no_command){
+                var required_el = this._required_el();
+                this.set_required(required);
+                if (!readonly && required) {
+                    required_el.addClass('required');
+                } else {
+                    required_el.removeClass('required');
+                }
             }
             var invalid = state_attrs.invalid;
-            var invalid_el = this._invalid_el();
-            if (!readonly && invalid) {
-                invalid_el.addClass('has-error');
-            } else {
-                invalid_el.removeClass('has-error');
+            // MAB: For extra data
+            if (!this.attributes.no_command){
+                var invalid_el = this._invalid_el();
+                if (!readonly && invalid) {
+                    invalid_el.addClass('has-error');
+                } else {
+                    invalid_el.removeClass('has-error');
+                }
             }
             if (invisible === undefined) {
                 invisible = field.get_state_attrs(this.record).invisible;
@@ -5377,8 +5383,8 @@ function eval_pyson(value){
             field.labelled.uniqueId();
             field.labelled.attr('aria-labelledby', label.attr('id'));
             label.attr('for', field.labelled.attr('id'));
-
-            if (!this.attribute.no_command) {
+            // MAB: For extra data
+            if (!this.attributes.no_command) {
                 field.button.click(() => {
                     this.remove(key, true);
                 });
