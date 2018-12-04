@@ -3758,11 +3758,20 @@ function eval_pyson(value){
             }
             widget = null;
             var to_display = null;
+            var record_load_promises, display_prm;
+
+            function display_form(widget, record) {
+                return function () {
+                    widget.screen.current_record = record;
+                    widget.display(widget.record(), widget.field());
+                };
+            }
 
             // !!!> add fields; change widget's record; display widgets
             for (var i = 0; i < to_sync.length; i++){
                 widget = to_sync[i].widget;
                 record = to_sync[i].record;
+                record_load_promises = [];
 
                 if (widget.screen.current_view === undefined)
                     continue;
@@ -3779,10 +3788,17 @@ function eval_pyson(value){
                     }
                     // !!!> initiate and add new fields
                     record.group.model.add_fields(ret);
+
+                    for (var field_name in fields) {
+                        if (!fields.hasOwnProperty(field_name)) {
+                            continue;
+                        }
+                        record_load_promises.push(record.load(field_name));
+                    }
                 }
 
-                widget.screen.current_record = record;
-                widget.display(widget.record(), widget.field());
+                display_prm = jQuery.when.apply(jQuery, record_load_promises);
+                display_prm.then(display_form(widget, record).bind(this));
                 if (record){
                     to_display = widget;
                 }
