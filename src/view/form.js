@@ -3758,6 +3758,7 @@ function eval_pyson(value){
             }
             widget = null;
             var to_display = null;
+            var to_display_prm = jQuery.when();
             var record_load_promises, display_prm;
 
             function display_form(widget, record) {
@@ -3797,10 +3798,11 @@ function eval_pyson(value){
                     }
                 }
 
-                display_prm = jQuery.when.apply(jQuery, record_load_promises);
-                display_prm.then(display_form(widget, record).bind(this));
+                display_prm = jQuery.when.apply(jQuery, record_load_promises)
+                    .then(display_form(widget, record).bind(this));
                 if (record){
                     to_display = widget;
+                    to_display_prm = display_prm;
                 }
             }
             // !!!> resize forms to fix display width
@@ -3811,7 +3813,9 @@ function eval_pyson(value){
                 }
             }
             if (to_display) {
-                to_display.display(to_display.record(), to_display.field());
+                to_display_prm.done(function() {
+                    to_display.display(to_display.record(), to_display.field());
+                });
             }
         },
         set_readonly: function(readonly) {
