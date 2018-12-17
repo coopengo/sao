@@ -3798,8 +3798,8 @@ function eval_pyson(value){
                 }
 
                 widget.screen.current_record = record;
-                display_prm = jQuery.when.apply(jQuery, record_load_promises)
-                    .then(display_form(widget, record).bind(this));
+                display_prm = jQuery.when.apply(jQuery, record_load_promises);
+                display_prm.done(display_form(widget, record).bind(this));
                 if (record){
                     to_display = widget;
                     to_display_prm = display_prm;
