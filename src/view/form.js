@@ -3805,16 +3805,13 @@ function eval_pyson(value){
                     to_display_prm = display_prm;
                 }
             }
-            // !!!> resize forms to fix display width
-            if (widget){
-                for (j in widget.view.containers) {
-                    var container = widget.view.containers[j];
-                    container.resize();
-                }
-            }
             if (to_display) {
                 to_display_prm.done(function() {
-                    to_display.display(to_display.record(), to_display.field());
+                    for (var j in to_display.view.containers) {
+                        var container = widget.view.containers[j];
+                        container.resize();
+                    }
+                    to_display.display(to_display.record, to_display.field);
                 });
             }
         },
