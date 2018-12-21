@@ -1376,12 +1376,34 @@ function eval_pyson(value){
             }.bind(this));
 
             tr_container[0].addEventListener('click', function(event){
+                if (this.is_parent)
+                    this.set_expander(!this.expanded);
+                for (var i in this.childs){
+                    this.childs[i].set_visibility(this.expanded);
+                }
             }.bind(this));
 
             return tr_container;
         };
         this.get_element = function(){
             return this.el;
+        };
+        this.set_expander = function(expanded){
+            var icon = '';
+            if (expanded)
+                icon = 'minus';
+            else
+                icon = 'plus';
+
+            this.expander.empty();
+            var span = jQuery('<span/>', {
+                'class': 'glyphicon glyphicon-' + icon
+            }).appendTo(this.expander);
+            span.html('&nbsp;');
+            span.css({
+                'float': 'right'
+            });
+            this.expanded = expanded;
         };
         this.append_children = function(children){
             this.childs.push(children);
