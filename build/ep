@@ -10,7 +10,6 @@ move_res() {
 # in dev mode, these files are referenced from their original path
 pack() {
     cp index.html dist/ \
-        && cp offcanvas.css dist/ \
         && cp -r locale dist/ \
         && cp -r images dist/ \
         && cp -r bower_components/bootstrap/dist/fonts dist/ \
