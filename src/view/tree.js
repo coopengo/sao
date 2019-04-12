@@ -297,18 +297,18 @@
                 this.screen.order = [[column.attributes.name, 'ASC']];
             }
             var unsaved_records = [];
-            this.screen.group.forEach(function(unsaved_record) {
+            this.group.forEach(function(unsaved_record) {
                     if (unsaved_record.id < 0) {
                         unsaved_records = unsaved_record.group;
                 }
             });
             var search_string = this.screen.screen_container.get_text();
             if ((!jQuery.isEmptyObject(unsaved_records)) ||
-                    (this.screen.search_count == this.screen.group.length) ||
-                    (this.screen.group.parent)) {
+                    (this.screen.search_count == this.group.length) ||
+                    (this.group.parent)) {
                 this.screen.search_filter(search_string, true).then(
                 function(ids) {
-                    this.screen.group.sort(function(a, b) {
+                    this.group.sort(function(a, b) {
                         a = ids.indexOf(a.id);
                         a = a < 0 ? ids.length : a;
                         b = ids.indexOf(b.id);
@@ -337,11 +337,11 @@
             return buttons;
         },
         display: function(selected, expanded) {
-            var current_record = this.screen.current_record;
+            var current_record = this.record;
             if (jQuery.isEmptyObject(selected)) {
                 selected = this.get_selected_paths();
                 if (current_record) {
-                    var current_path = current_record.get_path(this.screen.group);
+                    var current_path = current_record.get_path(this.group);
                     current_path = current_path.map(function(e) {
                         return e[1];
                     });
@@ -366,18 +366,18 @@
                 });
             }.bind(this);
             var min_display_size = Math.min(
-                    this.screen.group.length, this.display_size);
+                    this.group.length, this.display_size);
             // XXX find better check to keep focus
             if (this.children_field) {
                 this.construct();
             } else if ((min_display_size > this.rows.length) &&
                 Sao.common.compare(
-                    this.screen.group.slice(0, this.rows.length),
+                    this.group.slice(0, this.rows.length),
                     row_records())) {
                 this.construct(true);
             } else if ((min_display_size != this.rows.length) ||
                 !Sao.common.compare(
-                    this.screen.group.slice(0, this.rows.length),
+                    this.group.slice(0, this.rows.length),
                     row_records())){
                 this.construct();
             }
@@ -498,13 +498,13 @@
                 this.rows.push(tree_row);
                 tree_row.construct();
             };
-            this.screen.group.slice(start, this.display_size).forEach(
+            this.group.slice(start, this.display_size).forEach(
                     add_row.bind(this));
             if (!extend) {
                 tbody.replaceWith(this.tbody);
             }
 
-            if (this.display_size < this.screen.group.length) {
+            if (this.display_size < this.group.length) {
                 var more_row = jQuery('<tr/>', {
                     'class': 'more-row',
                 });
@@ -533,7 +533,7 @@
                 record = this.edited_row.record;
                 this.edited_row.set_selection(true);
             }
-            this.screen.current_record = record;
+            this.record = record;
             // TODO update_children
         },
         update_sum: function() {
@@ -555,8 +555,8 @@
                 var records_ids = selected_records.map(function(record){
                     return record.id;
                 });
-                for (i=0; i < this.screen.group.length; i++){
-                    record = this.screen.group[i];
+                for (i=0; i < this.group.length; i++) {
+                    record = this.group[i];
                     if (!record.get_loaded([name]) && record.id >=0){
                         loaded = false;
                         break;
@@ -591,7 +591,7 @@
                 }
                 if (loaded) {
                     if (field.description.type == 'timedelta'){
-                        var converter = field.converter(this.screen.group);
+                        var converter = field.converter(this.group);
                         selected_sum =  Sao.common.timedelta.format(
                             Sao.TimeDelta(null, selected_sum), converter);
                         sum_ = Sao.common.timedelta.format(
@@ -626,7 +626,7 @@
             this.rows.forEach(add_record);
             if (this.selection.prop('checked') &&
                     !this.selection.prop('indeterminate')) {
-                this.screen.group.slice(this.rows.length)
+                this.group.slice(this.rows.length)
                     .forEach(function(record) {
                         records.push(record);
                     });
@@ -693,7 +693,7 @@
                 this.selection.prop('checked', false);
             } else if (selected_records.length ==
                     this.tbody.children().length &&
-                    this.display_size >= this.screen.group.length) {
+                    this.display_size >= this.group.length) {
                 this.selection.prop('checked', true);
             } else {
                 this.selection.prop('indeterminate', true);
@@ -770,12 +770,12 @@
             var i, root_group, path, row_path, row, column;
             var row_idx, rest, td;
 
-            if (!this.screen.current_record) {
+            if (!this.record) {
                 return;
             }
-            path = this.screen.current_record.get_index_path(this.screen.group);
+            path = this.record.get_index_path(this.group);
             if (this.rows.length < path[0]) {
-                this.display_size = this.screen.group.length;
+                this.display_size = this.group.length;
                 this.display();
             }
             row_idx = path[0];
@@ -817,7 +817,7 @@
                 }
                 return;
             }
-            if (!this.screen.group.parent) {
+            if (!this.group.parent) {
                 prm = this.edited_row.record.save();
             } else if (this.screen.attributes.pre_validate && this.record) {
                 prm = this.record.pre_validate();
@@ -1132,7 +1132,7 @@
                 this.collapse_children();
             } else {
                 if (this.tree.n_children(this) > Sao.config.limit) {
-                    this.tree.screen.current_record = this.record;
+                    this.tree.record = this.record;
                     this.tree.screen.switch_view('form');
                 } else {
                     this.update_expander(true);
@@ -2067,7 +2067,7 @@
         button_clicked: function(event) {
             var record = event.data[0];
             var button = event.data[1];
-            if (record != this.screen.current_record) {
+            if (record != this.record) {
                 // Need to raise the event to get the record selected
                 return true;
             }
