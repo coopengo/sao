@@ -76,7 +76,7 @@
     Sao.View.Tree = Sao.class_(Sao.View, {
         view_type: 'tree',
         xml_parser: Sao.View.TreeXMLViewParser,
-        init: function(screen, xml, children_field, children_definitions) {
+        init: function(view_id, screen, xml, children_field, children_definitions) {
             this.children_field = children_field;
             this.sum_widgets = {};
             this.columns = [];
@@ -94,7 +94,7 @@
             //      > attribute always_expand (expand tree view)
             this.always_expand = this.attributes.always_expand || null;
 
-            Sao.View.Tree._super.init.call(this, screen, xml);
+            Sao.View.Tree._super.init.call(this, view_id, screen, xml);
 
             // Table of records
             this.rows = [];

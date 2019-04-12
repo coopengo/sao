@@ -52,6 +52,8 @@
     white-space: nowrap;
 }
 
+.list-group-item-variant(selected, @state-info-bg, @state-info-text);
+
 .tab-form, .tab-board {
     nav.toolbar.affix {
         top: @navbar-height + 1px;
@@ -160,6 +162,12 @@ img.icon {
 
 .filter-box {
     margin: 5px 5px;
+}
+
+.list-form {
+    overflow-y: auto;
+    -moz-user-select: none;
+    -webkit-user-select: none;
 }
 
 .treeview {
@@ -365,7 +373,7 @@ img.icon {
         }
     }
     .form-one2many-content, .form-many2many-content {
-        .treeview {
+        .treeview, .list-form {
             min-height: 100px;
             max-height: 300px;
         }

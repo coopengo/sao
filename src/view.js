@@ -11,7 +11,8 @@
         editable: null,
         children_field: null,
         xml_parser: null,
-        init: function(screen, xml) {
+        init: function(view_id, screen, xml) {
+            this.view_id = view_id;
             this.screen = screen;
             this.widgets = {};
             this.state_widgets = [];
@@ -27,9 +28,11 @@
             for (var name in this.screen.model.fields) {
                 field_attrs[name] = this.screen.model.fields[name].description;
             }
-            new this.xml_parser(
-                this, this.screen.exclude_field, field_attrs)
-                .parse(xml.children()[0]);
+            if (this.xml_parser) {
+                new this.xml_parser(
+                    this, this.screen.exclude_field, field_attrs)
+                    .parse(xml.children()[0]);
+            }
         },
         set_value: function() {
         },
@@ -71,19 +74,21 @@
     };
 
     // [Coog specific] multi_mixed_view
-    Sao.View.parse = function(screen, xml, children_field,
+    Sao.View.parse = function(screen, view_id, type, xml, children_field,
             children_definitions) {
-        switch (xml.children().prop('tagName')) {
+        switch (type) {
             case 'tree':
                 // [Coog specific] multi_mixed_view
-                return new Sao.View.Tree(screen, xml, children_field,
+                return new Sao.View.Tree(view_id, screen, xml, children_field,
                     children_definitions);
             case 'form':
-                return new Sao.View.Form(screen, xml);
+                return new Sao.View.Form(view_id, screen, xml);
             case 'graph':
-                return new Sao.View.Graph(screen, xml);
+                return new Sao.View.Graph(view_id, screen, xml);
             case 'calendar':
-                return new Sao.View.Calendar(screen, xml);
+                return new Sao.View.Calendar(view_id, screen, xml);
+            case 'list-form':
+                return new Sao.View.ListForm(view_id, screen, xml);
         }
     };
 

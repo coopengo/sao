@@ -1,3 +1,4 @@
+* Add list-form view
 * Use separate XML parser in Views
 * Use properties
 * Allow sao classes to use javascript properties
