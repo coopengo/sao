@@ -394,7 +394,7 @@
             }
             var inversion = new Sao.common.DomainInversion();
             domain = inversion.simplify(domain);
-            var decoder = new Sao.PYSON.Decoder(this.screen.context());
+            var decoder = new Sao.PYSON.Decoder(this.screen.context);
             this.columns.forEach(function(column) {
                 visible_columns += 1;
                 var name = column.attributes.name;
@@ -533,7 +533,7 @@
                 record = this.edited_row.record;
                 this.edited_row.set_selection(true);
             }
-            this.screen.set_current_record(record);
+            this.screen.current_record = record;
             // TODO update_children
         },
         update_sum: function() {
@@ -542,7 +542,7 @@
                     continue;
                 }
 
-                var selected_records = this.selected_records();
+                var selected_records = this.selected_records;
                 var aggregate = '-';
                 var sum_label = this.sum_widgets[name][0];
                 var sum_value = this.sum_widgets[name][1];
@@ -612,7 +612,7 @@
                     'title', sum_label.text() + ' ' + sum_value.text());
             }
         },
-        selected_records: function() {
+        get selected_records() {
             if (this.selection_mode == Sao.common.SELECTION_NONE) {
                 return [];
             }
@@ -687,7 +687,7 @@
         },
         update_selection: function() {
             this.update_sum();
-            var selected_records = this.selected_records();
+            var selected_records = this.selected_records;
             this.selection.prop('indeterminate', false);
             if (jQuery.isEmptyObject(selected_records)) {
                 this.selection.prop('checked', false);
@@ -1119,7 +1119,7 @@
                     }
                 }.bind(this));
             }
-            if (this.record.deleted() || this.record.removed()) {
+            if (this.record.deleted || this.record.removed) {
                 this.el.css('text-decoration', 'line-through');
             } else {
                 this.el.css('text-decoration', 'inherit');
@@ -1132,7 +1132,7 @@
                 this.collapse_children();
             } else {
                 if (this.tree.n_children(this) > Sao.config.limit) {
-                    this.tree.screen.set_current_record(this.record);
+                    this.tree.screen.current_record = this.record;
                     this.tree.screen.switch_view('form');
                 } else {
                     this.update_expander(true);
@@ -1258,7 +1258,7 @@
                 this.tree.select_changed(this.record);
             } else {
                 this.tree.select_changed(
-                        this.tree.selected_records()[0] || null);
+                        this.tree.selected_records[0] || null);
             }
             this.tree.update_selection();
         },

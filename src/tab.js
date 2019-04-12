@@ -518,7 +518,7 @@
             var screen = this.screen;
             var buttons = this.buttons;
             var prm = screen.model.execute('view_toolbar_get', [],
-                screen.context());
+                screen.context);
             prm.done(function(toolbars) {
                 [
                 ['action', 'tryton-launch',
@@ -631,7 +631,7 @@
                                 }).append(name))
                             .click(function(evt) {
                                 evt.preventDefault();
-                                var ids = screen.current_view.selected_records()
+                                var ids = screen.current_view.selected_records
                                     .map(function(record) {
                                         return record.id;
                                     });
@@ -669,7 +669,7 @@
                                     record_id = screen.current_record.id;
                                 }
                                 var record_ids = screen.current_view
-                                .selected_records().map(function(record) {
+                                .selected_records.map(function(record) {
                                     return record.id;
                                 });
                                 exec_action = Sao.Action.evaluate(exec_action,
@@ -680,7 +680,7 @@
                                     ids: record_ids
                                 };
                                 Sao.Action.exec_action(exec_action, data,
-                                    screen.context());
+                                    screen.context);
                             });
                         }.bind(this))
                         .appendTo(menu);
@@ -787,7 +787,7 @@
                             .then(function() {
                                 this.screen.group.forEach(function(record) {
                                     if (record.id == record_id) {
-                                        this.screen.set_current_record(record);
+                                        this.screen.current_record = record;
                                         set_cursor = true;
                                     }
                                 }.bind(this));
@@ -893,7 +893,7 @@
             return this.screen.model.execute('read', [[record.id],
                     fields.map(function(field) {
                         return field[0];
-                    })], this.screen.context())
+                    })], this.screen.context)
             .then(function(result) {
                 result = result[0];
                 var message = '';
@@ -929,7 +929,7 @@
                             (revision < revisions[revisions.length - 1][0])) {
                         revision = revisions[revisions.length - 1][0];
                     }
-                    if (revision != this.screen.context()._datetime) {
+                    if (revision != this.screen.context._datetime) {
                         this.screen.clear();
                         // Update group context that will be propagated by
                         // recreating new group
@@ -947,19 +947,19 @@
                 }.bind(this);
             }.bind(this);
             return this.modified_save().then(function() {
-                var ids = this.screen.current_view.selected_records().map(
+                var ids = this.screen.current_view.selected_records.map(
                     function(record) {
                         return record.id;
                     });
                 return this.screen.model.execute('history_revisions',
-                    [ids], this.screen.context())
+                    [ids], this.screen.context)
                     .then(function(revisions) {
                         new Sao.Window.Revision(revisions, set_revision(revisions));
                     });
             }.bind(this));
         },
         update_revision: function() {
-            var revision = this.screen.context()._datetime;
+            var revision = this.screen.context._datetime;
             var label, title;
             if (revision) {
                 var date_format = Sao.common.date_format();
@@ -1272,11 +1272,11 @@
         export: function(){
             new Sao.Window.Export(
                 this.title.text(), this.screen,
-                this.screen.current_view.selected_records().map(function(r) {
+                this.screen.current_view.selected_records.map(function(r) {
                     return r.id;
                 }),
                 this.screen.current_view.get_fields(),
-                this.screen.context());
+                this.screen.context);
         },
         import: function(){
             new Sao.Window.Import(this.title.text(), this.screen);
