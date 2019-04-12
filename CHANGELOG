@@ -1,3 +1,4 @@
+* Use separate XML parser in Views
 * Use properties
 * Allow sao classes to use javascript properties
 * Use record and field properties of widget instead of method arguments
