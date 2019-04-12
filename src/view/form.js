@@ -358,10 +358,8 @@ function eval_pyson(value){
                 // JMO: report https://github.com/coopengo/tryton/pull/13
                 record.fields_to_load = {};
             }
-            var display = function(record, field) {
-                return function(widget) {
-                    widget.display(record, field);
-                };
+            var display = function(widget) {
+                widget.display();
             };
             return jQuery.when.apply(jQuery,promesses)
                 .done(function() {
@@ -375,7 +373,7 @@ function eval_pyson(value){
                         if (field) {
                             field.set_state(record);
                         }
-                        widgets.forEach(display(record, field));
+                        widgets.forEach(display);
                     }
                 }.bind(this))
                 .done(function() {
@@ -1035,7 +1033,9 @@ function eval_pyson(value){
             this.visible = true;
             this.labelled = null;  // Element which received the labelledby
         },
-        display: function(record, field) {
+        display: function() {
+            var field = this.field();
+            var record = this.record();
             var readonly = this.attributes.readonly;
             var invisible = this.attributes.invisible;
             var required = this.attributes.required;
@@ -1097,7 +1097,7 @@ function eval_pyson(value){
                 }
             }
             if (invisible === undefined) {
-                invisible = field.get_state_attrs(record).invisible;
+                invisible = field.get_state_attrs(this.record()).invisible;
                 if (invisible === undefined) {
                     invisible = false;
                 }
@@ -1128,9 +1128,9 @@ function eval_pyson(value){
             if (!this.visible) {
                 return;
             }
-            this.set_value(this.record(), this.field());
+            this.set_value();
         },
-        set_value: function(record, field) {
+        set_value: function() {
         },
         set_readonly: function(readonly) {
             this._readonly = readonly;
@@ -1391,8 +1391,8 @@ function eval_pyson(value){
                 'height': '490px'
             });
         },
-        display: function(record, field){
-            Sao.View.Form.Source._super.display.call(this, record, field);
+        display: function(){
+            Sao.View.Form.Source._super.display.call(this);
 
             var display_code = function(str){
                 this.codeMirror.setValue(str);
@@ -1762,15 +1762,19 @@ function eval_pyson(value){
                 .click(this.translate.bind(this));
             }
         },
-        get_client_value: function(record, field) {
+        get_client_value: function() {
+            var field = this.field();
+            var record = this.record();
             var value = '';
             if (field) {
                 value = field.get_client(record);
             }
             return value;
         },
-        display: function(record, field) {
-            Sao.View.Form.Char._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.Char._super.display.call(this);
+
+            var record = this.record();
             if (this.datalist) {
                 this.datalist.children().remove();
                 var set_autocompletion = function() {
@@ -1800,13 +1804,13 @@ function eval_pyson(value){
                     width = null;
                 }
             }
-            this.input.val(this.get_client_value(record, field));
+            this.input.val(this.get_client_value());
             this.input.attr('maxlength', length);
             this.input.attr('size', length);
             this.group.css('width', width);
         },
-        set_value: function(record, field) {
-            field.set_client(record, this.input.val());
+        set_value: function() {
+            this.field().set_client(this.record(), this.input.val());
         },
         set_readonly: function(readonly) {
             this.input.prop('readonly', readonly);
@@ -1925,22 +1929,24 @@ function eval_pyson(value){
                 }.bind(this));
             }.bind(this));
         },
-        get_format: function(record, field) {
-            return field.date_format(record);
+        get_format: function() {
+            return this.field().date_format(this.record());
         },
-        get_value: function(record, field) {
+        get_value: function() {
             var value = this.date.data('DateTimePicker').date();
             if (value) {
                 value.isDate = true;
             }
             return value;
         },
-        display: function(record, field) {
+        display: function() {
+            var record = this.record();
+            var field = this.field();
             if (record && field) {
                 this.date.data('DateTimePicker').format(
-                    Sao.common.moment_format(this.get_format(record, field)));
+                    Sao.common.moment_format(this.get_format()));
             }
-            Sao.View.Form.Date._super.display.call(this, record, field);
+            Sao.View.Form.Date._super.display.call(this);
             var value;
             if (record) {
                 value = field.get_client(record);
@@ -1957,8 +1963,8 @@ function eval_pyson(value){
         focus: function() {
             this.input.focus();
         },
-        set_value: function(record, field) {
-            field.set_client(record, this.get_value(record, field));
+        set_value: function() {
+            this.field().set_client(this.record(), this.get_value());
         },
         set_readonly: function(readonly) {
             this.date.find('button').prop('disabled', readonly);
@@ -1969,10 +1975,12 @@ function eval_pyson(value){
     Sao.View.Form.DateTime = Sao.class_(Sao.View.Form.Date, {
         class_: 'form-datetime',
         _width: '20em',
-        get_format: function(record, field) {
+        get_format: function() {
+            var record = this.record();
+            var field = this.field();
             return field.date_format(record) + ' ' + field.time_format(record);
         },
-        get_value: function(record, field) {
+        get_value: function() {
             var value = this.date.data('DateTimePicker').date();
             if (value) {
                 value.isDateTime = true;
@@ -1984,10 +1992,10 @@ function eval_pyson(value){
     Sao.View.Form.Time = Sao.class_(Sao.View.Form.Date, {
         class_: 'form-time',
         _width: '10em',
-        get_format: function(record, field) {
-            return field.time_format(record);
+        get_format: function() {
+            return this.field().time_format(this.record());
         },
-        get_value: function(record, field) {
+        get_value: function() {
             var value = this.date.data('DateTimePicker').date();
             if (value) {
                 value.isTime = true;
@@ -2010,8 +2018,9 @@ function eval_pyson(value){
             }).appendTo(this.el);
             this.el.change(this.focus_out.bind(this));
         },
-        display: function(record, field) {
-            Sao.View.Form.TimeDelta._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.TimeDelta._super.display.call(this);
+            var record = this.record();
             if (record) {
                 var value = record.field_get_client(this.field_name);
                 this.input.val(value || '');
@@ -2022,8 +2031,8 @@ function eval_pyson(value){
         focus: function() {
             this.input.focus();
         },
-        set_value: function(record, field) {
-            field.set_client(record, this.input.val());
+        set_value: function() {
+            this.field().set_client(this.record(), this.input.val());
         },
         set_readonly: function(readonly) {
             this.input.prop('readonly', readonly);
@@ -2057,24 +2066,27 @@ function eval_pyson(value){
                 }
             }.bind(this));
         },
-        set_value: function(record, field) {
-            field.set_client(record, this.input.val(), undefined, this.factor);
+        set_value: function() {
+            this.field().set_client(
+                this.record(), this.input.val(), undefined, this.factor);
         },
-        get_client_value: function(record, field) {
+        get_client_value: function() {
             var value = '';
+            var field = this.field();
             if (field) {
-                value = field.get(record);
+                value = field.get(this.record());
                 if (value !== null) {
                     value *= this.factor;
                 }
             }
             return value;
         },
-        display: function(record, field) {
-            Sao.View.Form.Integer._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.Integer._super.display.call(this);
+            var field = this.field();
             var value = '';
             if (field) {
-                value = field.get_client(record, this.factor);
+                value = field.get_client(this.record(), this.factor);
             }
             this.input_text.val(value);
             this.input_text.attr('maxlength', this.input.attr('maxlength'));
@@ -2096,7 +2108,9 @@ function eval_pyson(value){
 
     Sao.View.Form.Float = Sao.class_(Sao.View.Form.Integer, {
         class_: 'form-float',
-        display: function(record, field) {
+        display: function() {
+            var record = this.record();
+            var field = this.field();
             var step = 'any';
             if (record) {
                 var digits = field.digits(record, this.factor);
@@ -2108,7 +2122,7 @@ function eval_pyson(value){
                 step = Math.pow(10, -step);
             }
             this.input.attr('step', step);
-            Sao.View.Form.Float._super.display.call(this, record, field);
+            Sao.View.Form.Float._super.display.call(this);
         }
     });
 
@@ -2151,7 +2165,9 @@ function eval_pyson(value){
                 }));
             });
         },
-        display_update_selection: function(record, field) {
+        display_update_selection: function() {
+            var record = this.record();
+            var field = this.field();
             this.update_selection(record, field, function() {
                 if (!field) {
                     this.select.val('');
@@ -2183,9 +2199,9 @@ function eval_pyson(value){
                 }.bind(this));
             }.bind(this));
         },
-        display: function(record, field) {
-            Sao.View.Form.Selection._super.display.call(this, record, field);
-            this.display_update_selection(record, field);
+        display: function() {
+            Sao.View.Form.Selection._super.display.call(this);
+            this.display_update_selection();
         },
         focus: function() {
             this.select.focus();
@@ -2193,9 +2209,9 @@ function eval_pyson(value){
         value_get: function() {
             return JSON.parse(this.select.val());
         },
-        set_value: function(record, field) {
+        set_value: function() {
             var value = this.value_get();
-            field.set_client(record, value);
+            this.field().set_client(this.record(), value);
         },
         set_readonly: function(readonly) {
             this.select.prop('disabled', readonly);
@@ -2221,8 +2237,9 @@ function eval_pyson(value){
                 return !jQuery(this).prop('readonly');
             });
         },
-        display: function(record, field) {
-            Sao.View.Form.Boolean._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.Boolean._super.display.call(this);
+            var record = this.record();
             if (record) {
                 this.input.prop('checked', record.field_get(this.field_name));
             } else {
@@ -2232,9 +2249,9 @@ function eval_pyson(value){
         focus: function() {
             this.input.focus();
         },
-        set_value: function(record, field) {
+        set_value: function() {
             var value = this.input.prop('checked');
-            field.set_client(record, value);
+            this.field().set_client(this.record(), value);
         },
         set_readonly: function(readonly) {
             this.input.prop('readonly', readonly);
@@ -2268,8 +2285,9 @@ function eval_pyson(value){
                 button.click(this.translate.bind(this));
             }
         },
-        display: function(record, field) {
-            Sao.View.Form.Text._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.Text._super.display.call(this);
+            var record = this.record();
             if (record) {
                 var value = record.field_get_client(this.field_name);
                 this.input.val(value);
@@ -2285,9 +2303,9 @@ function eval_pyson(value){
         focus: function() {
             this.input.focus();
         },
-        set_value: function(record, field) {
+        set_value: function() {
             var value = this.input.val() || '';
-            field.set_client(record, value);
+            this.field().set_client(this.record(), value);
         },
         set_readonly: function(readonly) {
             this.input.prop('readonly', readonly);
@@ -2458,9 +2476,10 @@ function eval_pyson(value){
                 }
             }.bind(this), 0);
         },
-        display: function(record, field) {
-            Sao.View.Form.RichText._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.RichText._super.display.call(this);
             var value = '';
+            var record = this.record();
             if (record) {
                 value = record.field_get_client(this.field_name);
                 if(this.attributes.spell) {
@@ -2474,17 +2493,17 @@ function eval_pyson(value){
         focus: function() {
             this.input.focus();
         },
-        set_value: function(record, field) {
+        set_value: function() {
             // avoid modification of not normalized value
             this._normalize(this.input);
             var value = this.input.html() || '';
-            var previous = field.get_client(record);
+            var previous = this.field().get_client(this.record());
             var previous_el = jQuery('<div/>').html(previous || '');
             this._normalize(previous_el);
             if (value == previous_el.html()) {
                 value = previous;
             }
-            field.set_client(record, value);
+            this.field().set_client(this.record(), value);
         },
         _normalize: function(el) {
             // TODO order attributes
@@ -2625,20 +2644,19 @@ function eval_pyson(value){
             }
             Sao.View.Form.Many2One._super.focus_out.call(this);
         },
-        set_value: function(record, field) {
+        set_value: function() {
+            var record = this.record();
+            var field = this.field();
             if (field.get_client(record) != this.entry.val()) {
                 field.set_client(record, this.value_from_id(null, ''));
                 this.entry.val('');
             }
         },
-        display: function(record, field) {
-            var screen_record = this.record();
-            if ((screen_record && record) && (screen_record.id != record.id)) {
-                return;
-            }
-
+        display: function() {
+            var record = this.record();
+            var field = this.field();
             var text_value, value;
-            Sao.View.Form.Many2One._super.display.call(this, record, field);
+            Sao.View.Form.Many2One._super.display.call(this);
 
             this._set_button_sensitive();
             this._set_completion();
@@ -3062,8 +3080,10 @@ function eval_pyson(value){
             }
             this.record().field_set_client(this.field_name, value);
         },
-        set_value: function(record, field) {
+        set_value: function() {
             var value;
+            var record = this.record();
+            var field = this.field();
             if (!this.get_model()) {
                 value = this.entry.val();
                 if (jQuery.isEmptyObject(value)) {
@@ -3104,9 +3124,9 @@ function eval_pyson(value){
                 this.select.val('');
             }
         },
-        display: function(record, field) {
-            this.update_selection(record, field, function() {
-                Sao.View.Form.Reference._super.display.call(this, record, field);
+        display: function() {
+            this.update_selection(this.record(), this.field(), function() {
+                Sao.View.Form.Reference._super.display.call(this);
             }.bind(this));
         },
         set_readonly: function(readonly) {
@@ -3471,12 +3491,15 @@ function eval_pyson(value){
                         !this.position || !access.write || !access.read);
             }
         },
-        display: function(record, field) {
-            Sao.View.Form.One2Many._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.One2Many._super.display.call(this);
 
             this._set_button_sensitive();
 
             this.prm.done(function() {
+                var record = this.record();
+                var field = this.field();
+
                 if (!field) {
                     this.screen.new_group();
                     this.screen.set_current_record(null);
@@ -3759,7 +3782,7 @@ function eval_pyson(value){
             }
             return prm;
         },
-        set_value: function(record, field) {
+        set_value: function() {
             // [Coog specific]
             // > multi_mixed_view see tryton/8fa02ed59d03aa52600fb8332973f6a88d46d8c0
             if (this.screen.current_view.view_type == 'form' &&
@@ -3899,10 +3922,13 @@ function eval_pyson(value){
             this._position = data[0];
             this._set_button_sensitive();
         },
-        display: function(record, field) {
-            Sao.View.Form.Many2Many._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.Many2Many._super.display.call(this);
 
             this.prm.done(function() {
+                var record = this.record();
+                var field = this.field();
+
                 if (!field) {
                     this.screen.new_group();
                     this.screen.set_current_record(null);
@@ -4198,8 +4224,10 @@ function eval_pyson(value){
 
             this.toolbar('input-group-btn').appendTo(group);
         },
-        display: function(record, field) {
-            Sao.View.Form.Binary._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.Binary._super.display.call(this);
+
+            var recor = this.record(), field = this.field();
             if (!field) {
                 if (this.text) {
                     this.text.val('');
@@ -4236,9 +4264,9 @@ function eval_pyson(value){
                 evt.preventDefault();
             }
         },
-        set_value: function(record, field) {
+        set_value: function() {
             if (this.text) {
-                this.filename_field().set_client(record,
+                this.filename_field().set_client(this.record(),
                         this.text.val() || '');
             }
         },
@@ -4285,14 +4313,14 @@ function eval_pyson(value){
                 this.select.val(value);
             }.bind(this));
         },
-        set_value: function(record, field) {
+        set_value: function() {
             var value = this.select.val();
             if (value) {
                 value = value.map(function(e) { return parseInt(e, 10); });
             } else {
                 value = [];
             }
-            field.set_client(record, value);
+            this.field().set_client(this.record(), value);
         }
     });
 
@@ -4357,8 +4385,8 @@ function eval_pyson(value){
                 this.update_buttons(Boolean(data));
             }.bind(this));
         },
-        display: function(record, field) {
-            Sao.View.Form.Image._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.Image._super.display.call(this);
             this.update_img();
         }
     });
@@ -4377,9 +4405,11 @@ function eval_pyson(value){
             this.icon = jQuery('<img/>').appendTo(this.button);
             this.set_icon();
         },
-        display: function(record, field) {
-            Sao.View.Form.URL._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.URL._super.display.call(this);
             var url = '';
+            var record = this.record();
+            var field = this.field();
             if (record) {
                 url = record.field_get_client(this.field_name);
             }
@@ -4455,10 +4485,11 @@ function eval_pyson(value){
             }).appendTo(this.el);
             this.progressbar.css('min-width: 2em');
         },
-        display: function(record, field) {
-            Sao.View.Form.ProgressBar._super.display.call(
-                    this, record, field);
+        display: function() {
+            Sao.View.Form.ProgressBar._super.display.call(this);
             var value, text;
+            var record = this.record();
+            var field = this.field();
             if (!field) {
                 value = 0;
                 text = '';
@@ -4600,8 +4631,8 @@ function eval_pyson(value){
                 this.set_value(this.record(), this.field());
             }
         },
-        set_value: function(record, field) {
-            field.set_client(record, this.get_value());
+        set_value: function() {
+            this.field().set_client(this.record(), this.get_value());
         },
         get_value: function() {
             var value = {};
@@ -4673,9 +4704,11 @@ function eval_pyson(value){
 
             row.appendTo(this.container);
         },
-        display: function(record, field) {
-            Sao.View.Form.Dict._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.Dict._super.display.call(this);
 
+            var record = this.record();
+            var field = this.field();
             if (!field) {
                 return;
             }
@@ -5017,8 +5050,8 @@ function eval_pyson(value){
             }).appendTo(this.group);
             this.group.addClass('has-feedback');
         },
-        display: function(record, field) {
-            Sao.View.Form.PYSON._super.display.call(this, record, field);
+        display: function() {
+            Sao.View.Form.PYSON._super.display.call(this);
             this.validate_pyson();
         },
         get_encoded_value: function() {
@@ -5033,9 +5066,11 @@ function eval_pyson(value){
                 return null;
             }
         },
-        set_value: function(record, field) {
+        set_value: function() {
             // avoid modification because different encoding
             var value = this.get_encoded_value();
+            var record = this.record();
+            var field = this.field();
             var previous = field.get_client(record);
             if (previous && Sao.common.compare(
                 value, this.encoder.encode(this.decoder.decode(previous)))) {
@@ -5043,9 +5078,8 @@ function eval_pyson(value){
             }
             field.set_client(record, value);
         },
-        get_client_value: function(record, field) {
-            var value = Sao.View.Form.PYSON._super.get_client_value.call(
-                    this, record, field);
+        get_client_value: function() {
+            var value = Sao.View.Form.PYSON._super.get_client_value.call(this);
             if (value) {
                 value = Sao.PYSON.toString(this.decoder.decode(value));
             }
