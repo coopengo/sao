@@ -49,10 +49,6 @@
                 this.login = login;
                 this.user_id = result[0];
                 this.session = result[1];
-                // AKE: save session to localStorage on login
-                // MAB: Save has been kept but we might not need it anymore
-                this.save();
-
                 this.store();
                 dfd.resolve();
             }.bind(this), function() {
@@ -90,8 +86,6 @@
             if (Sao.Session.current_session === this) {
                 Sao.Session.current_session = null;
             }
-            // AKE: drop session from localStorage on logout
-            this.drop();
             return prm;
         },
         reload_context: function() {
@@ -99,10 +93,6 @@
                 'method': 'model.res.user.get_preferences',
                 'params': [true, {}]
             };
-            // AKE: avoid cloning session, it will be changed anyway
-            // MAB: We might not need it anymore
-            delete this.context;
-
             this.context = {
                 client: Sao.Bus.id,
             };
@@ -124,30 +114,6 @@
             localStorage.removeItem('sao_session_' + this.database);
         },
     });
-
-    // AKE: method to load session from localStorage
-    Sao.Session.prototype.load = function () {
-      var session = window.localStorage.getItem('tryton-session');
-      if (session) {
-          jQuery.extend(this, JSON.parse(session));
-          return true;
-      }
-    };
-
-    // AKE: method to save session to localStorage
-    Sao.Session.prototype.save = function () {
-      window.localStorage.setItem('tryton-session', JSON.stringify({
-        database: this.database,
-        login: this.login,
-        user_id: this.user_id,
-        session: this.session
-      }));
-    };
-
-    // AKE: method to drop session from localStorage
-    Sao.Session.prototype.drop = function() {
-      window.localStorage.removeItem('tryton-session');
-    };
 
     Sao.Session.login_dialog = function() {
         var dialog = new Sao.Dialog(Sao.i18n.gettext('Login'), 'lg');
@@ -193,12 +159,13 @@
                 /^(#(!|))/, '').split('/', 1)[0] || null;
         };
         var dfd = jQuery.Deferred();
-        // AKE: try to load session from localStorage before launching login
-        var session = Sao.Session.current_session || new Sao.Session();
-        if (session.load()) {
-            return dfd.resolve(session);
-        }
         var database = database_url();
+
+        var session = new Sao.Session(database, null);
+        if (session.session) {
+            dfd.resolve(session);
+            return dfd;
+        }
         var dialog = Sao.Session.login_dialog();
 
         var empty_field = function() {
@@ -278,10 +245,6 @@
         }
         var dfd = jQuery.Deferred();
         session.prm = dfd.promise();
-        // AKE: drop session from localStorage on renew
-        // MAB: Not sure we still need this
-        session.drop();
-
         session.do_login(session.login).then(dfd.resolve, function() {
             Sao.logout();
             dfd.reject();
