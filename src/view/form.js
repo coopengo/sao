@@ -1417,9 +1417,8 @@ function eval_pyson(value){
     // [Coog] widget Source (engine)
     Sao.View.Form.Source = Sao.class_(Sao.View.Form.Widget, {
         class_: 'form-source',
-        init: function(field_name, model, attributes) {
-            Sao.View.Form.Source._super.init.call(this, field_name, model,
-                attributes);
+        init: function(view, attributes) {
+            Sao.View.Form.Source._super.init.call(this, view, attributes);
             this.el = jQuery('<div/>', {
                 'class': this.class_
             });
@@ -1540,8 +1539,8 @@ function eval_pyson(value){
                 'height': '490px'
             });
         },
-        display: function(record, field){
-            Sao.View.Form.Source._super.display.call(this, record, field);
+        display: function(){
+            Sao.View.Form.Source._super.display.call(this);
 
             var display_code = function(str){
                 this.codeMirror.setValue(str);
@@ -1552,7 +1551,7 @@ function eval_pyson(value){
 
             var display_tree = function(){
                 var tree_data, json_data;
-                json_data = record.field_get_client(this.tree_data_field);
+                json_data = this.record.field_get_client(this.tree_data_field);
                 if (json_data){
                     if (json_data != this.json_data){
                         this.clear_tree();
@@ -1566,22 +1565,22 @@ function eval_pyson(value){
                 }
             }.bind(this);
 
-            if (!field || !record) {
+            if (!this.field || !this.record) {
                 this.codeMirror.setValue('');
                 this.clear_tree();
                 return;
             }
 
-            var value = field.get_client(record);
+            var value = this.field.get_client(this.record);
             if (value != this.value){
                 this.value = value;
                 display_code(this.value);
             }
 
             if (this.tree_data_field){
-                if (!record)
+                if (!this.record)
                     return;
-                record.load(this.tree_data_field).then(display_tree);
+                this.record.load(this.tree_data_field).then(display_tree);
             }
         },
         append_tree_element: function(parent, element, good_text, iter_lvl){
@@ -1618,8 +1617,8 @@ function eval_pyson(value){
                     this.populate_tree(element.children, iter_lvl + 1, new_iter);
             }
         },
-        set_value: function(record, field){
-            field.set_client(record, this.codeMirror.getValue());
+        set_value: function(){
+            this.field.set_client(this.record, this.codeMirror.getValue());
         },
         set_readonly: function(readonly) {
             if (readonly) {
