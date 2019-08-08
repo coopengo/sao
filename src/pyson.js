@@ -651,7 +651,8 @@
                 delta_days);
     };
     Sao.PYSON.Date = Sao.class_(Sao.PYSON.PYSON, {
-        init: function(year, month, day, delta_years, delta_months, delta_days)
+        init: function(
+            year, month, day, delta_years, delta_months, delta_days, start)
         {
             Sao.PYSON.Date._super.init.call(this);
             if (year === undefined) year = null;
@@ -674,6 +675,7 @@
             this._delta_years = delta_years;
             this._delta_months = delta_months;
             this._delta_days = delta_days;
+            this._start = start || null;
         },
         pyson: function() {
             return {
@@ -683,7 +685,8 @@
                 'd': this._day,
                 'dy': this._delta_years,
                 'dM': this._delta_months,
-                'dd': this._delta_days
+                'dd': this._delta_days,
+                'start': this._start,
             };
         },
         types: function() {
@@ -703,19 +706,29 @@
         },
         __string_params__: function() {
             return [this._year, this._month, this._day, this._delta_years,
-                this._delta_months, this._delta_days];
+                this._delta_months, this._delta_days, this._start];
         }
     });
 
     Sao.PYSON.Date.eval_ = function(value, context) {
-        var date = Sao.Date(value.y, value.M && value.M - 1, value.d);
+        var date = value.start;
+        if (date && date.isDateTime) {
+            date = Sao.Date(date.year(), date.month(), date.date());
+        }
+        if (!date || !date.isDate) {
+            date = Sao.Date();
+        }
+        if (value.y) date.year(value.y);
+        if (value.M) date.month(value.M - 1);
+        if (value.d) date.date(value.d);
         if (value.dy) date.add(value.dy, 'y');
         if (value.dM) date.add(value.dM, 'M');
         if (value.dd) date.add(value.dd, 'd');
         return date;
     };
     Sao.PYSON.Date.init_from_object = function(obj) {
-        return new Sao.PYSON.Date(obj.y, obj.M, obj.d, obj.dy, obj.dM, obj.dd);
+        return new Sao.PYSON.Date(
+            obj.y, obj.M, obj.d, obj.dy, obj.dM, obj.dd, obj.start);
     };
 
     Sao.PYSON.eval.DateTime = function(year, month, day, hour, minute, second,
@@ -728,9 +741,9 @@
     Sao.PYSON.DateTime = Sao.class_(Sao.PYSON.Date, {
         init: function(year, month, day, hour, minute, second, microsecond,
                   delta_years, delta_months, delta_days, delta_hours,
-                  delta_minutes, delta_seconds, delta_microseconds) {
+                  delta_minutes, delta_seconds, delta_microseconds, start) {
             Sao.PYSON.DateTime._super.init.call(this, year, month, day,
-                delta_years, delta_months, delta_days);
+                delta_years, delta_months, delta_days, start);
             if (hour === undefined) hour = null;
             if (minute === undefined) minute = null;
             if (second === undefined) second = null;
@@ -778,13 +791,26 @@
                 this._hour, this._minute, this._second, this._microsecond,
                 date_params[3], date_params[4], date_params[5],
                 this._delta_hours, this._delta_minutes, this._delta_seconds,
-                this._delta_microseconds];
+                this._delta_microseconds, date_params[6]];
         }
     });
 
     Sao.PYSON.DateTime.eval_ = function(value, context) {
-        var date = Sao.DateTime(value.y, value.M && value.M - 1, value.d,
-                value.h, value.m, value.s, value.ms && value.ms / 1000, true);
+        var date = value.start;
+        if (date && date.isDate) {
+            date = Sao.DateTime.combine(date, Sao.Time());
+        }
+        if (!date || !date.isDateTime) {
+            date = Sao.DateTime();
+            date.utc();
+        }
+        if (value.y) date.year(value.y);
+        if (value.M) date.month(value.M - 1);
+        if (value.d) date.date(value.d);
+        if (value.h !== null) date.hour(value.h);
+        if (value.m !== null) date.minute(value.m);
+        if (value.s !== null) date.second(value.s);
+        if (value.ms !== null) date.milliseconds(value.ms / 1000);
         if (value.dy) date.add(value.dy, 'y');
         if (value.dM) date.add(value.dM, 'M');
         if (value.dd) date.add(value.dd, 'd');
