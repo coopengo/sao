@@ -146,7 +146,7 @@ var Sao = {};
         return date;
     };
 
-    Sao.Date.min = moment(new Date(-100000000 * 86400000));
+    Sao.Date.min = moment(new Date((-100000000 + 1) * 86400000));
     Sao.Date.min.set({hour: 0, minute: 0, second: 0, millisecond: 0});
     Sao.Date.min.isDate = true;
     Sao.Date.max = moment(new Date(100000000 * 86400000));
