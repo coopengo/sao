@@ -140,7 +140,6 @@
                 this.state = state;
                 this.process();
             }.bind(this));
-            this.show();
         },
         _get_button: function(definition) {
             var button = new Sao.common.Button(definition);
