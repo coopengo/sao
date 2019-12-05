@@ -32,6 +32,7 @@ pack() {
         && move_res bower_components/codemirror/lib/codemirror.js \
         && move_res bower_components/fullcalendar/dist/fullcalendar.min.css \
         && rm dist/tryton-sao.js dist/tryton-sao.css dist/coog-sao.css \
+        && sed -i "s;\.\./fonts;fonts;g" dist/bootstrap.min.css \
         && sed -i "s;dist/tryton-sao.js;tryton-sao.js;g" dist/index.html \
         && sed -i "s;dist/tryton-sao.min.js;tryton-sao.min.js;g" dist/index.html \
         && sed -i "s;dist/tryton-sao.css;tryton-sao.css;g" dist/index.html \
