@@ -49,6 +49,8 @@ echo
   font-display: auto;
   }
 " >> dist/coog-sao.min.css
+
+return 0
 }
 
 
