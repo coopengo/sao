@@ -41,4 +41,4 @@ pack() {
         && sed -i "s;dist/coog-sao.min.css;coog-sao.min.css;g" dist/index.html
 }
 
-yarn && grunt && pack && override
+yarn && grunt && pack
