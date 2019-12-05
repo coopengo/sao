@@ -40,4 +40,16 @@ pack() {
         && sed -i "s;dist/coog-sao.min.css;coog-sao.min.css;g" dist/index.html
 }
 
-yarn && grunt && pack
+override() {
+echo 
+"
+@font-face {
+  font-family: \"Glyphicons Halflings\";
+  src: url(\"/sao/fonts/glyphicons-halflings-regular.woff2\");
+  font-display: auto;
+  }
+" >> dist/coog-sao.min.css
+}
+
+
+yarn && grunt && pack && override
