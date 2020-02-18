@@ -2511,6 +2511,10 @@
                 record._values[this.name][1] >= -1) {
                 return record._values[this.name].join(',');
             }
+            // JMO: temporary fix for #14945
+            if (typeof record._values[this.name] === 'string') {
+              return record._values[this.name];
+            }
             return null;
         },
         set_client: function(record, value, force_change) {
