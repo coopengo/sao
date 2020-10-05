@@ -3282,9 +3282,10 @@
                 'title': Sao.i18n.gettext("Yes"),
             }).text(Sao.i18n.gettext('Yes')).click(() => {
                 this.close(dialog);
-                if (always.prop('checked')) {
-                    prm.resolve('always');
-                }
+                // Coog specific : always is not displayed cf bug #9035
+                // if (always.prop('checked')) {
+                //     prm.resolve('always');
+                // }
                 prm.resolve('ok');
             }).appendTo(dialog.footer);
             return dialog;
