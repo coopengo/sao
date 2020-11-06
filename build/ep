@@ -24,6 +24,7 @@ pack() {
         && move_res bower_components/papaparse/papaparse.min.js \
         && move_res bower_components/fullcalendar/dist/fullcalendar.min.js \
         && move_res bower_components/fullcalendar/dist/locale-all.js \
+        && move_res bower_components/Sortable/Sortable.js \
         && move_res bower_components/mousetrap/mousetrap.min.js \
         && move_res bower_components/bootstrap/dist/css/bootstrap.min.css \
         && move_res bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css \
