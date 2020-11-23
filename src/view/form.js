@@ -5773,7 +5773,7 @@ function eval_pyson(value){
             }
             this.input.attr('step', step);
             Sao.View.Form.Dict.Float._super.set_value.call(this, value, options);
-        },
+        }
     });
 
     Sao.View.Form.Dict.Numeric = Sao.class_(Sao.View.Form.Dict.Float, {
