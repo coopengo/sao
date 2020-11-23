@@ -32,6 +32,7 @@ module.exports = function(grunt) {
       'bower_components/bootstrap',
       'bower_components/bootstrap/less',
       'bower_components/bootstrap-rtl-ondemand/less',
+      'theme/coog',
   ];
 
   // Project configuration.
@@ -130,7 +131,8 @@ module.exports = function(grunt) {
             tasks: ['concat', 'jshint']
         },
         styles: {
-            files: ['src/*.less'],
+            files: ['src/*.less', 'theme/coog/*.less',
+                'theme/coog/elements/*.less'],
             tasks: 'less:dev'
         }
     },
