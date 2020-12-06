@@ -1875,8 +1875,9 @@
                 if (digits) {
                     // Round to avoid float precision error
                     // after the division by factor
-                    value = this.convert(value.toFixed(digits[1]));
+                    value = value.toFixed(digits[1]);
                 }
+                value = this.convert(value);
             }
             return value;
         },
