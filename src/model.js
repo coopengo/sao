@@ -2271,6 +2271,24 @@
             }
 
             if (value.add || value.update) {
+                if (value.update) {
+                    value.update.forEach(function(vals) {
+                        if (!vals.id) {
+                            return;
+                        }
+                        var loaded_vals = {};
+                        for (var key in vals) {
+                            if (!(key in field_names)) {
+                                loaded_vals[key] = vals[key];
+                            }
+                        }
+                        var record2 = group.get(vals.id);
+                        if (record2) {
+                            record2.set_on_change(loaded_vals);
+                        }
+                    });
+                }
+
                 group.add_fields(fields);
                 if (value.add) {
                     value.add.forEach(function(vals) {
