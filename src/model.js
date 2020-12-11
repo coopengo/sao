@@ -2271,20 +2271,22 @@
             }
 
             if (value.add || value.update) {
+                // First set already added fields to prevent triggering a
+                // second on_change call
                 if (value.update) {
                     value.update.forEach(function(vals) {
                         if (!vals.id) {
                             return;
                         }
-                        var loaded_vals = {};
+                        var vals_to_set = {};
                         for (var key in vals) {
                             if (!(key in field_names)) {
-                                loaded_vals[key] = vals[key];
+                                vals_to_set[key] = vals[key];
                             }
                         }
                         var record2 = group.get(vals.id);
                         if (record2) {
-                            record2.set_on_change(loaded_vals);
+                            record2.set_on_change(vals_to_set);
                         }
                     });
                 }
