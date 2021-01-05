@@ -5300,7 +5300,7 @@ function eval_pyson(value){
         },
         set_readonly: function(readonly) {
             Sao.View.Form.Dict.Float._super.set_readonly.call(this, readonly);
-            this.input_text.prop('disabled', readonly);
+            this.input_text.prop('readonly', readonly);
         }
     });
 
