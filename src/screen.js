@@ -1128,7 +1128,12 @@
                 this.screen_container.get_text(), false, false);
             this.screen_container.tab_domain.forEach(function(tab_domain, i) {
                 if (tab_domain[2]) {
-                    var domain = ['AND', tab_domain[1], screen_domain];
+                    var ctx = tab_domain[1][0];
+                    var t_domain = tab_domain[1][1];
+                    var decoder = new Sao.PYSON.Decoder(ctx);
+
+                    var domain = ['AND', decoder.decode(t_domain),
+                        screen_domain];
                     this.screen_container.set_tab_counter(null, i);
                     this.group.model.execute(
                         'search_count', [domain], this.context)
