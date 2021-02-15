@@ -89,7 +89,7 @@
                 // [Coog Specific] handle extra_context
                 ctx = jQuery.extend(ctx, data.extra_context || {});
 
-                ctx.context = ctx;
+                ctx.context = Sao.common.clone(ctx);
                 decoder = new Sao.PYSON.Decoder(ctx);
                 params.domain = decoder.decode(action.pyson_domain);
                 params.order = decoder.decode(action.pyson_order);
