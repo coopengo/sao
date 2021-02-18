@@ -2236,8 +2236,7 @@
             return this.set(record, value, true);
         },
         set_on_change: function(record, value) {
-            var fields;
-            record.load(this.name);
+            var fields, new_fields;
             record._changed[this.name] = true;
             if (value instanceof Array) {
                 return this._set_value(record, value, false, true);
