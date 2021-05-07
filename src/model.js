@@ -2678,10 +2678,6 @@
             var batchlen = Math.min(10, Sao.config.limit);
 
             keys = jQuery.extend([], keys);
-            var get_keys = function(key_ids) {
-                return this.schema_model.execute('get_keys',
-                        [key_ids], context).then(update_keys);
-            }.bind(this);
             var update_keys = function(values) {
                 for (var i = 0, len = values.length; i < len; i++) {
                     var k = values[i];
@@ -2692,24 +2688,26 @@
             var prms = [];
             while (keys.length > 0) {
                 var sub_keys = keys.splice(0, batchlen);
-                prms.push(this.schema_model.execute('search',
+                prms.push(this.schema_model.execute('search_get_keys',
                             [[['name', 'in', sub_keys], domain],
-                            0, Sao.config.limit, null], context)
-                        .then(get_keys));
+                                Sao.config.limit],
+                            context)
+                        .then(update_keys));
             }
             return jQuery.when.apply(jQuery, prms);
         },
         add_new_keys: function(ids, record) {
             var context = this.get_context(record);
-            return this.schema_model.execute('get_keys', [ids], context)
-                .then(function(new_fields) {
-                    var names = [];
-                    new_fields.forEach(function(new_field) {
-                        this.keys[new_field.name] = new_field;
-                        names.push(new_field.name);
+            return this.schema_model.execute(
+                'search_get_keys', [[['id', 'in', ids]]], context).then(
+                    function(new_fields) {
+                        var names = [];
+                        new_fields.forEach(function(new_field) {
+                            this.keys[new_field.name] = new_field;
+                            names.push(new_field.name);
+                        }.bind(this));
+                        return names;
                     }.bind(this));
-                    return names;
-                }.bind(this));
         },
         validate: function(record, softvalidation, pre_validate) {
             var valid = Sao.field.Dict._super.validate.call(
