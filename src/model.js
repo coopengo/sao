@@ -689,6 +689,10 @@
                 var fdescription = this.model.fields[fname].description;
                 if (~rec_named_fields.indexOf(fdescription.type))
                     fnames_to_fetch.push(fname + '.rec_name');
+                if ((fdescription.type == 'selection') &&
+                        ((fdescription.loading || 'eager') == 'eager')) {
+                    fnames_to_fetch.push(fname + '.string');
+                }
             }
             if (!~fnames.indexOf('rec_name')) {
                 fnames_to_fetch.push('rec_name');
@@ -832,7 +836,8 @@
                     later[name] = value;
                 }
                 if ((this.model.fields[name] instanceof Sao.field.Many2One) ||
-                        (this.model.fields[name] instanceof Sao.field.Reference)) {
+                        (this.model.fields[name] instanceof Sao.field.Reference) ||
+                        (this.model.fields[name] instanceof Sao.field.Selection)) {
                     var related = name + '.';
                     this._values[related] = values[related] || {};
                 }

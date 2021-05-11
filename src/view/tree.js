@@ -2173,8 +2173,10 @@
         init: function(model, attributes) {
             Sao.View.Tree.SelectionColumn._super.init.call(this, model,
                 attributes);
-            Sao.common.selection_mixin.init.call(this);
-            this.init_selection();
+            if (this.tree && this.tree.editable) {
+                Sao.common.selection_mixin.init.call(this);
+                this.init_selection();
+            }
         },
         init_selection: function(key) {
             Sao.common.selection_mixin.init_selection.call(this, key);
@@ -2184,28 +2186,33 @@
                 this.field, callback);
         },
         update_text: function(cell, record) {
-            this.update_selection(record, function() {
-                var value = this.field.get(record);
-                var prm, text, found = false;
-                for (var i = 0, len = this.selection.length; i < len; i++) {
-                    if (this.selection[i][0] === value) {
-                        found = true;
-                        text = this.selection[i][1];
-                        break;
+            if (record._values[this.field.name + '.']) {
+                var text_value = record._values[this.field.name + '.'].string;
+                cell.text(text_value);
+            } else {
+                this.update_selection(record, function() {
+                    var value = this.field.get(record);
+                    var prm, text, found = false;
+                    for (var i = 0, len = this.selection.length; i < len; i++) {
+                        if (this.selection[i][0] === value) {
+                            found = true;
+                            text = this.selection[i][1];
+                            break;
+                        }
                     }
-                }
-                if (!found) {
-                    prm = Sao.common.selection_mixin.get_inactive_selection
-                        .call(this, value).then(function(inactive) {
-                            return inactive[1];
-                        });
-                } else {
-                    prm = jQuery.when(text);
-                }
-                prm.done(function(text_value) {
-                    cell.text(text_value).attr('title', text_value);
+                    if (!found) {
+                        prm = Sao.common.selection_mixin.get_inactive_selection
+                            .call(this, value).then(function(inactive) {
+                                return inactive[1];
+                            });
+                    } else {
+                        prm = jQuery.when(text);
+                    }
+                    prm.done(function(text_value) {
+                        cell.text(text_value).attr('title', text_value);
+                    }.bind(this));
                 }.bind(this));
-            }.bind(this));
+            }
         }
     });
 
