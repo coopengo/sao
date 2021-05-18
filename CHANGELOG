@@ -1,18 +1,4 @@
-* Display the number of selected records
-* Humanize the count result
-* Add limit to search_count
-
-Version 6.0.4 - 2021-08-05
-* Bug fixes (see mercurial logs for details)
-
-Version 6.0.3 - 2021-07-21
-* Bug fixes (see mercurial logs for details)
-
-Version 6.0.2 - 2021-07-01
-* Bug fixes (see mercurial logs for details)
-
-Version 6.0.1 - 2021-06-17
-* Bug fixes (see mercurial logs for details)
+* Support Binary field in CSV import/export
 
 Version 6.0.0 - 2021-05-03
 * Bug fixes (see mercurial logs for details)
