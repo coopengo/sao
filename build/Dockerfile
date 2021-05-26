@@ -1,4 +1,4 @@
-from node:8-alpine
+from node:15-alpine
 
 RUN addgroup -S -g 1306 coog && adduser -S -u 1306 -G coog coog \
     && apk add --no-cache git \
