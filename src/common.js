@@ -861,6 +861,9 @@
                         'class': 'badge'
                     }));
                 }
+                this.el.attr(
+                    'accesskey',
+                    Sao.common.accesskey(attributes.string || ''));
             }
             this.icon = this.el.children('img');
             if (!this.icon.length) {
@@ -3933,6 +3936,16 @@
         }
         var ellipsis = Sao.i18n.gettext('...');
         return string.slice(0, length - ellipsis.length) + ellipsis;
+    };
+
+    Sao.common.accesskey = function(string) {
+        for (var i=0; i < string.length; i++) {
+            var c = string.charAt(i).toLowerCase();
+            // Skip sao and browser shortcuts
+            if (!~['d', 'e', 'f', 'i', 'n', 't', 'w'].indexOf(c)) {
+                return c;
+            }
+        }
     };
 
     Sao.common.debounce = function(func, wait) {
