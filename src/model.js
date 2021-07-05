@@ -1730,6 +1730,12 @@
 
     Sao.field.Char = Sao.class_(Sao.field.Field, {
         _default: '',
+        set: function(record, value) {
+            if (this.description.strip) {
+                value = value.trim();
+            }
+            Sao.field.Char._super.get.call(this, record, value);
+        },
         get: function(record) {
             return Sao.field.Char._super.get.call(this, record) || this._default;
         }
