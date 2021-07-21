@@ -2020,7 +2020,8 @@ function eval_pyson(value){
             mousetrap.bind('=', function(e, combo) {
                 if (!this.date.prop('readonly')) {
                     e.preventDefault();
-                    this.date.val(this._format(this.get_format(), moment()));
+                    this.date.val(this._format(this.get_format(), moment()))
+                        .change();
                 }
             }.bind(this));
 
@@ -2032,7 +2033,8 @@ function eval_pyson(value){
                     e.preventDefault();
                     var date = this.get_value() || Sao.DateTime();
                     date.add(operator[1]);
-                    this.date.val(this._format(this.get_format(), date));
+                    this.date.val(this._format(this.get_format(), date))
+                        .change();
                 }.bind(this));
             }.bind(this));
         },
@@ -5554,11 +5556,11 @@ function eval_pyson(value){
             mousetrap.bind('enter', function(e, combo) {
                 var value = this._parse(this.format, this.input.val());
                 value = this._format(this.format, value);
-                this.input.val(value);
+                this.input.val(value).change();
             }.bind(this));
             mousetrap.bind('=', function(e, combo) {
                 e.preventDefault();
-                this.input.val(this._format(this.format, moment()));
+                this.input.val(this._format(this.format, moment())).change();
             }.bind(this));
 
             Sao.common.DATE_OPERATORS.forEach(function(operator) {
@@ -5566,7 +5568,7 @@ function eval_pyson(value){
                     e.preventDefault();
                     var date = this.get_value() || Sao.DateTime();
                     date.add(operator[1]);
-                    this.input.val(this._format(this.format, date));
+                    this.input.val(this._format(this.format, date)).change();
                 }.bind(this));
             }.bind(this));
         },
