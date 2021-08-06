@@ -26,11 +26,22 @@
             return false;
         }
         for (var i = 0; i < arr1.length; i++) {
-            if (arr1[i] instanceof Array && arr2[i] instanceof Array) {
-                if (!Sao.common.compare(arr1[i], arr2[i])) {
+            var a = arr1[i], b = arr2[i];
+            if ((a instanceof Array) && (b instanceof Array)) {
+                if (!Sao.common.compare(a, b)) {
                     return false;
                 }
-            } else if (arr1[i] != arr2[i]) {
+            } else if (moment.isMoment(a) && moment.isMoment(b)) {
+                if ((a.isDate != b.isDate) &&
+                    (a.isDateTime != b.isDateTime) &&
+                    (a.valueOf() != b.valueOf())) {
+                    return false;
+                }
+            } else if ((a instanceof Number) || (b instanceof Number)) {
+                if (Number(a) !== Number(b)) {
+                    return false;
+                }
+            } else if (a != b) {
                 return false;
             }
         }
@@ -118,7 +129,7 @@
         }
         var prm = jQuery.Deferred();
         if (jQuery.isEmptyObject(values)) {
-            prm.fail();
+            prm.reject();
             return prm;
         }
         var keys = Object.keys(values).sort();
@@ -133,7 +144,7 @@
 
         keys.forEach(function(k, i) {
             jQuery('<div/>', {
-                'class': 'checkbox'
+                'class': 'radio'
             }).append(jQuery('<label/>')
                 .text(' ' + k)
                 .prepend(jQuery('<input/>', {
@@ -150,7 +161,7 @@
             'type': 'button'
         }).text(Sao.i18n.gettext('Cancel')).click(function() {
             dialog.modal.modal('hide');
-            prm.fail();
+            prm.reject();
         }).appendTo(dialog.footer);
         jQuery('<button/>', {
             'class': 'btn btn-primary',
@@ -269,17 +280,15 @@
         return date;
     };
 
-    Sao.common.format_datetime = function(date_format, time_format, date) {
+    Sao.common.format_datetime = function(datetime_format, date) {
         if (!date) {
             return '';
         }
-        return date.format(
-                Sao.common.moment_format(date_format + ' ' + time_format));
+        return date.format(Sao.common.moment_format(datetime_format));
     };
 
-    Sao.common.parse_datetime = function(date_format, time_format, value) {
-        var date = moment(value,
-                Sao.common.moment_format(date_format + ' ' + time_format));
+    Sao.common.parse_datetime = function(datetime_format, value) {
+        var date = moment(value, Sao.common.moment_format(datetime_format));
         if (date.isValid()) {
             date = Sao.DateTime(date.year(), date.month(), date.date(),
                     date.hour(), date.minute(), date.second(),
@@ -331,20 +340,22 @@
             sign = '-';
         }
         value = Math.abs(value);
-        converter = Object.keys(converter).map(function(key) {
-            return [key, converter[key]];
-        });
-        converter.sort(function(first, second) {
-            return second[1] - first[1];
-        });
+        converter = Object.keys(
+            Sao.common.timedelta._get_separator()).map(function(key) {
+                return [key, converter[key]];
+            });
         var values = [];
         var k, v;
         for (var i = 0; i < converter.length; i++) {
             k = converter[i][0];
             v = converter[i][1];
-            var part = Math.floor(value / v);
-            value -= part * v;
-            values.push(part);
+            if (v) {
+                var part = Math.floor(value / v);
+                value -= part * v;
+                values.push(part);
+            } else {
+                values.push(0);
+            }
         }
         for (i = 0; i < converter.length - 3; i++) {
             k = converter[i][0];
@@ -496,6 +507,28 @@
     });
     Sao.common.MODELHISTORY = new Sao.common.ModelHistory();
 
+    Sao.common.ModelName = Sao.class_(Object, {
+        init: function() {
+            this._names = {};
+        },
+        load_names: function() {
+            this._names = Sao.rpc({
+                'method':'model.ir.model.get_names',
+                'params': [{}],
+            }, Sao.Session.current_session, false);
+        },
+        get: function(model) {
+            if (jQuery.isEmptyObject(this._names)) {
+                this.load_names();
+            }
+            return this._names[model] || '';
+        },
+        clear: function() {
+            this._names = {};
+        },
+    });
+    Sao.common.MODELNAME = new Sao.common.ModelName();
+
     Sao.common.ViewSearch = Sao.class_(Object, {
         init: function() {
             this.encoder = new Sao.PYSON.Encoder();
@@ -525,7 +558,7 @@
                 if (this.searches[model] === undefined) {
                     this.searches[model] = [];
                 }
-                this.searches[model].push([id, name, domain]);
+                this.searches[model].push([id, name, domain, true]);
             }.bind(this));
         },
         remove: function(model, id) {
@@ -590,6 +623,7 @@
     Sao.common.selection_mixin = {};
     Sao.common.selection_mixin.init = function() {
         this.selection = null;
+        this.help = null;
         this.inactive_selection = [];
         this._last_domain = null;
         this._values2selection = {};
@@ -607,6 +641,7 @@
         }
         var key = JSON.stringify(value);
         var selection = this.attributes.selection || [];
+        var help = this.attributes.help_selection || {};
         var prm;
         var prepare_selection = function(selection) {
             selection = jQuery.extend([], selection);
@@ -616,7 +651,8 @@
                 });
             }
             this.selection = jQuery.extend([], selection);
-            if (callback) callback(this.selection);
+            this.help = this.attributes.help_selection || {};
+            if (callback) callback(this.selection, this.help);
         };
         if (!(selection instanceof Array) &&
                 !(key in this._values2selection)) {
@@ -645,7 +681,7 @@
         var _update_selection = function() {
             if (!field) {
                 if (callback) {
-                    callback(this.selection);
+                    callback(this.selection, this.help);
                 }
                 return;
             }
@@ -659,7 +695,7 @@
                             Sao.common.selection_mixin.filter_selection.call(
                                     this, domain, record, field);
                             if (callback) {
-                                callback(this.selection);
+                                callback(this.selection, this.help);
                             }
                         }.bind(this));
             } else {
@@ -674,14 +710,19 @@
                         (JSON.stringify(context) ==
                          JSON.stringify(this._last_domain[1]))) {
                     if (callback) {
-                        callback(this.selection);
+                        callback(this.selection, this.help);
                     }
                     return;
+                }
+                var fields = ['rec_name'];
+                var help_field = this.attributes.help_field;
+                if (help_field) {
+                    fields.push(help_field);
                 }
                 var prm = Sao.rpc({
                     'method': 'model.' + this.attributes.relation +
                         '.search_read',
-                    'params': [domain, 0, null, null, ['rec_name'], context]
+                    'params': [domain, 0, null, null, fields, context]
                 }, record.model.session);
                 prm.done(function(result) {
                     var selection = [];
@@ -691,18 +732,25 @@
                     if (this.nullable_widget) {
                         selection.push([null, '']);
                     }
+                    var help = {};
+                    if (help_field){
+                        result.forEach(function(x) {
+                            help[x.id] = x[help_field];
+                        });
+                    }
                     this._last_domain = [domain, context];
                     this._domain_cache[jdomain] = selection;
                     this.selection = jQuery.extend([], selection);
+                    this.help = help;
                     if (callback) {
-                        callback(this.selection);
+                        callback(this.selection, this.help);
                     }
                 }.bind(this));
                 prm.fail(function() {
                     this._last_domain = null;
                     this.selection = [];
                     if (callback) {
-                        callback(this.selection);
+                        callback(this.selection, this.help);
                     }
                 }.bind(this));
             }
@@ -759,13 +807,14 @@
     };
 
     Sao.common.Button = Sao.class_(Object, {
-        init: function(attributes, el, size) {
+        init: function(attributes, el, size, style) {
             this.attributes = attributes;
             if (el) {
                 this.el = el;
             } else {
                 this.el = jQuery('<button/>', {
                     title: attributes.string || '',
+                    name: attributes.name || '',
                 });
                 this.el.text(attributes.string || '');
                 if (this.attributes.rule) {
@@ -781,7 +830,8 @@
                 }).prependTo(this.el);
                 this.icon.hide();
             }
-            this.el.addClass('btn btn-default ' + (size || ''));
+            this.el.addClass(
+                ['btn', (style || 'btn-default'), (size || '')].join(' '));
             this.el.attr('type', 'button');
             this.icon.attr('aria-hidden', true);
             this.set_icon(attributes.icon);
@@ -1779,12 +1829,15 @@
             }.bind(this));
             return result;
         },
-        likify: function(value) {
+        likify: function(value, escape) {
+            escape = escape || '\\';
             if (!value) {
                 return '%';
             }
-            var escaped = value.replace('%%', '__');
-            if (escaped.contains('%')) {
+            var escaped = value
+                .replace(escape + '%', '')
+                .replace(escape + '_', '');
+            if (escaped.contains('%') || escaped.contains('_')) {
                 return value;
             } else {
                 return '%' + value + '%';
@@ -1915,9 +1968,8 @@
                 'reference': convert_selection,
                 'datetime': function() {
                     var result = Sao.common.parse_datetime(
-                            Sao.common.date_format(context.date_format),
-                            this.time_format(field),
-                            value);
+                        Sao.common.date_format(context.date_format) + ' ' +
+                        this.time_format(field), value);
                     return result;
                 }.bind(this),
                 'date': function() {
@@ -1966,20 +2018,25 @@
                 if (!value && value !== 0 && value !== new Sao.Decimal(0)) {
                     return '';
                 }
+                var digit = 0;
                 var factor = Number(field.factor || 1);
-                var digit = String(value * factor)
-                    .replace(/0+$/, '').split('.')[1];
-                if (digit) {
-                    digit = digit.length;
-                } else {
-                    digit = 0;
+                var string = String(value * factor);
+                if (string.contains('e')) {
+                    var exp = string.split('e')[1];
+                    string = string.split('e')[0];
+                    digit -= parseInt(exp);
+                }
+                if (string.contains('.')) {
+                    digit += string.replace(/0+$/, '').split('.')[1].length;
                 }
                 return (value * factor).toFixed(digit);
             };
             var format_selection = function() {
-                for (var i = 0; i < field.selection.length; i++) {
-                    if (field.selection[i][0] == value) {
-                        return field.selection[i][1];
+                if (field.selection instanceof Array) {
+                    for (var i = 0; i < field.selection.length; i++) {
+                        if (field.selection[i][0] == value) {
+                            return field.selection[i][1];
+                        }
                     }
                 }
                 return value || '';
@@ -2034,9 +2091,8 @@
                                 value);
                     }
                     return Sao.common.format_datetime(
-                            Sao.common.date_format(context.date_format),
-                            this.time_format(field),
-                            value);
+                        Sao.common.date_format(context.date_format) + ' ' +
+                        this.time_format(field), value);
                 }.bind(this),
                 'date': function() {
                     return Sao.common.format_date(
@@ -2186,6 +2242,17 @@
                 return Boolean(context[field.split('.')[0]]);
             }
             var context_field = context[field];
+            if (!~['=', '!='].indexOf(operand) &&
+                ((context_field === null) ||
+                    (context_field === undefined) ||
+                    (value === null) ||
+                    (value === undefined)) &&
+                !(~['in', 'not in'].indexOf(operand) &&
+                    ((context_field === null) ||
+                        (context_field === undefined)) &&
+                    ((value instanceof Array) && ~value.indexOf(null)))) {
+                return;
+            }
             if ((context_field && context_field._isAMomentObject) && !value) {
                 if (context_field.isDateTime) {
                     value = Sao.DateTime.min;
@@ -2271,8 +2338,9 @@
             } else if (domain[0] == 'OR') {
                 return this.eval_domain(domain.slice(1), context, this.or);
             } else {
-                return boolop(this.eval_domain(domain[0], context),
-                        this.eval_domain(domain.slice(1), context, boolop));
+                return boolop(Boolean(this.eval_domain(domain[0], context)),
+                    Boolean(this.eval_domain(domain.slice(1), context, boolop))
+                );
             }
         },
         localize_domain: function(domain, field_name, strip_target) {
@@ -2729,24 +2797,41 @@
         }
     });
 
+    Sao.common.mimetypes = {
+        'csv': 'text/csv',
+        'doc': 'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'gif': 'image/gif',
+        'html': 'text/html',
+        'jpeg': 'image/jpeg',
+        'jpg': 'image/jpeg',
+        'mpeg': 'video/mpeg',
+        'mpg': 'video/mpeg',
+        'ods': 'application/vnd.oasis.opendocument.spreadsheet',
+        'odt': 'application/vnd.oasis.opendocument.text',
+        'ogg': 'audio/ogg',
+        'pdf': 'application/pdf',
+        'png': 'image/png',
+        'svg': 'image/svg+xml',
+        'text': 'text/plain',
+        'tif': 'image/tif',
+        'tiff': 'image/tif',
+        'txt': 'text/plain',
+        'webp': 'image/webp',
+        'xls': 'application/vnd.ms-excel',
+        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'xml': 'application/xml',
+        'xpm': 'image/x-xpixmap',
+    };
+
     Sao.common.guess_mimetype = function(filename) {
-        if (/.*odt$/.test(filename)) {
-            return 'application/vnd.oasis.opendocument.text';
-        } else if (/.*ods$/.test(filename)) {
-            return 'application/vnd.oasis.opendocument.spreadsheet';
-        } else if (/.*pdf$/.test(filename)) {
-            return 'application/pdf';
-        } else if (/.*docx$/.test(filename)) {
-            return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-        } else if (/.*doc/.test(filename)) {
-            return 'application/msword';
-        } else if (/.*xlsx$/.test(filename)) {
-            return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-        } else if (/.*xls/.test(filename)) {
-            return 'application/vnd.ms-excel';
-        } else {
-            return 'application/octet-binary';
+        for (var ext in Sao.common.mimetypes) {
+            var re = new RegExp('.*\.' + ext + '$', 'i');
+            if (re.test(filename)) {
+                return Sao.common.mimetypes[ext];
+            }
         }
+        return 'application/octet-binary';
     };
 
     Sao.common.LOCAL_ICONS = [
@@ -2790,10 +2875,12 @@
         'tryton-open',
         'tryton-print',
         'tryton-public',
+        'tryton-question',
         'tryton-refresh',
         'tryton-remove',
         'tryton-save',
         'tryton-search',
+        'tryton-send',
         'tryton-star-border',
         'tryton-star',
         'tryton-switch',
@@ -3052,7 +3139,7 @@
         build_dialog: function(message, title, prm) {
             var dialog = Sao.common.UserWarningDialog._super.build_dialog.call(
                 this, message, title, prm);
-            // Coog specific : do not display this warning cf bug #9035
+            // Coog specific : do not display this warning button cf bug #9035
             // var always = jQuery('<input/>', {
             //     'type': 'checkbox'
             // });
@@ -3060,7 +3147,7 @@
             //     'class': 'checkbox',
             // }).append(jQuery('<label/>')
             //     .append(always)
-            //     .append(Sao.i18n.gettext('Always ignore this warning.')))
+            //     .text(Sao.i18n.gettext('Always ignore this warning.')))
             // );
             dialog.body.append(jQuery('<p/>')
                     .text(Sao.i18n.gettext('Do you want to proceed?')));
@@ -3212,7 +3299,7 @@
                 ).removeClass('modal-sm').addClass('modal-lg');
             dialog.add_title(Sao.i18n.gettext('Concurrency Exception'));
             dialog.body.append(jQuery('<div/>', {
-                'class': 'alert alert-warning',
+                'class': 'alert alert-info',
                 role: 'alert'
             }).append(jQuery('<p/>')
                 .append(Sao.common.ICONFACTORY.get_icon_img('tryton-info', {
@@ -3282,7 +3369,7 @@
                 ).removeClass('modal-sm').addClass('modal-lg');
             dialog.add_title(Sao.i18n.gettext('Application Error'));
             dialog.body.append(jQuery('<div/>', {
-                'class': 'alert alert-warning',
+                'class': 'alert alert-danger',
                 role: 'alert'
             }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-error', {
                 'aria-hidden': true,
@@ -3319,10 +3406,16 @@
                 'id': 'processing',
                 'class': 'text-center'
             });
-            this.el.append(jQuery('<span/>', {
+            var label = jQuery('<span/>', {
                 'class': 'label label-info',
-                'text': Sao.i18n.gettext('Processing...')
-            }));
+                'text': Sao.i18n.gettext('Processing'),
+            }).appendTo(this.el);
+            for (var i = 0; i < 3; i ++) {
+                label.append(jQuery('<span/>', {
+                    'class': 'dot',
+                    'text': '.',
+                }));
+            }
             this.el.hide();
             jQuery(function() {
                 this.el.appendTo('body');
@@ -3347,6 +3440,30 @@
     });
     Sao.common.processing = new Sao.common.Processing();
 
+    Sao.common.set_overflow = function set_overflow(el, state) {
+        // We must set the overflow of the treeview and modal-body
+        // containing the input to visible to prevent vertical scrollbar
+        // inherited from the auto overflow-x
+        // Idem when in navbar collapse for the overflow-y
+        // (see http://www.w3.org/TR/css-overflow-3/#overflow-properties)
+        var overflow, height;
+        if (state == 'hide') {
+            overflow = '';
+            height = '';
+        } else {
+            overflow = 'visible';
+            height = 'none';
+        }
+        el.closest('.treeview')
+            .css('overflow', overflow)
+            .css('max-height', height);
+        el.closest('.modal-body').css('overflow', overflow);
+        el.closest('.navbar-collapse.in').css('overflow-y', overflow);
+        el.closest('.content-box').css('overflow-y', overflow);
+        el.closest('fieldset.form-group_').css('overflow', overflow);
+        Sao.common.scrollIntoViewIfNeeded(el);
+    };
+
     Sao.common.InputCompletion = Sao.class_(Object, {
         init: function(el, source, match_selected, format) {
             if (!el.is('input')) {
@@ -3355,6 +3472,7 @@
             } else {
                 el.wrap('<div class="dropdown"/>');
                 this.dropdown = el.parent();
+                this.dropdown.css('display', 'table');
             }
             this.input = el.find('input').add(el.filter('input')).first();
             this.input.attr('autocomplete', 'off');
@@ -3405,29 +3523,12 @@
                     this.menu.dropdown('toggle');
                 }
             }.bind(this));
-            // We must set the overflow of the treeview and modal-body
-            // containing the input to visible to prevent vertical scrollbar
-            // inherited from the auto overflow-x
-            // Idem when in navbar collapse for the overflow-y
-            // (see http://www.w3.org/TR/css-overflow-3/#overflow-properties)
             this.dropdown.on('hide.bs.dropdown', function() {
                 this.input.focus();
-                this.input.closest('.treeview')
-                    .css('overflow', '')
-                    .css('max-height', '');
-                this.input.closest('.modal-body').css('overflow', '');
-                this.input.closest('.navbar-collapse.in').css('overflow-y', '');
-                this.input.closest('.content-box').css('overflow-y', '');
-                Sao.common.scrollIntoViewIfNeeded(this.input);
+                Sao.common.set_overflow(this.input, 'hide');
             }.bind(this));
             this.dropdown.on('show.bs.dropdown', function() {
-                this.input.closest('.treeview')
-                    .css('overflow', 'visible')
-                    .css('max-height', 'none');
-                this.input.closest('.modal-body').css('overflow', 'visible');
-                this.input.closest('.navbar-collapse.in').css('overflow-y', 'visible');
-                this.input.closest('.content-box').css('overflow-y', 'visible');
-                Sao.common.scrollIntoViewIfNeeded(this.input);
+                Sao.common.set_overflow(this.input, 'show');
             }.bind(this));
         },
         set_actions: function(actions, action_activated) {
@@ -3508,7 +3609,9 @@
                     this.input.focus();
                 }.bind(this)).prependTo(this.menu);
             }, this);
-            if (!this.input.val()) {
+            if (!this.input.val() || (
+                !this.menu.find('li.completion').length &&
+                !this.menu.find('li.action').length)) {
                 if (this.dropdown.hasClass('open')) {
                     this.menu.dropdown('toggle');
                 }
@@ -3527,10 +3630,12 @@
         };
         var completion = new Sao.common.InputCompletion(
                 el, source, match_selected, format);
-        completion.set_actions([
+        if (action_activated) {
+            completion.set_actions([
                 ['search', Sao.i18n.gettext('Search...')],
                 ['create', Sao.i18n.gettext('Create...')]],
                 action_activated);
+        }
     };
 
     Sao.common.update_completion = function(
@@ -3543,7 +3648,8 @@
             domain = field.get_domain(record);
         }
         var context = field.get_search_context(record);
-        domain = [['rec_name', 'ilike', '%' + search_text + '%'], domain];
+        var likify = new Sao.common.DomainParser().likify;
+        domain = [['rec_name', 'ilike', likify(search_text)], domain];
 
         var order = field.get_search_order(record);
         var sao_model = new Sao.Model(model);
@@ -3745,6 +3851,240 @@
                 var v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             });
+    };
+
+    Sao.common.COLOR_SCHEMES = {
+        'red': '#cf1d1d',
+        'green': '#3fb41b',
+        'blue': '#224565',
+        'grey': '#444444',
+        'black': '#000000',
+        'darkcyan': '#305755',
+    };
+
+    Sao.common.hex2rgb = function(hexstring, digits) {
+        digits = digits || 2;
+        var top = parseInt('f'.repeat(digits), 16);
+        var r = parseInt(
+            hexstring.substring(1, digits + 1), 16);
+        var g = parseInt(
+            hexstring.substring(digits + 1, digits * 2 + 1), 16);
+        var b = parseInt(
+            hexstring.substring(digits * 2 + 1, digits * 3 + 1), 16);
+        return [r / top, g / top, b / top];
+    };
+
+    Sao.common.rgb2hex = function(rgb, digits) {
+        digits = digits || 2;
+        var top = parseInt('f'.repeat(digits), 16);
+        return '#' + rgb
+            .map(function(i) { return Math.round(i * top).toString(16); })
+            .join('');
+    };
+
+    Sao.common.rgb2hsv = function(rgb) {
+        var r = rgb[0],
+            g = rgb[1],
+            b = rgb[2];
+        var maxc = Math.max.apply(null, rgb);
+        var minc = Math.min.apply(null, rgb);
+        var v = maxc;
+        if (minc == maxc) return [0, 0, v];
+        var s = (maxc - minc) / maxc;
+        var rc = (maxc - r) / (maxc - minc);
+        var gc = (maxc - g) / (maxc - minc);
+        var bc = (maxc - b) / (maxc - minc);
+        var h;
+        if (r == maxc) {
+            h = bc - gc;
+        } else if (g == maxc) {
+            h = 2 + rc - bc;
+        } else {
+            h = 4 + gc - rc;
+        }
+        h = (h / 6) % 1;
+        return [h, s, v];
+    };
+
+    Sao.common.hsv2rgb = function(hsv) {
+        var h = hsv[0],
+            s = hsv[1],
+            v = hsv[2];
+        if (s == 0) return [v, v, v];
+        var i = Math.trunc(h * 6);
+        var f = (h * 6) - i;
+        var p = v * (1 - s);
+        var q = v * (1 - s * f);
+        var t = v * (1 - s * (1 - f));
+        i = i % 6;
+
+        if (i == 0) return [v, t, p];
+        else if (i == 1) return [q, v, p];
+        else if (i == 2) return [p, v, t];
+        else if (i == 3) return [p, q, v];
+        else if (i == 4) return [t, p, v];
+        else if (i == 5) return [v, p, q];
+    };
+
+    Sao.common.generateColorscheme = function(masterColor, keys, light) {
+        if (light === undefined) {
+            light = 0.1;
+        }
+        var rgb = Sao.common.hex2rgb(
+            Sao.common.COLOR_SCHEMES[masterColor] || masterColor);
+        var hsv = Sao.common.rgb2hsv(rgb);
+        var h = hsv[0],
+            s = hsv[1],
+            v = hsv[2];
+        if (keys.length) {
+            light = Math.min(light, (1 - v) / keys.length);
+        }
+        var golden_angle = 0.618033988749895;
+        var colors = {};
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            colors[key] = Sao.common.rgb2hex(Sao.common.hsv2rgb(
+                [(h + golden_angle * i) % 1, s, (v + light * i) % 1]));
+        }
+        return colors;
+    };
+
+    Sao.common.richtext_toolbar = function() {
+        var toolbar = jQuery('<div/>', {
+            'class': 'btn-toolbar',
+            'role': 'toolbar',
+        });
+
+        var button_apply_command = function(evt) {
+            document.execCommand(evt.data);
+        };
+
+        var add_buttons = function(buttons) {
+            var group = jQuery('<div/>', {
+                'class': 'btn-group',
+                'role': 'group'
+            }).appendTo(toolbar);
+            for (var i in buttons) {
+                var properties = buttons[i];
+                var button = jQuery('<button/>', {
+                    'class': 'btn btn-default',
+                    'type': 'button'
+                }).append(Sao.common.ICONFACTORY.get_icon_img(
+                    'tryton-format-' + properties.icon)
+                ).appendTo(group);
+                button.click(properties.command, button_apply_command);
+            }
+        };
+
+        add_buttons([
+            {
+                'icon': 'bold',
+                'command': 'bold'
+            }, {
+                'icon': 'italic',
+                'command': 'italic'
+            }, {
+                'icon': 'underline',
+                'command': 'underline'
+            }]);
+
+        var selections = [
+            {
+                'heading': Sao.i18n.gettext('Font'),
+                'options': ['Normal', 'Serif', 'Sans', 'Monospace'],  // XXX
+                'command': 'fontname'
+            }, {
+                'heading': Sao.i18n.gettext('Size'),
+                'options': [1, 2, 3, 4, 5, 6, 7],
+                'command': 'fontsize'
+            }];
+        var add_option = function(dropdown, properties) {
+            return function(option) {
+                dropdown.append(jQuery('<li/>').append(jQuery('<a/>', {
+                    'href': '#'
+                }).text(option).click(function(evt) {
+                    evt.preventDefault();
+                    document.execCommand(properties.command, false, option);
+                })));
+            };
+        };
+        for (var i in selections) {
+            var properties = selections[i];
+            var group = jQuery('<div/>', {
+                'class': 'btn-group',
+                'role': 'group'
+            }).appendTo(toolbar);
+            var button = jQuery('<button/>', {
+                'class': 'btn btn-default dropdown-toggle',
+                'type': 'button',
+                'data-toggle': 'dropdown',
+                'aria-expanded': false,
+                'aria-haspopup': true
+            }).append(properties.heading)
+                .append(jQuery('<span/>', {
+                    'class': 'caret'
+                })).appendTo(group);
+            var dropdown = jQuery('<ul/>', {
+                'class': 'dropdown-menu'
+            }).appendTo(group);
+            properties.options.forEach(add_option(dropdown, properties));
+        }
+
+        add_buttons([
+            {
+                'icon': 'align-left',
+                'command': Sao.i18n.rtl? 'justifyRight' : 'justifyLeft',
+            }, {
+                'icon': 'align-center',
+                'command': 'justifyCenter'
+            }, {
+                'icon': 'align-right',
+                'command': Sao.i18n.rtl? 'justifyLeft': 'justifyRight',
+            }, {
+                'icon': 'align-justify',
+                'command': 'justifyFull'
+            }]);
+
+        // TODO backColor
+        [['foreColor', '#000000']].forEach(
+            function(e) {
+                var command = e[0];
+                var color = e[1];
+                jQuery('<input/>', {
+                    'class': 'btn btn-default',
+                    'type': 'color'
+                }).appendTo(toolbar)
+                    .change(function() {
+                        document.execCommand(command, false, jQuery(this).val());
+                    }).focusin(function() {
+                        document.execCommand(command, false, jQuery(this).val());
+                    }).val(color);
+            });
+        return toolbar;
+    };
+
+    Sao.common.richtext_normalize = function(html) {
+        var el = jQuery('<div/>').html(html);
+        // TODO order attributes
+        el.find('div').each(function(i, el) {
+            el = jQuery(el);
+            // Not all browsers respect the styleWithCSS
+            if (el.css('text-align')) {
+                // Remove browser specific prefix
+                var align = el.css('text-align').split('-').pop();
+                el.attr('align', align);
+                el.css('text-align', '');
+            }
+            // Some browsers set start as default align
+            if (el.attr('align') == 'start') {
+                if (Sao.i18n.rtl) {
+                    el.attr('align', 'right');
+                } else {
+                    el.attr('align', 'left');
+                }
+            }
+        });
+        return el.html();
     };
 
     Sao.common.clone = function(obj) {

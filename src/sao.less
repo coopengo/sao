@@ -1,6 +1,99 @@
-@import "variables";
-@import "mixins";
-@import "src/coopengo.less";
+/* This file is part of Tryton.  The COPYRIGHT file at the top level of
+   this repository contains the full copyright notices and license terms. */
+@import "bootstrap";
+@import "bootstrap-rtl";
+@import "sao-variables";
+// JMO : merge_60 TODO: @import "src/coopengo.less";
+html[theme="default"] {
+    @import "theme";
+}
+
+// Fix double rtl prefix
+.float-rtl-grid-columns(@class, @rtl-prefix) {
+  .col(@index) { // initial
+    @item: ~".col-@{class}-@{index}";
+    .col((@index + 1), @item);
+  }
+  .col(@index, @list) when (@index =< @grid-columns) { // general
+    @item: ~".col-@{class}-@{index}";
+    .col((@index + 1), ~"@{list}, @{item}");
+  }
+  .col(@index, @list) when (@index > @grid-columns) { // terminal
+    @{list} {
+      float: right;
+    }
+  }
+  .col(1); // kickstart it
+}
+
+// Backport from Bootstrap 4
+.stretched-link {
+    &::after {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1;
+        // Just in case `pointer-events: none` is set on a parent
+        pointer-events: auto;
+        content: "";
+        // IE10 bugfix, see https://stackoverflow.com/questions/16947967/ie10-hover-pseudo-class-doesnt-work-without-background-color
+        background-color: rgba(0, 0, 0, 0);
+    }
+}
+
+
+.navbar-inverse {
+    .close {
+        color: @navbar-inverse-link-color;
+
+        &:hover,
+        &:focus {
+            color: @navbar-inverse-link-hover-color;
+            background-color: @navbar-inverse-link-hover-bg;
+        }
+    }
+    .active .close {
+        &,
+        &:hover,
+        &:focus {
+            color: @navbar-inverse-link-active-color;
+            background-color: @navbar-inverse-link-active-bg;
+        }
+    }
+}
+
+.navbar {
+    .icon {
+        display: inline-block;
+        height: unit(@line-height-base, em);
+        vertical-align: middle;
+    }
+}
+
+.navbar-nav {
+    @media (min-width: @grid-float-breakpoint) {
+        float:none;
+    }
+}
+
+.btn-primary {
+    .icon {
+        filter: brightness(0) invert(1);
+    }
+}
+
+.panel-heading {
+    a {
+        color: inherit;
+    }
+}
+
+.modal-header {
+    background-color: @brand-primary;
+    color: #fff;
+}
 
 #tablist > li > a {
     > span {
@@ -50,6 +143,10 @@
     }
 }
 
+#tabcontent > .tab-pane > .panel {
+    margin-bottom: 0;
+}
+
 @media screen and (min-width: @screen-sm-min) {
     #global-search-entry {
         width: 10em;
@@ -64,14 +161,29 @@
 }
 
 #user-preferences > a {
-    max-width: 20em;
+    max-width: 30em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    > img {
+        margin: -5px 5px;
+        width: 30px;
+
+        &[src=''] {
+            width: 0;
+        }
+
+        &.img-badge {
+            margin-left: -15px;
+            margin-bottom: -25px;
+            width: 15px;
+        }
+    }
 }
 
-.list-group-item-variant(selected; @state-info-bg; @state-info-text);
-.table-row-variant(selected; @state-info-bg);
+.list-group-item-variant(selected; @state-selected-bg; @state-selected-text);
+.table-row-variant(selected; @state-selected-bg);
 /* Duplicate bootstrap variant to have precedence over selected */
 .table-row-variant(success; @state-success-bg);
 .table-row-variant(warning; @state-warning-bg);
@@ -108,6 +220,12 @@
     }
 
     .tab-domain {
+        overflow-x: auto;
+
+        > .nav-tabs {
+            display: inline-flex;
+            white-space: nowrap;
+        }
         .badge {
             min-width: 3em;
         }
@@ -222,6 +340,15 @@ img.icon {
     overflow-y: auto;
 }
 
+@media screen and (max-width: @screen-sm-max) {
+    .attachment-preview:not(:empty) {
+        border-color: @panel-default-border;
+        border-style: solid;
+        border-width: 0 0 1px 0;
+        margin-bottom: 5px;
+    }
+}
+
 .list-form {
     overflow-y: auto;
     -moz-user-select: none;
@@ -232,7 +359,6 @@ img.icon {
     -moz-user-select: none;
     -webkit-user-select: none;
     overflow-x: auto;
-    height: calc(100vh - 300px);
 
     > table.tree {
         width: 100%;
@@ -274,6 +400,16 @@ img.icon {
             background-color: @body-bg;
             position: sticky;
             top: 0;
+            z-index: 100;
+        }
+        > tfoot > tr th {
+            background-color: @body-bg;
+            bottom: 0;
+            position: sticky;
+            z-index: 100;
+            & > label {
+                display: none;
+            }
         }
         > tbody > tr > td {
             cursor: pointer;
@@ -302,7 +438,7 @@ img.icon {
     .editabletree-char, .editabletree-date, .editabletree-datetime,
     .editabletree-integer, .editabletree-float, .editabletree-selection,
     .editabletree-timedelta, .editabletree-boolean, .editabletree-many2one,
-    .editabletree-one2many, .editabletree-reference {
+    .editabletree-one2many, .editabletree-reference, .editabletree-time {
         width: 100%;
 
         input[type='checkbox'] {
@@ -341,6 +477,10 @@ img.icon {
     .cell {
         display: flex;
         justify-content: space-between;
+
+        > * {
+            align-self: center;
+        }
 
         .widget, .widget-editable {
             min-width: 0;
@@ -405,7 +545,7 @@ img.icon {
         display: inline-table;
     }
     table.form-container > tbody > tr > td {
-        padding: 1px;
+        padding: 2px;
     }
     table.form-hcontainer > tbody > tr > td {
         padding-top: 0px;
@@ -423,15 +563,15 @@ img.icon {
     .form-multiselection, .form-url, .form-email, .form-callto, .form-sip,
     .form-pyson {
         input, select {
-            min-width: 8em;
+            min-width: 8ch;
         }
     }
     .form-many2one, .form-one2one, .form-reference, form-binary {
         select {
-            min-width: 8em;
+            min-width: 8ch;
         }
         input {
-            min-width: 12em;
+            min-width: 12ch;
         }
     }
 
@@ -500,7 +640,8 @@ img.icon {
     }
     .form-text, .form-richtext {
         > textarea {
-            min-height: inherit;
+            min-height: 150px;
+            max-height: 300px;
         }
     }
     .form-richtext {
@@ -526,9 +667,24 @@ img.icon {
             height: 4em;
         }
     }
+    .form-document {
+        object {
+            object-fit: scale-down;
+            object-position: center top;
+            width: 100%;
+            height: 75vh;
+            @media screen and (max-width: @screen-sm-max) {
+                height: 50vh;
+            }
+            @media screen and (max-width: @screen-xs-max) {
+                height: 25vh;
+            }
+        }
+    }
     label {
         font-weight: normal;
         display: inline;
+        padding: 0 5px;
         &.required {
             font-weight: bold;
         }
@@ -540,13 +696,16 @@ img.icon {
         margin-bottom: 15px;
     }
     .panel-heading {
-        padding: 1px 1px;
+        padding: 2px 2px;
     }
     fieldset.form-group_ {
         overflow: auto;
         > legend {
             font-size: @font-size-base;
             margin-bottom: 5px;
+        }
+        .form-container, .form-hcontainer, .form-vcontainer {
+            vertical-align: middle;
         }
     }
 }
@@ -579,9 +738,28 @@ input.column-boolean {
     .center-block();
 }
 
-.form-boolean, .dict-boolean, .editabletree-boolean {
-    input[type=checkbox] {
-        width: initial;
+.form-date, .form-datetime, .form-time,
+.dict-date, .dict-datetime,
+.input-date, .input-datetime-local, .input-time,
+.editabletree-date, .editabletree-datetime, .editabletree-time {
+    .icon-input {
+        overflow-y: hidden;
+    }
+    input[type="date"], input[type="datetime-local"], input[type="time"] {
+        min-width: 0;
+        opacity: 0;
+        position: absolute;
+        width: calc(100% + 2em);
+        left: -2em;
+
+        &::-webkit-calendar-picker-indicator {
+            bottom: 0;
+            left: 0;
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
     }
 }
 
@@ -617,6 +795,21 @@ input.column-boolean {
             overflow: auto;
             white-space: nowrap;
         }
+        li.dragged-row {
+            background-color: @state-info-bg;
+        }
+    }
+}
+
+.email {
+    .email-richtext {
+        min-height: 10em;
+    }
+    input[type='file'] {
+        display: inline-block;
+    }
+    .close {
+        float: none;
     }
 }
 
@@ -686,9 +879,22 @@ input.column-boolean {
         }
 
         tfoot {
-            > tr > td:empty,
-            > tr > td > label {
-                display: none !important;
+            background-color: @body-bg;
+            border: 1px solid @table-border-color;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            > tr {
+                & > td:empty,
+                > td > label {
+                    display: none !important;
+                }
+                & th {
+                    border: none;
+                    & > label {
+                        display: inline !important;
+                    }
+                }
             }
         }
     }
@@ -699,13 +905,13 @@ input.column-boolean {
     }
     table.responsive-header {
         > tbody > tr {
-            border: 1px solid #ccc;
+            border: 1px solid @table-border-color;
         }
         > tbody > tr > td,
         > tfoot > tr > td {
             /* Behave like a "row" */
             border: none;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid @table-border-color;
             position: relative;
         }
         > tbody > tr,
@@ -740,11 +946,28 @@ input.column-boolean {
     }
 }
 
+@keyframes blink {
+    50% {
+        color: transparent;
+    }
+}
+
 #processing {
     position: fixed;
     top: 0px;
     width: 100%;
     z-index: 2000;
+
+    .dot {
+        animation: 1s blink infinite;
+
+        &:nth-child(2) {
+            animation-delay: 250ms;
+        }
+        &:nth-child(3) {
+            animation-delay: 500ms;
+        }
+    }
 }
 
 .scrollbar {
@@ -756,12 +979,15 @@ input.column-boolean {
 }
 
 .infobar {
+    line-height: @line-height-computed;
     position: fixed;
-    top: 0px;
+    top: 65px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
-    min-width: 50%;
+    min-width: 25%;
+    text-align: center;
+    font-size: @font-size-large;
 }
 
 img.global-search-icon {
@@ -773,3 +999,7 @@ img.favorite-icon {
     width: 1em;
     height: 1em;
 }
+
+@import "input-icon";
+@import "offcanvas";
+@import (optional) "custom.less";

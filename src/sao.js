@@ -5,14 +5,6 @@ var Sao = {};
 (function() {
     'use strict';
 
-    // Restore htmlPrefilter of jQuery < 3.5
-    // To be removed when
-    // https://github.com/fullcalendar/fullcalendar/pull/5391 is merged
-    var rxhtmlTag = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([a-z][^\/\0>\x20\t\r\n\f]*)[^>]*)\/>/gi;
-    jQuery.htmlPrefilter = function( html ) {
-        return html.replace( rxhtmlTag, "<$1></$2>" );
-    };
-
     // Browser compatibility: polyfill
     if (!('contains' in String.prototype)) {
         String.prototype.contains = function(str, startIndex) {
@@ -171,12 +163,42 @@ var Sao = {};
                     Object.getOwnPropertyDescriptor(props, name));
             }
         }
+
+        // Method to create new instance with a list of arguments
+        function F(args) {
+            return ClassConstructor.apply(this, args);
+        }
+        F.prototype = ClassConstructor.prototype;
+        ClassConstructor.new_ = function(args) {
+            return new F(args);
+        };
         return ClassConstructor;
     };
 
     Sao.Decimal = Number;
 
-    Sao.Date = function(year, month, day) {
+    var _moment_to_string = moment.prototype.toString;
+    moment.prototype.toString = function() {
+        if (this.isDate) {
+            return this.format('YYYY-MM-DD');
+        } else if (this.isDateTime) {
+            if (this.milliseconds()) {
+                return this.format('YYYY-MM-DD HH:mm:ss.SSSSSS');
+            } else {
+                return this.format('YYYY-MM-DD HH:mm:ss');
+            }
+        } else if (this.isTime) {
+            if (this.milliseconds()) {
+                return this.format('HH:mm:ss.SSSSSS');
+            } else {
+                return this.format('HH:mm:ss');
+            }
+        } else {
+            return _moment_to_string.call(this);
+        }
+    };
+
+    Sao.Date = function(year, month, day, utc) {
         var date;
         if (month === undefined) {
             date = moment(year);
@@ -185,14 +207,14 @@ var Sao = {};
         else {
             date = moment();
         }
+        if (utc) {
+            date.utc();
+        }
         date.year(year);
         date.month(month);
         date.date(day);
         date.set({hour: 0, minute: 0, second: 0, millisecond: 0});
         date.isDate = true;
-        date.toString = function() {
-            return this.format('YYYY-MM-DD');
-        };
         return date;
     };
 
@@ -239,13 +261,6 @@ var Sao = {};
             datetime.milliseconds(millisecond);
         }
         datetime.isDateTime = true;
-        datetime.toString = function() {
-            if (this.milliseconds()) {
-                return this.format('YYYY-MM-DD HH:mm:ss.SSSSSS');
-            } else {
-                return this.format('YYYY-MM-DD HH:mm:ss');
-            }
-        };
         datetime.local();
         return datetime;
     };
@@ -289,7 +304,9 @@ var Sao = {};
     Sao.config.display_size = 20;
     Sao.config.bug_url = 'https://support.coopengo.com/';
     Sao.config.title = 'Coog';
-    Sao.config.icon_colors = '#0094d2,#555753,#cc0000'.split(',');
+    Sao.config.icon_colors = '#267f82,#3e4950,#e78e42'.split(',');
+    Sao.config.calendar_colors = '#fff,#267f82'.split(',');
+    Sao.config.graph_color = '#267f82';
     Sao.config.bus_timeout = 10 * 60 * 1000;
 
     Sao.i18n = i18n();
@@ -339,6 +356,8 @@ var Sao = {};
     };
     Sao.i18n.locale = {};
 
+    Sao.BOM_UTF8 = '\uFEFF';
+
     Sao.get_preferences = function() {
         var session = Sao.Session.current_session;
         return session.reload_context().then(function() {
@@ -356,11 +375,7 @@ var Sao = {};
                         Sao.Action.execute(action_id, {}, null, {});
                     });
                     Sao.set_title();
-                    /* Coog: avoid icon filled with standard color
-                    Sao.common.ICONFACTORY.get_icon_url('tryton-menu')
-                        .then(function(url) {
-                            jQuery('.navbar-brand > img').attr('src', url);
-                        }); */
+                    // JMO merge_60, here we had: Coog: avoid icon filled with standard color
                     var new_lang = preferences.language != Sao.i18n.getLocale();
                     var prm = jQuery.Deferred();
                     Sao.i18n.setlang(preferences.language).always(function() {
@@ -371,6 +386,7 @@ var Sao = {};
                     });
                     Sao.i18n.set_direction(preferences.language_direction);
                     Sao.i18n.locale = preferences.locale;
+                    Sao.common.MODELNAME.clear();
                     return prm;
                 });
             });
@@ -494,8 +510,6 @@ var Sao = {};
             try {
                 attributes.data = loads(params.data || '{}');
                 attributes.direct_print = loads(params.direct_print || 'false');
-                attributes.email_print = loads(params.email_print || 'false');
-                attributes.email = loads(params.email || 'null');
                 attributes.name = loads(params.name || '""');
                 attributes.window = loads(params.window || 'false');
                 attributes.context = loads(params.context || '{}');
@@ -518,8 +532,6 @@ var Sao = {};
             try {
                 attributes.data = loads(params.data || '{}');
                 attributes.direct_print = loads(params.direct_print || 'false');
-                attributes.email_print = loads(params.email_print || 'false');
-                attributes.email = loads(params.email || 'null');
                 attributes.context = loads(params.context || '{}');
             } catch (e) {
                 return;
@@ -579,7 +591,6 @@ var Sao = {};
         var session = Sao.Session.current_session;
         Sao.Tab.tabs.close(true).done(function() {
             jQuery('#user-preferences').empty();
-            jQuery('#user-logout').empty();
             jQuery('#user-favorites').empty();
             jQuery('#global-search').empty();
             jQuery('#menu').empty();
@@ -592,9 +603,9 @@ var Sao = {};
         Sao.Tab.tabs.close(true).done(function() {
             jQuery('#user-preferences').empty();
             jQuery('#user-favorites').empty();
-            jQuery('#user-logout').empty();
             jQuery('#menu').empty();
             new Sao.Window.Preferences(function() {
+                Sao.Session.current_session.reset_context();
                 Sao.get_preferences().then(function(preferences) {
                     Sao.menu(preferences);
                     Sao.user_menu(preferences);
@@ -669,28 +680,37 @@ var Sao = {};
     };
 
     Sao.user_menu = function(preferences) {
+        var avatar_url = preferences.avatar_url || '';
+        if (avatar_url) {
+            avatar_url += '?s=30';
+        }
+        var avatar_badge_url = preferences.avatar_badge_url || '';
+        if (avatar_badge_url){
+            avatar_badge_url += '?s=15';
+        }
         jQuery('#user-preferences').empty();
         jQuery('#user-favorites').empty();
-        jQuery('#user-logout').empty();
         jQuery('#user-preferences').append(jQuery('<a/>', {
             'href': '#',
             'title': preferences.status_bar,
         }).click(function(evt) {
             evt.preventDefault();
             Sao.preferences();
-        }).text(preferences.status_bar));
+        }).text(preferences.status_bar)
+            .prepend(jQuery('<img/>', {
+                'src': avatar_badge_url,
+                'class': 'img-circle img-badge',
+            })).prepend(jQuery('<img/>', {
+                'src': avatar_url,
+                'class': 'img-circle',
+            })));
         var title = Sao.i18n.gettext("Logout");
-        jQuery('#user-logout').append(jQuery('<a/>', {
-            'href': '#',
-            'title': title,
-            'aria-label': title,
-        }).click(Sao.logout).append(
-            Sao.common.ICONFACTORY.get_icon_img('tryton-exit', {
-            'class': 'icon hidden-xs',
-            'aria-hidden': true,
-        })).append(jQuery('<span/>', {
-            'class': 'visible-xs',
-        }).text(title)));
+        jQuery('#user-logout > a')
+            .attr('title', title)
+            .attr('aria-label', title)
+            .off()
+            .click(Sao.logout)
+            .find('span:not(.icon)').text(title);
     };
 
     Sao.main_menu_row_activate = function() {
@@ -867,8 +887,9 @@ var Sao = {};
         },
         add_title: function(title) {
             this.header.append(jQuery('<h4/>', {
-                'class': 'modal-title'
-            }).text(title));
+                'class': 'modal-title',
+                'title': title,
+            }).text(Sao.common.ellipsize(title, 120)));
         }
     });
 
@@ -1029,6 +1050,10 @@ var Sao = {};
                 label: Sao.i18n.gettext('Print'),
                 id: 'print',
             }, {
+                shortcut: 'ctrl+shift+e',
+                label: Sao.i18n.gettext('E-Mail'),
+                id: 'email',
+            }, {
                 shortcut: 'alt+shift+tab',
                 label: Sao.i18n.gettext('Previous tab'),
                 callback: function() {
@@ -1150,6 +1175,16 @@ var Sao = {};
         }
     });
 
+    // Fix Chrome bug: https://bugs.chromium.org/p/chromium/issues/detail?id=890248
+    jQuery(document).on('keydown', 'textarea', function(event) {
+        if (event.key === 'PageUp' || event.key === 'PageDown') {
+            var cursorPosition = (
+                event.key === 'PageUp' ? 0 : event.target.textLength);
+            event.preventDefault();
+            event.target.setSelectionRange(cursorPosition, cursorPosition);
+        }
+    });
+
     function setModalsAndBackdropsOrder() {
         var modalZIndex = 1040;
         jQuery('.modal.in').each(function(index) {
@@ -1162,4 +1197,5 @@ var Sao = {};
         jQuery('.modal.in:visible:last').focus()
         .next('.modal-backdrop.in').removeClass('hidden');
     }
+
 }());

@@ -91,6 +91,11 @@
                     id: 'print',
                     icon: 'tryton-print',
                     label: Sao.i18n.gettext('Print'),
+                }, {
+                    id: 'email',
+                    icon: 'tryton-email',
+                    label: Sao.i18n.gettext('E-Mail...'),
+                    tooltip: Sao.i18n.gettext('Send an e-mail using the record'),
                 }, null, {
                     id: 'export',
                     icon: 'tryton-export',
@@ -114,9 +119,12 @@
             var toolbar = this.create_toolbar().appendTo(this.el);
             this.title = toolbar.find('.title');
 
-            this.content = jQuery('<div/>', {
-                'class': 'panel-body',
+            this.main = jQuery('<div/>', {
+                'class': 'panel-body row',
             }).appendTo(this.el);
+            this.content = jQuery('<div/>', {
+                'class': 'col-xs-12',
+            }).appendTo(this.main);
 
             if (this.info_bar) {
                 this.el.append(this.info_bar.el);
@@ -164,7 +172,7 @@
                 'class': 'toolbar panel-heading',
                 'role': 'toolbar'
             }).append(jQuery('<div/>', {
-                'class': 'container-fluid'
+                'class': 'container-fluid navbar-inverse'
             }).append(jQuery('<div/>', {
                 'class': 'dropdown navbar-header navbar-left flip'
             }).append(jQuery('<a/>', {
@@ -257,6 +265,8 @@
             }).appendTo(jQuery('<div/>', {
                 'class': 'navbar-text hidden-xs',
             }).insertAfter(this.buttons.previous));
+            this.buttons.previous.addClass('hidden-xs');
+            this.buttons.next.addClass('hidden-xs');
             toolbar.find('.btn-toolbar > .btn-group').last()
                 .addClass( 'hidden-xs')
                 .find('.dropdown')
@@ -304,7 +314,7 @@
         set_name: function(name) {
             this.name = name;
             this.name_el.text(Sao.common.ellipsize(name, 20));
-            this.name_el.parents('li').first().attr('title', name);
+            this.name_el.attr('title', name);
         },
         get_url: function() {
         },
@@ -443,11 +453,20 @@
         class_: 'tab-form',
         init: function(model_name, attributes) {
             Sao.Tab.Form._super.init.call(this, attributes);
+            attributes = jQuery.extend({}, attributes);
+            var name = attributes.name;
+            if (!name) {
+                name = Sao.common.MODELNAME.get(model_name);
+            }
+            this.set_name(name);
+            attributes.breadcrumb = [name];
             var screen = new Sao.Screen(model_name, attributes);
             screen.tab = this;
             this.screen = screen;
             this.info_bar = new Sao.Window.InfoBar();
             this.create_tabcontent();
+
+            this.attachment_screen = null;
 
             screen.message_callback = this.record_message.bind(this);
             screen.switch_callback = function() {
@@ -460,7 +479,6 @@
 
             this.view_prm = this.screen.switch_view().done(function() {
                 this.screen.count_tab_domain();
-                this.set_name(attributes.name || '');
                 this.content.append(screen.screen_container.el);
                 if (attributes.res_id) {
                     if (!jQuery.isArray(attributes.res_id)) {
@@ -522,7 +540,7 @@
                         'role': 'menu',
                         'aria-labelledby': menu_action[0]
                     }))
-                    .appendTo(toolbar.find('.btn-toolbar > .btn-group').last());
+                    .insertBefore(toolbar.find('button#email'));
                     buttons[menu_action[0]] = button;
                     var dropdown = button
                         .on('show.bs.dropdown', function() {
@@ -608,10 +626,14 @@
                                     });
                                 var id = screen.current_record ?
                                     screen.current_record.id : null;
+                                var model_context = screen.context_screen ?
+                                    screen.context_screen.model_name : null;
                                 func({
                                     'model': screen.model.name,
-                                    'ids': ids,
+                                    'model_context': model_context,
                                     'id': id,
+                                    'ids': ids,
+                                    'paths': screen.selected_paths(),
                                 });
                             })
                             .appendTo(menu);
@@ -629,26 +651,31 @@
                         }).text(action.name))
                         .click(function(evt) {
                             evt.preventDefault();
-                            var prm = jQuery.when();
-                            if (this.screen.modified()) {
-                                prm = this.save();
-                            }
-                            prm.then(function() {
+                            this.modified_save().then(function() {
                                 var exec_action = jQuery.extend({}, action);
                                 var record_id = null;
                                 if (screen.current_record) {
                                     record_id = screen.current_record.id;
                                 }
-                                var record_ids = screen.current_view
-                                .selected_records.map(function(record) {
+                                var records, paths;
+                                if (action.records == 'listed') {
+                                    records = screen.listed_records;
+                                    paths = screen.listed_paths;
+                                } else {
+                                    records = screen.selected_records;
+                                    paths = screen.selected_paths;
+                                }
+                                var record_ids = records.map(function(record) {
                                     return record.id;
                                 });
-                                exec_action = Sao.Action.evaluate(exec_action,
-                                    menu_action[0], screen.current_record);
+                                var model_context = screen.context_screen ?
+                                    screen.context_screen.model_name : null;
                                 var data = {
-                                    model: screen.model_name,
-                                    id: record_id,
-                                    ids: record_ids
+                                    'model': screen.model_name,
+                                    'model_context': model_context,
+                                    'id': record_id,
+                                    'ids': record_ids,
+                                    'paths': paths,
                                 };
                                 Sao.Action.execute(exec_action, data,
                                     jQuery.extend({}, screen.local_context));
@@ -686,6 +713,12 @@
                 .on('dragover', false)
                 .on('drop', this.attach_drop.bind(this));
             return toolbar;
+        },
+        create_tabcontent: function() {
+            Sao.Tab.Form._super.create_tabcontent.call(this);
+            this.attachment_preview = jQuery('<div/>', {
+                'class': 'col-xs-12 attachment-preview',
+            }).prependTo(this.main);
         },
         compare: function(attributes) {
             if (!attributes) {
@@ -725,7 +758,17 @@
                             case 'ok':
                                 return this.save();
                             case 'ko':
-                                return this.reload(false);
+                                var record_id = this.screen.current_record.id;
+                                return this.reload(false).then(function() {
+                                    if (this.screen.current_record) {
+                                        if (record_id !=
+                                            this.screen.current_record.id) {
+                                            return jQuery.Deferred().reject();
+                                        }
+                                    } else if (record_id < 0) {
+                                        return jQuery.Deferred().resolve();
+                                    }
+                                }.bind(this));
                             default:
                                 return jQuery.Deferred().reject();
                         }
@@ -757,7 +800,7 @@
                     function() {
                         this.info_bar.message(
                                 Sao.i18n.gettext('Record saved.'), 'info');
-                        this.screen.count_tab_domain();
+                        this.screen.count_tab_domain(true);
                     }.bind(this),
                     function() {
                         this.info_bar.message(
@@ -821,7 +864,7 @@
                             Sao.i18n.gettext(
                                 'Working now on the duplicated record(s).'),
                             'info');
-                    this.screen.count_tab_domain();
+                    this.screen.count_tab_domain(true);
                 }.bind(this));
             }.bind(this));
         },
@@ -841,7 +884,7 @@
                             this.info_bar.message(
                                     Sao.i18n.gettext('Records removed.'),
                                     'info');
-                            this.screen.count_tab_domain();
+                            this.screen.count_tab_domain(true);
                         }.bind(this), function() {
                             this.info_bar.message(
                                     Sao.i18n.gettext('Records not removed.'),
@@ -911,8 +954,7 @@
                     value = (value || {})[name] || '/';
                     if (value && value.isDateTime) {
                         value = Sao.common.format_datetime(
-                            Sao.common.date_format(),
-                            '%H:%M:%S',
+                            Sao.common.date_format() + ' %H:%M:%S',
                             value);
                     }
                     message += label + ' ' + value + '\n';
@@ -969,10 +1011,11 @@
             var revision = this.screen.context._datetime;
             var label, title;
             if (revision) {
-                var date_format = Sao.common.date_format();
+                var date_format = Sao.common.date_format(
+                    this.screen.context.date_format);
                 var time_format = '%H:%M:%S.%f';
                 var revision_label = ' @ ' + Sao.common.format_datetime(
-                    date_format, time_format, revision);
+                    date_format + ' ' + time_format, revision);
                 label = Sao.common.ellipsize(
                     this.name, 80 - revision_label.length) + revision_label;
                 title = this.name + revision_label;
@@ -1020,6 +1063,20 @@
                 return new Sao.Window.Attachment(record, function() {
                     this.refresh_resources(true);
                 }.bind(this));
+            }.bind(this);
+            var preview = function() {
+                if (this.attachment_preview.children().length) {
+                    this.attachment_preview.empty();
+                    this.attachment_screen = null;
+                    this.attachment_preview.removeClass('col-md-4 col-md-push-8');
+                    this.content.removeClass('col-md-8 col-md-pull-4');
+                } else {
+                    this.attachment_preview.append(
+                        this._attachment_preview_el());
+                    this.refresh_attachment_preview();
+                    this.attachment_preview.addClass('col-md-4 col-md-push-8');
+                    this.content.addClass('col-md-8 col-md-pull-4');
+                }
             }.bind(this);
             var dropdown = this.buttons.attach.parents('.dropdown');
             if (!evt) {
@@ -1076,6 +1133,17 @@
                         'href': '#',
                         'tabindex': -1,
                     }).text(Sao.i18n.gettext('Add...'))));
+                    menu.append(jQuery('<li/>', {
+                        'role': 'presentation',
+                    }).append(jQuery('<a/>', {
+                        'role': 'menuitem',
+                        'href': '#',
+                        'tabindex': -1,
+                    }).text(Sao.i18n.gettext("Preview"))
+                        .click(function(evt) {
+                            evt.preventDefault();
+                            preview();
+                        })));
                     menu.append(jQuery('<li/>', {
                         'role': 'presentation',
                     }).append(jQuery('<a/>', {
@@ -1164,6 +1232,87 @@
                 evt.dataTransfer.clearData();
             }
         },
+        _attachment_preview_el: function() {
+            var el = jQuery('<div/>', {
+                'class': 'text-center',
+            });
+            var buttons = jQuery('<div/>', {
+                'class': 'btn-group',
+            }).appendTo(el);
+
+            var but_prev = jQuery('<button/>', {
+                'class': 'btn btn-default btn-sm',
+                'type': 'button',
+                'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Previous"),
+                'title': Sao.i18n.gettext("Previous"),
+            }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-back')
+            ).appendTo(buttons);
+
+            var label = jQuery('<span/>', {
+                'class': 'badge',
+            }).text('(0/0)').appendTo(jQuery('<span/>', {
+                'class': 'btn btn-sm btn-link',
+            }).appendTo(buttons));
+
+            var but_next = jQuery('<button/>', {
+                'class': 'btn btn-default btn-sm',
+                'type': 'button',
+                'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Next"),
+                'title': Sao.i18n.gettext("Next"),
+            }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-forward')
+            ).appendTo(buttons);
+
+            var screen = new Sao.Screen('ir.attachment', {
+                'readonly': true,
+                'mode': ['form'],
+                'context': {
+                    'preview': true,
+                },
+            });
+            this.attachment_screen = screen;
+
+            but_prev.click(function() {
+                screen.display_previous();
+            });
+            but_next.click(function() {
+                screen.display_next();
+            });
+
+            screen.message_callback = function(data) {
+                var position = data[0];
+                var length = data[1];
+                var text = (position || '_') + '/' + length;
+                label.text(text).attr('title', text);
+                but_prev.prop('disabled', !position || position <= 1);
+                but_next.prop('disabled', !position || position >= length);
+            };
+
+            screen.switch_view().done(function() {
+                el.append(screen.screen_container.el);
+            });
+            return el;
+        },
+        refresh_attachment_preview: function(force) {
+            if (!this.attachment_screen) {
+                return;
+            }
+            var record = this.screen.current_record;
+            if (!record) {
+                return;
+            }
+            var resource = record.model.name + ',' + record.id;
+            var domain = [
+                ['resource', '=', resource],
+                ['type', '=', 'data'],
+            ];
+            if (!Sao.common.compare(this.attachment_screen.domain, domain) ||
+                force) {
+                this.attachment_screen.domain = domain;
+                this.attachment_screen.search_filter();
+            }
+        },
         note: function() {
             var record = this.screen.current_record;
             if (!record || (record.id < 0)) {
@@ -1173,6 +1322,40 @@
                 this.refresh_resources(true);
             }.bind(this));
         },
+        email: function() {
+            function is_report(action) {
+                return action.type == 'ir.action.report';
+            }
+            if (!this.buttons.email.hasClass('disabled')) {
+                this.modified_save().then(function() {
+                    var record = this.screen.current_record;
+                    if (!record || (record.id < 0)) {
+                        return;
+                    }
+                    var title = this.title.text();
+                    this.screen.model.execute(
+                        'view_toolbar_get', [], this.screen.context)
+                        .then(function(toolbars) {
+                            var prints = toolbars.print.filter(is_report);
+                            var emails = {};
+                            for (var i = 0; i < toolbars.emails.length; i++) {
+                                var email = toolbars.emails[i];
+                                emails[email.name] = email.id;
+                            }
+                            record.rec_name().then(function(rec_name) {
+                                function email(template) {
+                                    new Sao.Window.Email(
+                                        title + ': ' + rec_name, record,
+                                        prints, template);
+                                }
+                                Sao.common.selection(
+                                    Sao.i18n.gettext("Template"), emails, true)
+                                    .then(email, email);
+                            });
+                        });
+                }.bind(this));
+            }
+        },
         refresh_resources: function(reload) {
             var record = this.screen.current_record;
             if (record) {
@@ -1180,6 +1363,9 @@
                     this.update_resources.bind(this));
             } else {
                 this.update_resources();
+            }
+            if (reload) {
+                this.refresh_attachment_preview(true);
             }
         },
         update_resources: function(resources) {
@@ -1204,6 +1390,7 @@
                     color = '';
                 }
                 badge.css('background-color', color);
+                badge.css('color', '#fff');
                 badge.text(text);
                 button.attr('title', title);
                 button.prop('disabled', disabled);
@@ -1252,6 +1439,12 @@
                 }.bind(this));
                 this.buttons.switch_.prop('disabled',
                     this.attributes.view_ids > 1);
+
+                this.menu_buttons.delete_.toggleClass(
+                    'disabled', !this.screen.deletable);
+                this.menu_buttons.save.toggleClass(
+                    'disabled', this.screen.readonly);
+
                 var msg = name + ' / ' + data[1];
                 if (data[1] < data[2]) {
                     msg += Sao.i18n.gettext(' of ') + data[2];
@@ -1260,6 +1453,7 @@
             }
             this.info_bar.message();
             // TODO activate_save
+            this.refresh_attachment_preview();
         },
         action: function() {
             window.setTimeout(function() {
@@ -1285,10 +1479,20 @@
         },
         do_export: function(export_) {
             this.modified_save().then(function() {
-                var ids = this.screen.current_view.selected_records
-                    .map(function(r) {
+                var ids, paths;
+                if (this.screen.current_view &&
+                    (this.screen.current_view.view_type == 'tree') &&
+                    this.screen.current_view.children_field) {
+                    ids = this.screen.listed_records.map(function(r) {
                         return r.id;
                     });
+                    paths = this.screen.listed_paths;
+                } else {
+                    ids = this.screen.selected_records.map(function(r) {
+                        return r.id;
+                    });
+                    paths = this.screen.selected_paths;
+                }
                 var fields = export_['export_fields.'].map(function(field) {
                     return field.name;
                 });
@@ -1299,23 +1503,27 @@
                             'fields': fields,
                             'data': data,
                         };
-                        unparse_obj.data = data.map(function(row) {
-                            return Sao.Window.Export.format_row(row);
+                        unparse_obj.data = data.map(function(row, i) {
+                            var indent = (
+                                paths && paths[i] ? paths[i].length -1 : 0);
+                            return Sao.Window.Export.format_row(row, indent);
                         });
                         var delimiter = ',';
-                        var encoding = 'utf-8';
                         if (navigator.platform &&
                             navigator.platform.slice(0, 3) == 'Win') {
                             delimiter = ';';
-                            encoding = 'cp1252';
                         }
                         var csv = Papa.unparse(unparse_obj, {
                             quoteChar: '"',
                             delimiter: delimiter,
                         });
+                        if (navigator.platform &&
+                            navigator.platform.slice(0, 3) == 'Win') {
+                            csv = Sao.BOM_UTF8 + csv;
+                        }
                         Sao.common.download_file(
                             csv, export_.name + '.csv',
-                            {'type': 'text/csv;charset=' + encoding});
+                            {'type': 'text/csv;charset=utf-8'});
                     });
             }.bind(this));
         },
@@ -1326,7 +1534,7 @@
             new Sao.Window.Import(this.title.text(), this.screen);
         },
         get_url: function() {
-            return this.screen.get_url(this.attributes.name);
+            return this.screen.get_url(this.name);
         },
     });
 
@@ -1339,7 +1547,11 @@
             this.view_id = (attributes.view_ids.length > 0 ?
                     attributes.view_ids[0] : null);
             this.context = attributes.context;
-            this.name = attributes.name || '';
+            var name = attributes.name;
+            if (!name) {
+                name = Sao.common.MODELNAME.get(this.model);
+            }
+            this.name = name;
             this.dialogs = [];
             this.board = null;
             UIView = new Sao.Model('ir.ui.view');
@@ -1402,6 +1614,8 @@
             wizard.tab = this;
             this.create_tabcontent();
             this.title.text(this.name_el.text());
+            this.content.remove();
+            this.content = wizard.form;
             this.el.append(wizard.form);
         },
         create_toolbar: function() {
@@ -1412,7 +1626,8 @@
             var prm = jQuery.when();
             if ((wizard.state !== wizard.end_state) &&
                 (wizard.end_state in wizard.states)) {
-                prm = wizard.response(wizard.end_state);
+                prm = wizard.response(
+                    wizard.states[wizard.end_state].attributes);
             }
             var dfd = jQuery.Deferred();
             prm.always(function() {

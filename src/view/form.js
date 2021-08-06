@@ -31,11 +31,12 @@ function eval_pyson(value){
             var container = new Sao.View.Form.Container(
                 Number(node.getAttribute('col') || 4));
             this.view.containers.push(container);
-            this.view.el.append(container.el);
             this.parse_child(node, container);
             if (this._containers.length > 0) {
                 throw 'AssertionError';
             }
+            // Append after parsing child to minimize browser reflow
+            this.view.el.append(container.el);
         },
         parse_child: function(node, container) {
             if (container) {
@@ -260,6 +261,7 @@ function eval_pyson(value){
         display: function() {
             var record = this.record;
             var field;
+            var depends;
             var name;
             var promesses = [];
             if (record) {
@@ -267,19 +269,19 @@ function eval_pyson(value){
                 // Get first the lazy one from the view to reduce number of requests
                 var field_names = new Set();
                 for (name in this.widgets) {
-                    field = record.model.fields[name];
+                    depends = (
+                        record.model.fields[name].description.depends || []);
                     field_names.add(name);
-                    for (var i = 0; i < field.description.depends.length; i++) {
-                        var depend = field.description.depends[i];
-                        var depend_field = record.model.fields[depend];
-                        if (depend.startsWith('_parent') || !depend_field) {
-                            continue;
+                    for (var i = 0; i < depends.length; i++) {
+                        var depend = depends[i];
+                        if (!depend.startsWith('_parent') &&
+                            depend in record.model.fields) {
+                            field_names.add(depend);
                         }
-                        field_names.add(depend);
                     }
                 }
                 var fields = [];
-                field_names.forEach(function (fname) {
+                field_names.forEach(function(fname) {
                     field = record.model.fields[fname];
                     fields.push([
                         fname,
@@ -707,9 +709,9 @@ function eval_pyson(value){
                 field = record.model.fields[this.attributes.name];
             }
             if (!((this.attributes.string === undefined) ||
-                this.attributes.string) && field) {
+                this.attributes.string)) {
                 var text = '';
-                if (record) {
+                if (field && record) {
                     text = field.get_client(record) || '';
                 }
                 this.label_el.text(text);
@@ -790,8 +792,8 @@ function eval_pyson(value){
                     'data-toggle': 'tab',
                     'href': '#' + tab_id
                 })
-                .append(img)
-                .text(text))
+                .text(text)
+                .prepend(img))
                 .appendTo(this.nav);
             pane.append(tab).appendTo(this.panes);
             if (!this.selected) {
@@ -908,6 +910,7 @@ function eval_pyson(value){
             Sao.View.Form.Link._super.init.call(this, attributes);
             this.el = jQuery('<button/>', {
                 'class': this.class_ + ' btn btn-link',
+                'name': attributes.name,
             });
             if (attributes.icon) {
                 var img = jQuery('<img/>', {
@@ -955,7 +958,7 @@ function eval_pyson(value){
                 'method': 'model.ir.action.get_action_value',
                 'params': [this.action_id, context],
             }, Sao.Session.current_session, false);
-            this.label.text(action.rec_name);
+            this.label.text(action.name);
 
             var decoder = new Sao.PYSON.Decoder(pyson_ctx);
             var domain = decoder.decode(action.pyson_domain);
@@ -973,7 +976,7 @@ function eval_pyson(value){
             var counter;
             if (record && record.links_counts[this.action_id]) {
                 counter = record.links_counts[this.action_id];
-                this.set_label(action.rec_name, tab_domains, counter);
+                this.set_label(action.name, tab_domains, counter);
             } else {
                 if (tab_domains.length) {
                     counter = tab_domains.map(function() {
@@ -997,7 +1000,7 @@ function eval_pyson(value){
                         }, Sao.Session.current_session).then(function(value) {
                             this._set_count(
                                 value, i, current, counter,
-                                action.rec_name, tab_domains);
+                                action.name, tab_domains);
                         }.bind(this));
                     }, this);
                 } else {
@@ -1008,7 +1011,7 @@ function eval_pyson(value){
                     }, Sao.Session.current_session).then(function(value) {
                         this._set_count(
                             value, 0, current, counter,
-                            action.rec_name, tab_domains);
+                            action.name, tab_domains);
                     }.bind(this));
                 }
             }
@@ -1075,14 +1078,29 @@ function eval_pyson(value){
                 var field = record.model.fields[name];
                 name = field.get(record);
             }
-            Sao.common.ICONFACTORY.get_icon_url(name)
-                .done(function(url) {
-                    if (url) {
-                        this.img.attr('src', url);
-                    } else {
-                        this.img.removeAttr('src');
+            if (this.attributes.type == 'url') {
+                if (name) {
+                    if (this.attributes.url_size) {
+                        var url = new URL(name, window.location);
+                        url.searchParams.set(
+                            this.attributes.url_size,
+                            attributes.size || 48);
+                        name = url.href;
                     }
-                }.bind(this));
+                    this.img.attr('src', name);
+                } else {
+                    this.img.removeAttr('src');
+                }
+            } else {
+                Sao.common.ICONFACTORY.get_icon_url(name)
+                    .done(function(url) {
+                        if (url) {
+                            this.img.attr('src', url);
+                        } else {
+                            this.img.removeAttr('src');
+                        }
+                    }.bind(this));
+            }
         }
     });
 
@@ -1204,7 +1222,6 @@ function eval_pyson(value){
         },
         set_readonly: function(readonly) {
             this._readonly = readonly;
-            this.el.prop('disabled', readonly);
         },
         set_required: function(required) {
         },
@@ -1617,11 +1634,11 @@ function eval_pyson(value){
                 dialog.modal.find('input,select')
                     .filter(':visible').first().focus();
             });
-        },
-        close: function(dialog) {
-            dialog.modal.on('hidden.bs.modal', function(event) {
+            dialog.modal.on('hide.bs.modal', function(){
                 jQuery(this).remove();
             });
+        },
+        close: function(dialog) {
             dialog.modal.modal('hide');
         },
         read: function(widget, dialog) {
@@ -1804,7 +1821,8 @@ function eval_pyson(value){
             }).appendTo(this.el);
             this.input = this.labelled = jQuery('<input/>', {
                 'type': 'text',
-                'class': 'form-control input-sm mousetrap'
+                'class': 'form-control input-sm mousetrap',
+                'name': attributes.name,
             }).appendTo(this.group);
             if (!jQuery.isEmptyObject(attributes.autocomplete)) {
                 this.datalist = jQuery('<datalist/>').appendTo(this.el);
@@ -1889,6 +1907,7 @@ function eval_pyson(value){
             return this.input.val();
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Char._super.set_readonly.call(this, readonly);
             this.input.prop('readonly', readonly);
         },
         focus: function() {
@@ -1897,7 +1916,8 @@ function eval_pyson(value){
         translate_widget: function() {
             return jQuery('<input/>', {
                 'class': 'form-control',
-                'readonly': 'readonly'
+                'readonly': 'readonly',
+                'name': this.attributes.name,
             });
         }
     });
@@ -1939,57 +1959,68 @@ function eval_pyson(value){
     Sao.View.Form.Date = Sao.class_(Sao.View.Form.Widget, {
         class_: 'form-date',
         _width: '10em',
+        _input: 'date',
+        _input_format: '%Y-%m-%d',
+        _format: Sao.common.format_date,
+        _parse: Sao.common.parse_date,
+        _default_format: '%x',
         init: function(view, attributes) {
             Sao.View.Form.Date._super.init.call(this, view, attributes);
             this.el = jQuery('<div/>', {
                 'class': this.class_
             });
-            this.date = this.labelled = jQuery('<div/>', {
+            var group = this.labelled = jQuery('<div/>', {
                 'class': ('input-group input-group-sm ' +
-                    'input-icon input-icon-primary'),
+                    'input-icon input-icon-secondary'),
             }).appendTo(this.el);
-            Sao.common.ICONFACTORY.get_icon_img('tryton-date')
-                .appendTo(jQuery('<div/>', {
-                    'class': 'datepickerbutton icon-input icon-primary',
+            this.date = this.labelled = jQuery('<input/>', {
+                'type': 'text',
+                'class': 'form-control input-sm mousetrap',
+                'name': attributes.name,
+            }).appendTo(group);
+            this.date.uniqueId();
+            this.input = jQuery('<input/>', {
+                'type': this._input,
+                'role': 'button',
+                'tabindex': -1,
+            });
+            this.input.click(function() {
+                var value = this.get_value();
+                value = this._format(this._input_format, value);
+                this.input.val(value);
+            }.bind(this));
+            this.input.change(function() {
+                var value = this.input.val();
+                if (value) {
+                    value = this._parse(this._input_format, value);
+                    value = this._format(this.get_format(), value);
+                    this.date.val(value);
+                    this.date.focus();
+                }
+            }.bind(this));
+            if (this.input[0].type == this._input) {
+                this.icon = jQuery('<div/>', {
+                    'class': 'icon-input icon-secondary',
                     'aria-label': Sao.i18n.gettext("Open the calendar"),
                     'title': Sao.i18n.gettext("Open the calendar"),
-                }).appendTo(this.date));
-            this.input = jQuery('<input/>', {
-                'type': 'text',
-                'class': 'form-control input-sm mousetrap'
-            }).appendTo(this.date);
-            this.date.datetimepicker({
-                'locale': moment.locale(),
-                'keyBinds': null,
-                'useCurrent': false,
-            });
+                }).appendTo(group);
+                this.input.appendTo(this.icon);
+                Sao.common.ICONFACTORY.get_icon_img('tryton-date')
+                    .appendTo(this.icon);
+            }
             this.date.css('max-width', this._width);
-            this.date.on('dp.change', this.focus_out.bind(this));
-            // We must set the overflow of the treeview and modal-body
-            // containing the input to visible to prevent vertical scrollbar
-            // inherited from the auto overflow-x
-            // (see http://www.w3.org/TR/css-overflow-3/#overflow-properties)
-            this.date.on('dp.hide', function() {
-                this.date.closest('.treeview').css('overflow', '');
-                this.date.closest('.modal-body').css('overflow', '');
-                this.date.closest('.form-group_').css('overflow', 'auto');
-            }.bind(this));
-            this.date.on('dp.show', function() {
-                this.date.closest('.treeview').css('overflow', 'visible');
-                this.date.closest('.modal-body').css('overflow', 'visible');
-                this.date.closest('.form-group_').css('overflow', 'visible');
-            }.bind(this));
-            var mousetrap = new Mousetrap(this.el[0]);
+            this.date.change(this.focus_out.bind(this));
+            var mousetrap = new Mousetrap(this.date[0]);
 
             mousetrap.bind('enter', function(e, combo) {
-                if (!this.date.find('input').prop('readonly')) {
-                    this.date.data('DateTimePicker').date();
+                if (!this.date.prop('readonly')) {
+                    this.focus_out();
                 }
             }.bind(this));
             mousetrap.bind('=', function(e, combo) {
                 if (!this.date.find('input').prop('readonly')) {
                     e.preventDefault();
-                    this.date.data('DateTimePicker').date(moment());
+                    this.date.val(this._format(this.get_format(), moment()));
                 }
             }.bind(this));
 
@@ -1999,43 +2030,31 @@ function eval_pyson(value){
                         return;
                     }
                     e.preventDefault();
-                    var dp = this.date.data('DateTimePicker');
-                    var date = dp.date();
+                    var date = this.get_value() || Sao.DateTime();
                     date.add(operator[1]);
-                    dp.date(date);
+                    this.date.val(this._format(this.get_format(), date));
                 }.bind(this));
             }.bind(this));
         },
         get_format: function() {
-            return this.field.date_format(this.record);
+            if (this.field && this.record) {
+                return this.field.date_format(this.record);
+            } else {
+                return this._default_format;
+            }
         },
         get_value: function() {
-            var value = this.date.data('DateTimePicker').date();
-            if (value) {
-                value.isDate = true;
-            }
-            return value;
+            return this._parse(this.get_format(), this.date.val());
         },
         display: function() {
             var record = this.record;
             var field = this.field;
-            if (record && field) {
-                this.date.data('DateTimePicker').format(
-                    Sao.common.moment_format(this.get_format()));
-            }
             Sao.View.Form.Date._super.display.call(this);
             var value;
             if (record) {
                 value = field.get_client(record);
-            } else {
-                value = null;
             }
-            this.date.off('dp.change');
-            try {
-                this.date.data('DateTimePicker').date(value);
-            } finally {
-                this.date.on('dp.change', this.focus_out.bind(this));
-            }
+            this.date.val(this._format(this.get_format(), value));
         },
         focus: function() {
             this.input.focus();
@@ -2052,41 +2071,58 @@ function eval_pyson(value){
             this.field.set_client(this.record, this.get_value());
         },
         set_readonly: function(readonly) {
-            this.date.find('button').prop('disabled', readonly);
-            this.date.find('input').prop('readonly', readonly);
+            Sao.View.Form.Date._super.set_readonly.call(this, readonly);
+            this.el.find('input').prop('readonly', readonly);
+            if (this.icon){
+                if (readonly) {
+                    this.icon.hide();
+                } else {
+                    this.icon.show();
+                }
+            }
         }
     });
 
     Sao.View.Form.DateTime = Sao.class_(Sao.View.Form.Date, {
         class_: 'form-datetime',
         _width: '20em',
+        _input: 'datetime-local',
+        _input_format: '%Y-%m-%dT%H:%M:%S',
+        _format: Sao.common.format_datetime,
+        _parse: Sao.common.parse_datetime,
+        _default_format: '%x %X',
         get_format: function() {
-            var record = this.record;
-            var field = this.field;
-            return field.date_format(record) + ' ' + field.time_format(record);
-        },
-        get_value: function() {
-            var value = this.date.data('DateTimePicker').date();
-            if (value) {
-                value.isDateTime = true;
+            if (this.field && this.record) {
+                return (this.field.date_format(this.record) + ' ' +
+                    this.field.time_format(this.record));
+            } else {
+                return this._default_format;
             }
-            return value;
-        }
+        },
     });
 
     Sao.View.Form.Time = Sao.class_(Sao.View.Form.Date, {
         class_: 'form-time',
         _width: '10em',
-        get_format: function() {
-            return this.field.time_format(this.record);
-        },
-        get_value: function() {
-            var value = this.date.data('DateTimePicker').date();
-            if (value) {
-                value.isTime = true;
+        _input: 'time',
+        _input_format: '%H:%M:%S',
+        _format: Sao.common.format_time,
+        _parse: Sao.common.parse_time,
+        _default_format: '%X',
+        init: function(view, attributes) {
+            Sao.View.Form.Time._super.init.call(this, view, attributes);
+            if (~navigator.userAgent.indexOf("Firefox")) {
+                // time input on Firefox does not have a pop-up
+                this.input.parent().hide();
             }
-            return value;
-        }
+        },
+        get_format: function() {
+            if (this.field && this.record) {
+                return this.field.time_format(this.record);
+            } else {
+                return this._default_format;
+            }
+        },
     });
 
     Sao.View.Form.TimeDelta = Sao.class_(Sao.View.Form.Widget, {
@@ -2098,7 +2134,8 @@ function eval_pyson(value){
             });
             this.input = this.labelled = jQuery('<input/>', {
                 'type': 'text',
-                'class': 'form-control input-sm mousetrap'
+                'class': 'form-control input-sm mousetrap',
+                'name': attributes.name,
             }).appendTo(this.el);
             this.el.change(this.focus_out.bind(this));
         },
@@ -2126,6 +2163,7 @@ function eval_pyson(value){
             this.field.set_client(this.record, this.input.val());
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.TimeDelta._super.set_readonly.call(this, readonly);
             this.input.prop('readonly', readonly);
         }
     });
@@ -2173,6 +2211,14 @@ function eval_pyson(value){
         init: function(view, attributes) {
             Sao.View.Form.Integer._super.init.call(this, view, attributes);
             this.input_text = this.labelled = integer_input(this.input);
+            if (this.attributes.symbol) {
+                this.symbol_start = jQuery('<span/>', {
+                    'class': 'input-group-addon symbol symbol-start'
+                }).prependTo(this.group);
+                this.symbol_end = jQuery('<span/>', {
+                    'class': 'input-group-addon symbol symbol-end'
+                }).appendTo(this.group);
+            }
             this.group.css('width', '');
             this.factor = Number(attributes.factor || 1);
         },
@@ -2214,12 +2260,36 @@ function eval_pyson(value){
             return 8;
         },
         display: function() {
+            var set_symbol = function(el, text) {
+                if (text) {
+                    el.text(text);
+                    el.show();
+                } else {
+                    el.text('');
+                    el.hide();
+                }
+            };
             Sao.View.Form.Integer._super.display.call(this);
-            var field = this.field;
+            var field = this.field,
+                record = this.record;
             var value = '';
-            this.el.css('width', this.width + 'ch');
+            if (this.width !== null){
+                this.el.css('width', this.width + 'ch');
+            }
             if (field) {
-                value = field.get_client(this.record, this.factor);
+                value = field.get_client(record, this.factor);
+            }
+            if (field && this.attributes.symbol) {
+                var result = field.get_symbol(record, this.attributes.symbol);
+                var symbol = result[0],
+                    position = result[1];
+                if (position < 0.5) {
+                    set_symbol(this.symbol_start, symbol);
+                    set_symbol(this.symbol_end, '');
+                } else {
+                    set_symbol(this.symbol_start, '');
+                    set_symbol(this.symbol_end, symbol);
+                }
             }
             this.input_text.val(value);
             this.input_text.attr('maxlength', this.input.attr('maxlength'));
@@ -2281,7 +2351,8 @@ function eval_pyson(value){
                 'class': this.class_
             });
             this.select = this.labelled = jQuery('<select/>', {
-                'class': 'form-control input-sm mousetrap'
+                'class': 'form-control input-sm mousetrap',
+                'name': attributes.name,
             });
             this.el.append(this.select);
             this.select.change(this.focus_out.bind(this));
@@ -2294,27 +2365,28 @@ function eval_pyson(value){
         },
         update_selection: function(record, field, callbak) {
             Sao.common.selection_mixin.update_selection.call(this, record,
-                field, function(selection) {
-                    this.set_selection(selection);
+                field, function(selection, help) {
+                    this.set_selection(selection, help);
                     if (callbak) {
-                        callbak();
+                        callbak(help);
                     }
                 }.bind(this));
         },
-        set_selection: function(selection) {
+        set_selection: function(selection, help) {
             var select = this.select;
             select.empty();
             selection.forEach(function(e) {
                 select.append(jQuery('<option/>', {
                     'value': JSON.stringify(e[0]),
-                    'text': e[1]
+                    'text': e[1],
+                    'title': help[e[0]],
                 }));
             });
         },
         display_update_selection: function() {
             var record = this.record;
             var field = this.field;
-            this.update_selection(record, field, function() {
+            this.update_selection(record, field, function(help) {
                 if (!field) {
                     this.select.val('');
                     return;
@@ -2342,6 +2414,11 @@ function eval_pyson(value){
                 }
                 prm.done(function() {
                     this.select.val(JSON.stringify(value));
+                    var title = help[value] || null;
+                    if (this.attributes.help && title) {
+                        title = this.attributes.help + '\n' + title;
+                    }
+                    this.select.attr('title', title);
                 }.bind(this));
             }.bind(this));
         },
@@ -2366,6 +2443,7 @@ function eval_pyson(value){
             this.field.set_client(this.record, value);
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Selection._super.set_readonly.call(this, readonly);
             this.select.prop('disabled', readonly);
         }
     });
@@ -2379,7 +2457,8 @@ function eval_pyson(value){
             });
             this.input = this.labelled = jQuery('<input/>', {
                 'type': 'checkbox',
-                'class': 'form-control input-sm mousetrap'
+                'class': 'form-control input-sm mousetrap',
+                'name': attributes.name,
             }).appendTo(this.el);
             this.input.change(this.focus_out.bind(this));
             this.input.click(function() {
@@ -2405,6 +2484,7 @@ function eval_pyson(value){
             this.field.set_client(this.record, value);
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Boolean._super.set_readonly.call(this, readonly);
             this.input.prop('readonly', readonly);
         }
     });
@@ -2419,7 +2499,8 @@ function eval_pyson(value){
                 'class': this.class_
             });
             this.input = this.labelled = jQuery('<textarea/>', {
-                'class': 'form-control input-sm mousetrap'
+                'class': 'form-control input-sm mousetrap',
+                'name': attributes.name,
             }).appendTo(this.el);
             this.input.change(this.focus_out.bind(this));
             if (this.attributes.translate) {
@@ -2466,6 +2547,7 @@ function eval_pyson(value){
             this.field.set_client(this.record, this.get_value());
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Text._super.set_readonly.call(this, readonly);
             this.input.prop('readonly', readonly);
         },
         translate_widget: function() {
@@ -2486,7 +2568,10 @@ function eval_pyson(value){
                 'class': this.class_ + ' panel panel-default'
             });
             if (parseInt(attributes.toolbar || '1', 10)) {
-                this.toolbar = this.get_toolbar().appendTo(this.el);
+                this.toolbar = Sao.common.richtext_toolbar().appendTo(
+                    jQuery('<div/>', {
+                        'class': 'panel-heading',
+                    }).appendTo(this.el));
             }
             this.input = this.labelled = jQuery('<div/>', {
                 'class': 'richtext mousetrap',
@@ -2507,122 +2592,6 @@ function eval_pyson(value){
                     Sao.common.ICONFACTORY.get_icon_img('tryton-translate'));
                 button.click(this.translate.bind(this));
             }
-        },
-        get_toolbar: function() {
-            var i, properties, button;
-            var toolbar = jQuery('<div/>', {
-                'class': 'btn-toolbar',
-                'role': 'toolbar'
-            }).appendTo(jQuery('<div/>', {
-                'class': 'panel-heading'
-            }));
-
-            var button_apply_command = function(evt) {
-                document.execCommand(evt.data);
-            };
-
-            var add_buttons = function(buttons) {
-                var group = jQuery('<div/>', {
-                    'class': 'btn-group',
-                    'role': 'group'
-                }).appendTo(toolbar);
-                for (i in buttons) {
-                    properties = buttons[i];
-                    button = jQuery('<button/>', {
-                        'class': 'btn btn-default',
-                        'type': 'button'
-                    }).append(Sao.common.ICONFACTORY.get_icon_img(
-                        'tryton-format-' + properties.icon)
-                    ).appendTo(group);
-                    button.click(properties.command, button_apply_command);
-                }
-            };
-
-            add_buttons([
-                    {
-                        'icon': 'bold',
-                        'command': 'bold'
-                    }, {
-                        'icon': 'italic',
-                        'command': 'italic'
-                    }, {
-                        'icon': 'underline',
-                        'command': 'underline'
-                    }]);
-
-            var selections = [
-            {
-                'heading': Sao.i18n.gettext('Font'),
-                'options': ['Normal', 'Serif', 'Sans', 'Monospace'],  // XXX
-                'command': 'fontname'
-            }, {
-                'heading': Sao.i18n.gettext('Size'),
-                'options': [1, 2, 3, 4, 5, 6, 7],
-                'command': 'fontsize'
-            }];
-            var add_option = function(dropdown, properties) {
-                return function(option) {
-                    dropdown.append(jQuery('<li/>').append(jQuery('<a/>', {
-                        'href': '#'
-                    }).text(option).click(function(evt) {
-                        evt.preventDefault();
-                        document.execCommand(properties.command, false, option);
-                    })));
-                };
-            };
-            for (i in selections) {
-                properties = selections[i];
-                var group = jQuery('<div/>', {
-                    'class': 'btn-group',
-                    'role': 'group'
-                }).appendTo(toolbar);
-                button = jQuery('<button/>', {
-                    'class': 'btn btn-default dropdown-toggle',
-                    'type': 'button',
-                    'data-toggle': 'dropdown',
-                    'aria-expanded': false,
-                    'aria-haspopup': true
-                }).append(properties.heading)
-                .append(jQuery('<span/>', {
-                    'class': 'caret'
-                })).appendTo(group);
-                var dropdown = jQuery('<ul/>', {
-                    'class': 'dropdown-menu'
-                }).appendTo(group);
-                properties.options.forEach(add_option(dropdown, properties));
-            }
-
-            add_buttons([
-                    {
-                        'icon': 'align-left',
-                        'command': Sao.i18n.rtl? 'justifyRight' : 'justifyLeft',
-                    }, {
-                        'icon': 'align-center',
-                        'command': 'justifyCenter'
-                    }, {
-                        'icon': 'align-right',
-                        'command': Sao.i18n.rtl? 'justifyLeft': 'justifyRight',
-                    }, {
-                        'icon': 'align-justify',
-                        'command': 'justifyFull'
-                    }]);
-
-            // TODO backColor
-            [['foreColor', '#000000']].forEach(
-                    function(e) {
-                        var command = e[0];
-                        var color = e[1];
-                        jQuery('<input/>', {
-                            'class': 'btn btn-default',
-                            'type': 'color'
-                        }).appendTo(toolbar)
-                        .change(function() {
-                            document.execCommand(command, false, jQuery(this).val());
-                        }).focusin(function() {
-                            document.execCommand(command, false, jQuery(this).val());
-                        }).val(color);
-            });
-            return toolbar;
         },
         focus_out: function() {
             // Let browser set the next focus before testing
@@ -2663,31 +2632,8 @@ function eval_pyson(value){
             this.field.set_client(this.record, value);
         },
         _normalize_markup: function(content) {
-            var el = jQuery('<div/>').html(
+            return Sao.common.richtext_normalize(
                 Sao.HtmlSanitizer.sanitize(content || ''));
-            this._normalize(el);
-            return el.html();
-        },
-        _normalize: function(el) {
-            // TODO order attributes
-            el.find('div').each(function(i, el) {
-                el = jQuery(el);
-                // Not all browsers respect the styleWithCSS
-                if (el.css('text-align')) {
-                    // Remove browser specific prefix
-                    var align = el.css('text-align').split('-').pop();
-                    el.attr('align', align);
-                    el.css('text-align', '');
-                }
-                // Some browsers set start as default align
-                if (el.attr('align') == 'start') {
-                    if (Sao.i18n.rtl) {
-                        el.attr('align', 'right');
-                    } else {
-                        el.attr('align', 'left');
-                    }
-                }
-            });
         },
         get modified() {
             if (this.record && this.field) {
@@ -2698,6 +2644,7 @@ function eval_pyson(value){
             return false;
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.RichText._super.set_readonly.call(this, readonly);
             this.input.prop('contenteditable', !readonly);
             if (this.toolbar) {
                 this.toolbar.find('button,input,select')
@@ -2709,7 +2656,10 @@ function eval_pyson(value){
                 'class': this.class_ + ' panel panel-default',
             });
             if (parseInt(this.attributes.toolbar || '1', 10)) {
-                this.get_toolbar().appendTo(widget);
+                Sao.common.richtext_toolbar().appendTo(
+                    jQuery('<div/>', {
+                        'class': 'panel-heading',
+                    }).appendTo(widget));
             }
             var input = jQuery('<div/>', {
                 'class': 'richtext mousetrap',
@@ -2747,7 +2697,8 @@ function eval_pyson(value){
             }).appendTo(this.el);
             this.entry = this.labelled = jQuery('<input/>', {
                 'type': 'input',
-                'class': 'form-control input-sm mousetrap'
+                'class': 'form-control input-sm mousetrap',
+                'name': attributes.name,
             }).appendTo(group);
             this.but_primary = jQuery('<img/>', {
                 'class': 'icon',
@@ -2788,6 +2739,10 @@ function eval_pyson(value){
                 // Remove the first tree view as mode is form only
                 view_ids.shift();
             }
+            var model = this.get_model();
+            var breadcrumb = jQuery.extend([], this.view.screen.breadcrumb);
+            breadcrumb.push(
+                this.attributes.string || Sao.common.MODELNAME.get(model));
             return new Sao.Screen(this.get_model(), {
                 'context': context,
                 'domain': domain,
@@ -2796,6 +2751,7 @@ function eval_pyson(value){
                 'views_preload': this.attributes.views,
                 'readonly': this._readonly,
                 exclude_field: this.attributes.relation_field,
+                breadcrumb: breadcrumb,
             });
         },
         set_text: function(value) {
@@ -2887,6 +2843,7 @@ function eval_pyson(value){
             this.entry.focus();
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Many2One._super.set_readonly.call(this, readonly);
             this._readonly = readonly;
             this._set_button_sensitive();
         },
@@ -2954,7 +2911,8 @@ function eval_pyson(value){
                     var params = {};
                     params.model = this.get_model();
                     params.res_id = m2o_id;
-                    params.mode = ['form', 'tree'];
+                    // JMO merge_60 , here we add 'tree' after 'form'
+                    params.mode = ['form'];
                     params.name = this.attributes.string;
                     Sao.Tab.create(params);
                     return;
@@ -2975,7 +2933,6 @@ function eval_pyson(value){
                     screen.load([m2o_id]);
                     win = new Sao.Window.Form(screen, callback.bind(this), {
                         save_current: true,
-                        title: this.attributes.string
                     });
                 }.bind(this));
                 return;
@@ -3033,7 +2990,6 @@ function eval_pyson(value){
                 var win = new Sao.Window.Form(screen, callback.bind(this), {
                     new_: true,
                     save_current: true,
-                    title: this.attributes.string,
                     rec_name: rec_name
                 });
             }.bind(this));
@@ -3194,20 +3150,21 @@ function eval_pyson(value){
         },
         update_selection: function(record, field, callback) {
             Sao.common.selection_mixin.update_selection.call(this, record,
-                field, function(selection) {
-                    this.set_selection(selection);
+                field, function(selection, help) {
+                    this.set_selection(selection, help);
                     if (callback) {
                         callback();
                     }
                 }.bind(this));
         },
-        set_selection: function(selection) {
+        set_selection: function(selection, help) {
             var select = this.select;
             select.empty();
             selection.forEach(function(e) {
                 select.append(jQuery('<option/>', {
                     'value': e[0],
-                    'text': e[1]
+                    'text': e[1],
+                    'title': help[e[0]],
                 }));
             });
         },
@@ -3425,11 +3382,18 @@ function eval_pyson(value){
             if (attributes.add_remove) {
                 this.wid_text = jQuery('<input/>', {
                     type: 'text',
-                    'class': 'form-control input-sm'
+                    'class': 'form-control input-sm',
+                    'name': attributes.name,
                 }).appendTo(group);
-                // TODO add completion
-                //
-                //
+
+                if (!attributes.completion || attributes.completion == '1') {
+                    Sao.common.get_completion(this.wid_text,
+                        this._update_completion.bind(this),
+                        this._completion_match_selected.bind(this),
+                        this._completion_action_activated.bind(this));
+                    this.wid_completion = true;
+                }
+
                 buttons =  jQuery('<div/>', {
                     'class': 'input-group-btn',
                 }).appendTo(group);
@@ -3514,7 +3478,11 @@ function eval_pyson(value){
             this.el.append(this.content);
 
             var modes = (attributes.mode || 'tree,form').split(',');
-            this.screen = new Sao.Screen(attributes.relation, {
+            var model = attributes.relation;
+            var breadcrumb = jQuery.extend([], this.view.screen.breadcrumb);
+            breadcrumb.push(
+                attributes.string || Sao.common.MODELNAME.get(model));
+            this.screen = new Sao.Screen(model, {
                 mode: modes,
                 view_ids: (attributes.view_ids || '').split(','),
                 views_preload: attributes.views || {},
@@ -3522,7 +3490,8 @@ function eval_pyson(value){
                 row_activate: this.activate.bind(this),
                 exclude_field: attributes.relation_field || null,
                 limit: null,
-                pre_validate: attributes.pre_validate
+                pre_validate: attributes.pre_validate,
+                breadcrumb: breadcrumb,
             });
             // [Coog specific]
             // > multi_mixed_view see tryton/8fa02ed59d03aa52600fb8332973f6a88d46d8c0
@@ -3535,7 +3504,10 @@ function eval_pyson(value){
                 this.content.append(this.screen.screen_container.el);
             }.bind(this));
 
-            // TODO key_press
+            if (attributes.add_remove) {
+                // Use keydown to not receive focus-in TAB
+                this.wid_text.on('keydown', this.key_press.bind(this));
+            }
 
             this.but_switch.prop('disabled', this.screen.number_of_views <= 0);
         },
@@ -3645,7 +3617,7 @@ function eval_pyson(value){
             return this.screen.current_view.modified;
         },
         set_readonly: function(readonly) {
-            this._readonly = readonly;
+            Sao.View.Form.One2Many._super.set_readonly.call(this, readonly);
             this._set_button_sensitive();
             this._set_label_state();
         },
@@ -3672,6 +3644,7 @@ function eval_pyson(value){
                 o2m_size = null;
                 size_limit = false;
             }
+            var deletable = this.screen.deletable;
             var create = this.attributes.create;
             if (create === undefined) {
                 create = true;
@@ -3684,7 +3657,7 @@ function eval_pyson(value){
                 delete_ = true;
             }
             this.but_del.prop('disabled', this._readonly || !delete_ ||
-                !access['delete'] || !this._position);
+                !access['delete'] || !this._position || !deletable);
             this.but_undel.prop('disabled', this._readonly || size_limit ||
                  !this._position);
             this.but_open.prop('disabled', !access.read || !this._position);
@@ -3805,7 +3778,8 @@ function eval_pyson(value){
                     this.screen.group.load(ids, true);
                     prm = this.screen.display();
                     if (sequence) {
-                        this.screen.group.set_sequence(sequence);
+                        this.screen.group.set_sequence(
+                            sequence, this.screen.new_position);
                     }
                 }
                 prm.done(function() {
@@ -3832,7 +3806,8 @@ function eval_pyson(value){
         },
         remove: function(event_) {
             var access = Sao.common.MODELACCESS.get(this.screen.model_name);
-            if (!access.write || !access.read) {
+            var writable = !this.screen.readonly;
+            if (!access.write || !access.read || !writable) {
                 return;
             }
             this.screen.remove(false, true, false);
@@ -3853,7 +3828,8 @@ function eval_pyson(value){
             var sequence = this._sequence();
             var update_sequence = function() {
                 if (sequence) {
-                    this.screen.group.set_sequence(sequence);
+                    this.screen.group.set_sequence(
+                        sequence, this.screen.new_position);
                 }
             }.bind(this);
             if (this.screen.current_view.type == 'form' ||
@@ -3868,7 +3844,6 @@ function eval_pyson(value){
                 var win = new Sao.Window.Form(this.screen, update_sequence, {
                     new_: true,
                     many: field_size,
-                    title: this.attributes.string
                 });
             }
         },
@@ -3935,7 +3910,8 @@ function eval_pyson(value){
                         });
                         var sequence = this._sequence();
                         if (sequence) {
-                            screen.group.set_sequence(sequence);
+                            screen.group.set_sequence(
+                                sequence, screen.new_position);
                         }
                     }.bind(this);
 
@@ -3947,7 +3923,8 @@ function eval_pyson(value){
             return this.edit();
         },
         delete_: function(event_) {
-            if (!Sao.common.MODELACCESS.get(this.screen.model_name)['delete']) {
+            if (!Sao.common.MODELACCESS.get(this.screen.model_name)['delete'] ||
+                !this.screen.deletable) {
                 return;
             }
             this.screen.remove(false, false, false);
@@ -3975,10 +3952,27 @@ function eval_pyson(value){
             return this.validate().then(function() {
                 var record = this.screen.current_record;
                 if (record) {
-                    var win = new Sao.Window.Form(this.screen, function() {},
-                        {title: this.attributes.string});
+                    var win = new Sao.Window.Form(this.screen, function() {});
                 }
             }.bind(this));
+        },
+        key_press: function(event_) {
+            if (event_.which == Sao.common.F3_KEYCODE) {
+                this.new_(event_);
+                event_.preventDefault();
+            } else if (event_.which ==  Sao.common.F2_KEYCODE) {
+                this.add(event_);
+                event_.preventDefault();
+            }
+            if (this.attributes.add_remove) {
+                var activate_keys = [Sao.common.TAB_KEYCODE];
+                if (!this.wid_completion) {
+                    activate_keys.push(Sao.common.RETURN_KEYCODE);
+                }
+                if (~activate_keys.indexOf(event_.which) && this.wid_text.val()) {
+                    this.add(event_);
+                }
+            }
         },
         record_label: function(data) {
             this._position = data[0];
@@ -4025,7 +4019,31 @@ function eval_pyson(value){
                 this.screen.model.name != this.record.model.name)
                 return;
             this.screen.save_tree_state();
-        }
+        },
+        _update_completion: function(text) {
+            if (!this.record) {
+                return;
+            }
+            var model = this.attributes.relation;
+            var domain = this.field.get_domain(this.record);
+            domain = [domain,
+                this.record.expr_eval(this.attributes.add_remove)];
+            var removed_ids = this.field.get_removed_ids(this.record);
+            domain = ['OR', domain, ['id', 'in', removed_ids]];
+            return Sao.common.update_completion(
+                this.wid_text, this.record, this.field, model, domain);
+        },
+        _completion_match_selected: function(value) {
+            this.screen.group.load([value.id], true);
+            this.wid_text.val('');
+        },
+        _completion_action_activated: function(action) {
+            if (action == 'search') {
+                this.add();
+            } else if (action == 'create') {
+                this.new_();
+            }
+        },
     });
 
     Sao.View.Form.Many2Many = Sao.class_(Sao.View.Form.Widget, {
@@ -4067,12 +4085,19 @@ function eval_pyson(value){
             }).appendTo(toolbar);
             this.entry = jQuery('<input/>', {
                 type: 'text',
-                'class': 'form-control input-sm mousetrap'
+                'class': 'form-control input-sm mousetrap',
+                'name': attributes.name,
             }).appendTo(group);
             // Use keydown to not receive focus-in TAB
             this.entry.on('keydown', this.key_press.bind(this));
 
-            // TODO completion
+            if (!attributes.completion || attributes.completion == '1') {
+                Sao.common.get_completion(group,
+                    this._update_completion.bind(this),
+                    this._completion_match_selected.bind(this),
+                    this._completion_action_activated.bind(this));
+                this.wid_completion = true;
+            }
 
             var buttons = jQuery('<div/>', {
                 'class': 'input-group-btn'
@@ -4109,14 +4134,18 @@ function eval_pyson(value){
                 'class': this.class_ + '-content panel-body'
             });
             this.el.append(this.content);
-
+            var model = attributes.relation;
+            var breadcrumb = jQuery.extend([], this.view.screen.breadcrumb);
+            breadcrumb.push(attributes.string || Sao.common.MODELNAME.get(model));
             this.screen = new Sao.Screen(attributes.relation, {
                 mode: ['tree'],
                 view_ids: (attributes.view_ids || '').split(','),
                 views_preload: attributes.views || {},
                 order: attributes.order,
                 row_activate: this.activate.bind(this),
-                limit: null
+                readonly: true,
+                limit: null,
+                breadcrumb: breadcrumb,
             });
             this.screen.message_callback = this.record_label.bind(this);
             this.prm = this.screen.switch_view('tree').done(function() {
@@ -4124,7 +4153,7 @@ function eval_pyson(value){
             }.bind(this));
         },
         set_readonly: function(readonly) {
-            this._readonly = readonly;
+            Sao.View.Form.Many2Many._super.set_readonly.call(this, readonly);
             this._set_button_sensitive();
             this._set_label_state();
         },
@@ -4286,8 +4315,7 @@ function eval_pyson(value){
             }.bind(this);
             screen.switch_view().done(function() {
                 screen.load([this.screen.current_record.id]);
-                new Sao.Window.Form(screen, callback,
-                    {title: this.attributes.string});
+                new Sao.Window.Form(screen, callback);
             }.bind(this));
         },
         new_: function() {
@@ -4299,15 +4327,40 @@ function eval_pyson(value){
                 }
                 this.entry.val('');
             }.bind(this);
+            var text = this.entry.val();
             screen.switch_view().done(function() {
                 new Sao.Window.Form(screen, callback, {
                     'new_': true,
                     'save_current': true,
-                    title: this.attributes.string,
-                    rec_name: this.entry.val()
+                    rec_name: text,
                 });
             }.bind(this));
-        }
+        },
+        _update_completion: function(text) {
+            if (!this.record) {
+                return;
+            }
+            var model = this.attributes.relation;
+            var domain = this.field.get_domain(this.record);
+            var add_remove = this.record.expr_eval(
+                this.attributes.add_remove);
+            if (!jQuery.isEmptyObject(add_remove)) {
+                domain = [domain, add_remove];
+            }
+            return Sao.common.update_completion(
+                this.entry, this.record, this.field, model, domain);
+        },
+        _completion_match_selected: function(value) {
+            this.screen.group.load([value.id], true);
+            this.entry.val('');
+        },
+        _completion_action_activated: function(action) {
+            if (action == 'search') {
+                this.add();
+            } else if (action == 'create') {
+                this.new_();
+            }
+        },
     });
 
     Sao.View.Form.BinaryMixin = Sao.class_(Sao.View.Form.Widget, {
@@ -4388,17 +4441,9 @@ function eval_pyson(value){
             }, !field.get_size);
         },
         open: function() {
-            var params = {};
-            var filename_field = this.filename_field;
-            if (filename_field) {
-                var filename = filename_field.get_client(this.record);
-                // Valid mimetype will make the browser directly open the file
-                params.mimetype = Sao.common.guess_mimetype(filename);
-            }
-            this.save_as(params);
+            this.save_as();
         },
-        save_as: function(params) {
-            var mimetype = params.mimetype || 'application/octet-binary';
+        save_as: function() {
             var field = this.field;
             var record = this.record;
             var prm;
@@ -4442,7 +4487,8 @@ function eval_pyson(value){
             this.size = jQuery('<input/>', {
                 type: 'input',
                 'class': 'form-control input-sm',
-                'readonly': true
+                'readonly': true,
+                'name': attributes.name,
             }).appendTo(group);
 
             if (this.filename && attributes.filename_visible) {
@@ -4501,7 +4547,7 @@ function eval_pyson(value){
             this.update_buttons(Boolean(size));
         },
         key_press: function(evt) {
-            var editable = !this.wid_text.prop('readonly');
+            var editable = !this.text.prop('readonly');
             if (evt.which == Sao.common.F3_KEYCODE && editable) {
                 this.new_();
                 evt.preventDefault();
@@ -4517,10 +4563,11 @@ function eval_pyson(value){
             }
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Binary._super.set_readonly.call(this, readonly);
             this.but_select.prop('disabled', readonly);
             this.but_clear.prop('disabled', readonly);
-            if (this.wid_text) {
-                this.wid_text.prop('readonly', readonly);
+            if (this.text) {
+                this.text.prop('readonly', readonly);
             }
         }
     });
@@ -4533,6 +4580,21 @@ function eval_pyson(value){
             Sao.View.Form.MultiSelection._super.init.call(
                 this, view, attributes);
             this.select.prop('multiple', true);
+        },
+        set_selection: function(selection, help) {
+            Sao.View.Form.MultiSelection._super.set_selection.call(
+                this, selection, help);
+            var widget_help = this.attributes.help;
+            if (widget_help) {
+                this.select.children().each(function() {
+                    var option = jQuery(this);
+                    var help = option.attr('title');
+                    if (help) {
+                        help = widget_help + '\n' + help;
+                        option.attr('title', help);
+                    }
+                });
+            }
         },
         get modified() {
             if (this.record && this.field) {
@@ -4595,6 +4657,7 @@ function eval_pyson(value){
             }
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Image._super.set_readonly.call(this, readonly);
             this.but_select.prop('disable', readonly);
             this.but_clear.prop('disable', readonly);
         },
@@ -4620,6 +4683,9 @@ function eval_pyson(value){
             }
             value.done(function(data) {
                 var url, blob;
+                if (record !== this.record) {
+                    return;
+                }
                 if (!data) {
                     url = null;
                 } else {
@@ -4636,10 +4702,70 @@ function eval_pyson(value){
         }
     });
 
+    Sao.View.Form.Document = Sao.class_(Sao.View.Form.BinaryMixin, {
+        class_: 'form-document',
+        expand: true,
+        init: function(view, attributes) {
+            Sao.View.Form.Document._super.init.call(this, view, attributes);
+
+            this._blob_url = null;
+            this.el = jQuery('<div/>', {
+                'class': this.class_,
+            });
+
+            this.object = jQuery('<object/>', {
+                'class': 'center-block',
+            }).appendTo(this.el);
+            if (attributes.height) {
+                this.object.css('height', parseInt(attributes.height, 10));
+            }
+            if (attributes.width) {
+                this.object.css('width', parseInt(attributes.width, 10));
+            }
+        },
+        display: function() {
+            Sao.View.Form.Document._super.display.call(this);
+            var data, filename;
+            var record = this.record;
+            if (record) {
+                data = record.model.fields[this.field_name].get_data(record);
+            } else {
+                data = jQuery.when(null);
+            }
+            var filename_field = this.filename_field;
+            if (filename_field) {
+                filename = filename_field.get_client(record);
+            }
+            data.done(function(data) {
+                var url, blob;
+                if (record !== this.record) {
+                    return;
+                }
+                if (!data) {
+                    url = null;
+                } else {
+                    var mimetype = Sao.common.guess_mimetype(filename);
+                    if (mimetype == 'application/octet-binary') {
+                        mimetype = null;
+                    }
+                    blob = new Blob([data], {
+                        'type': mimetype,
+                    });
+                    url = window.URL.createObjectURL(blob);
+                }
+                this.object.attr('data', url);
+                this.object.get(0).onload = function() {
+                    window.URL.revokeObjectURL(url);
+                };
+            }.bind(this));
+        },
+    });
+
     Sao.View.Form.URL = Sao.class_(Sao.View.Form.Char, {
         class_: 'form-url',
         init: function(view, attributes) {
             Sao.View.Form.URL._super.init.call(this, view, attributes);
+            this.input.attr('type', 'url');
             this.button = jQuery('<a/>', {
                 'class': 'btn btn-default',
                 'target': '_blank',
@@ -4695,6 +4821,10 @@ function eval_pyson(value){
 
     Sao.View.Form.Email = Sao.class_(Sao.View.Form.URL, {
         class_: 'form-email',
+        init: function(view, attributes) {
+            Sao.View.Form.Email._super.init.call(this, view, attributes);
+            this.input.attr('type', 'email');
+        },
         set_url: function(value) {
             Sao.View.Form.Email._super.set_url.call(this, 'mailto:' + value);
         }
@@ -4841,33 +4971,41 @@ function eval_pyson(value){
 
             // [Coog specific]
             //      > attribute no_command (hide input line)
-            // MAB: For extra data
             if (!attributes.no_command) {
-                var group = jQuery('<div/>', {
-                    'class': 'input-group input-group-sm'
-                }).appendTo(jQuery('<div>', {
-                    'class': 'col-sm-10 col-sm-offset-2'
-                }).appendTo(jQuery('<div/>', {
-                    'class': 'form-group'
-                }).appendTo(body)));
-                this.wid_text = jQuery('<input/>', {
-                    'type': 'text',
-                    'class': 'form-control input-sm',
-                    'placeholder': Sao.i18n.gettext('Search'),
-                }).appendTo(group);
+              var group = jQuery('<div/>', {
+                  'class': 'input-group input-group-sm'
+              }).appendTo(jQuery('<div>', {
+                  'class': 'col-sm-10 col-sm-offset-2'
+              }).appendTo(jQuery('<div/>', {
+                  'class': 'form-group'
+              }).appendTo(body)));
+              this.wid_text = jQuery('<input/>', {
+                  'type': 'text',
+                  'class': 'form-control input-sm',
+                  'placeholder': Sao.i18n.gettext('Search'),
+                  'name': attributes.name,
+              }).appendTo(group);
 
-                // TODO completion
+              if (!attributes.completion || attributes.completion == '1') {
+                  Sao.common.get_completion(group,
+                      this._update_completion.bind(this),
+                      this._completion_match_selected.bind(this));
+                  this.wid_completion = true;
+              }
 
-                this.but_add = jQuery('<button/>', {
-                    'class': 'btn btn-default btn-sm',
-                    'type': 'button',
-                    'aria-label': Sao.i18n.gettext('Add')
-                }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-add')
-                ).appendTo(jQuery('<div/>', {
-                    'class': 'input-group-btn'
-                }).appendTo(group));
-                this.but_add.click(this.add.bind(this));
+              this.but_add = jQuery('<button/>', {
+                  'class': 'btn btn-default btn-sm',
+                  'type': 'button',
+                  'aria-label': Sao.i18n.gettext('Add')
+              }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-add')
+              ).appendTo(jQuery('<div/>', {
+                  'class': 'input-group-btn'
+              }).appendTo(group));
             }
+
+
+            this.but_add.click(this.add.bind(this));
+
             this._readonly = false;
             this._record_id = null;
         },
@@ -4954,7 +5092,7 @@ function eval_pyson(value){
             return false;
         },
         set_readonly: function(readonly) {
-            this._readonly = readonly;
+            Sao.View.Form.Dict._super.set_readonly.call(this, readonly);
             this._set_button_sensitive();
             for (var key in this.fields) {
                 var widget = this.fields[key];
@@ -5094,6 +5232,20 @@ function eval_pyson(value){
             }.bind(this));
             this._set_button_sensitive();
         },
+        _update_completion: function(text) {
+            if (this.wid_text.prop('disabled')) {
+                return;
+            }
+            if (!this.record) {
+                return;
+            }
+            return Sao.common.update_completion(
+                this.wid_text, this.record, this.field, this.schema_model);
+        },
+        _completion_match_selected: function(value) {
+            this.add_new_keys([value.id]);
+            this.wid_text.val('');
+        },
         get_entries: function(type) {
             switch (type) {
                 case 'char':
@@ -5138,7 +5290,8 @@ function eval_pyson(value){
             }).appendTo(this.el);
             this.input = this.labelled = jQuery('<input/>', {
                 'type': 'text',
-                'class': 'form-control input-sm mousetrap'
+                'class': 'form-control input-sm mousetrap',
+                'name': this.name,
             }).appendTo(group);
             this.button = jQuery('<button/>', {
                 'class': 'btn btn-default',
@@ -5192,7 +5345,8 @@ function eval_pyson(value){
         create_widget: function() {
             Sao.View.Form.Dict.SelectionEntry._super.create_widget.call(this);
             var select = jQuery('<select/>', {
-                'class': 'form-control input-sm mousetrap'
+                'class': 'form-control input-sm mousetrap',
+                'name': this.name,
             });
             select.change(
                     this.parent_widget.focus_out.bind(this.parent_widget));
@@ -5208,8 +5362,9 @@ function eval_pyson(value){
                 select.append(jQuery('<option/>', {
                     'value': JSON.stringify(e[0]),
                     'text': e[1],
+                    'title': this.definition.help_selection[e[0]],
                 }));
-            });
+            }.bind(this));
         },
         set_readonly: function(readonly) {
             this._readonly = readonly;
@@ -5232,6 +5387,11 @@ function eval_pyson(value){
             },
             set_value: function(value) {
                 this.input.val(JSON.stringify(value));
+                var title = this.definition.help_selection[value] || null;
+                if (this.definition.help && title) {
+                    title = this.definition.help + '\n' + title;
+                }
+                this.input.attr('title', title);
             },
         });
 
@@ -5242,6 +5402,17 @@ function eval_pyson(value){
                 Sao.View.Form.Dict.MultiSelection._super
                     .create_widget.call(this);
                 this.input.prop('multiple', true);
+                var widget_help = this.definition.help;
+                if (widget_help) {
+                    this.input.children().each(function() {
+                        var option = jQuery(this);
+                        var help = option.attr('title');
+                        if (help) {
+                            help = widget_help + '\n' + help;
+                            option.attr('title', help);
+                        }
+                    });
+                }
             },
             get_value: function() {
                 var value = this.input.val();
@@ -5253,12 +5424,37 @@ function eval_pyson(value){
             }
         });
 
-    Sao.View.Form.Dict.Float = Sao.class_(Sao.View.Form.Dict.Entry, {
-        class_: 'dict-float',
+    Sao.View.Form.Dict.Integer = Sao.class_(Sao.View.Form.Dict.Entry, {
+        class_: 'dict-integer',
         create_widget: function() {
-            Sao.View.Form.Dict.Float._super.create_widget.call(this);
+            Sao.View.Form.Dict.Integer._super.create_widget.call(this);
             this.input_text = this.labelled = integer_input(this.input);
         },
+        get_value: function() {
+            var value = parseInt(this.input.val(), 10);
+            if (isNaN(value)) {
+                return null;
+            }
+            return value;
+        },
+        set_value: function(value, options) {
+            if (value !== null) {
+                this.input.val(value);
+                this.input_text.val(value.toLocaleString(
+                    Sao.i18n.BC47(Sao.i18n.getlang()), options));
+            } else {
+                this.input.val('');
+                this.input_text.val('');
+            }
+        },
+        set_readonly: function(readonly) {
+            Sao.View.Form.Dict.Integer._super.set_readonly.call(this, readonly);
+            this.input_text.prop('readonly', readonly);
+        },
+    });
+
+    Sao.View.Form.Dict.Float = Sao.class_(Sao.View.Form.Dict.Integer, {
+        class_: 'dict-float',
         get digits() {
             var record = this.parent_widget.record;
             if (record) {
@@ -5288,18 +5484,13 @@ function eval_pyson(value){
                 options.maximumFractionDigits = digits[1];
             }
             this.input.attr('step', step);
-            Sao.View.Form.Dict.Float._super.set_value.call(this, value);
-            if (value !== null) {
-                this.input_text.val(value.toLocaleString(
-                    Sao.i18n.BC47(Sao.i18n.getlang()), options));
-            } else {
-                this.input_text.val('');
-            }
+            Sao.View.Form.Dict.Float._super.set_value.call(this, value, options);
         },
-        set_readonly: function(readonly) {
-            Sao.View.Form.Dict.Float._super.set_readonly.call(this, readonly);
-            this.input_text.prop('disabled', readonly);
-        }
+        // JMO merge_60 : diff sans justification , à supprimer ?
+        //set_readonly: function(readonly) {
+        //    Sao.View.Form.Dict.Float._super.set_readonly.call(this, readonly);
+        //    this.input_text.prop('disabled', readonly);
+        //}
     });
 
     Sao.View.Form.Dict.Numeric = Sao.class_(Sao.View.Form.Dict.Float, {
@@ -5313,98 +5504,81 @@ function eval_pyson(value){
         }
     });
 
-    Sao.View.Form.Dict.Integer = Sao.class_(Sao.View.Form.Dict.Float, {
-        class_: 'dict-integer',
-        get_value: function() {
-            var value = parseInt(this.input.val(), 10);
-            if (isNaN(value)) {
-                return null;
-            }
-            return value;
-        },
-    });
-
-
     Sao.View.Form.Dict.Date = Sao.class_(Sao.View.Form.Dict.Entry, {
         class_: 'dict-date',
         format: '%x',
+        _input: 'date',
+        _input_format: '%Y-%m-%d',
+        _format: Sao.common.format_date,
+        _parse: Sao.common.parse_date,
         create_widget: function() {
             Sao.View.Form.Dict.Date._super.create_widget.call(this);
-            this.date = this.input.parent();
-            this.date.addClass('input-icon input-icon-primary');
-            Sao.common.ICONFACTORY.get_icon_img('tryton-date')
-                .appendTo(jQuery('<div/>', {
-                    'class': 'datepickerbutton icon-input icon-primary',
+            var group = this.input.parent().find('.input-group-btn');
+            this.input_date = jQuery('<input/>', {
+                'type': this._input,
+                'role': 'button',
+                'tabindex': -1,
+            });
+            this.input_date.click(function() {
+                var value = this.get_value();
+                value = this._format(this._input_format, value);
+                this.input_date.val(value);
+            }.bind(this));
+            this.input_date.change(function() {
+                var value = this.input_date.val();
+                if (value) {
+                    value = this._parse(this._input_format, value);
+                    value = this._format(this.format, value);
+                    this.input.val(value);
+                    this.input.focus();
+                }
+            }.bind(this));
+            if (this.input_date[0].type == this._input) {
+                var icon = jQuery('<div/>', {
+                    'class': 'btn btn-default',
                     'aria-label': Sao.i18n.gettext("Open the calendar"),
                     'title': Sao.i18n.gettext("Open the calendar"),
-                }).prependTo(this.date));
-            this.date.datetimepicker({
-                'format': Sao.common.moment_format(this.format),
-                'locale': moment.locale(),
-                'keyBinds': null,
-                'useCurrent': false,
-            });
-            this.date.on('dp.change',
-                    this.parent_widget.focus_out.bind(this.parent_widget));
-            // We must set the overflow of the treeview and modal-body
-            // containing the input to visible to prevent vertical scrollbar
-            // inherited from the auto overflow-x
-            // (see http://www.w3.org/TR/css-overflow-3/#overflow-properties)
-            this.date.on('dp.hide', function() {
-                this.date.closest('.treeview').css('overflow', '');
-                this.date.closest('.modal-body').css('overflow', '');
-            }.bind(this));
-            this.date.on('dp.show', function() {
-                this.date.closest('.treeview').css('overflow', 'visible');
-                this.date.closest('.modal-body').css('overflow', 'visible');
-            }.bind(this));
+                }).prependTo(group);
+                this.input_date.appendTo(icon);
+                Sao.common.ICONFACTORY.get_icon_img('tryton-date')
+                    .appendTo(icon);
+            }
             var mousetrap = new Mousetrap(this.el[0]);
 
-            mousetrap.bind(['enter', '='], function(e, combo) {
-                if (e.which != Sao.common.RETURN_KEYCODE) {
-                    e.preventDefault();
-                }
-                this.date.data('DateTimePicker').date(moment());
+            mousetrap.bind('enter', function(e, combo) {
+                var value = this._parse(this.format, this.input.val());
+                value = this._format(this.format, value);
+                this.input.val(value);
+            }.bind(this));
+            mousetrap.bind('=', function(e, combo) {
+                e.preventDefault();
+                this.input.val(this._format(this.format, moment()));
             }.bind(this));
 
             Sao.common.DATE_OPERATORS.forEach(function(operator) {
                 mousetrap.bind(operator[0], function(e, combo) {
                     e.preventDefault();
-                    var dp = this.date.data('DateTimePicker');
-                    var date = dp.date();
+                    var date = this.get_value() || Sao.DateTime();
                     date.add(operator[1]);
-                    dp.date(date);
+                    this.input.val(this._format(this.format, date));
                 }.bind(this));
             }.bind(this));
         },
         get_value: function() {
-            var value = this.date.data('DateTimePicker').date();
-            if (value) {
-                value.isDate = true;
-            }
-            return value;
+            return this._parse(this.format, this.input.val());
         },
         set_value: function(value) {
-            this.date.off('dp.change');
-            try {
-                this.date.data('DateTimePicker').date(value);
-            } finally {
-                this.date.on('dp.change',
-                    this.parent_widget.focus_out.bind(this.parent_widget));
-            }
-        }
+            this.input.val(this._format(this.format, value));
+        },
     });
 
     Sao.View.Form.Dict.DateTime = Sao.class_(Sao.View.Form.Dict.Date, {
         class_: 'dict-datetime',
         format: '%x %X',
-        get_value: function() {
-            var value = this.date.data('DateTimePicker').date();
-            if (value) {
-                value.isDateTime = true;
-            }
-            return value;
-        }
+        _input: 'datetime-local',
+        _input_format: '%Y-%m-%dT%H:%M:%S',
+        _format: Sao.common.format_datetime,
+        _parse: Sao.common.parse_datetime,
     });
 
     Sao.View.Form.PYSON = Sao.class_(Sao.View.Form.Char, {
@@ -5479,6 +5653,7 @@ function eval_pyson(value){
         'date': Sao.View.Form.Date,
         'datetime': Sao.View.Form.DateTime,
         'dict': Sao.View.Form.Dict,
+        'document': Sao.View.Form.Document,
         'email': Sao.View.Form.Email,
         'float': Sao.View.Form.Float,
         'html': Sao.View.Form.HTML,
