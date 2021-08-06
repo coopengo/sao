@@ -32,7 +32,7 @@ module.exports = function(grunt) {
       'bower_components/bootstrap',
       'bower_components/bootstrap/less',
       'bower_components/bootstrap-rtl-ondemand/less',
-      'theme/coog/coog-sao.less',
+      'theme/coog',
   ];
 
   // Project configuration.
@@ -111,7 +111,8 @@ module.exports = function(grunt) {
                 paths: less_paths,
             },
             files: {
-                'dist/<%= pkg.name %>.css': 'src/sao.less'
+                'dist/coog-sao.css': 'theme/coog/coog-sao.less',
+                'dist/<%= pkg.name %>.css': 'src/*.less'
             }
         },
         'default': {
@@ -120,7 +121,8 @@ module.exports = function(grunt) {
                 yuicompress: true
             },
             files: {
-                'dist/<%= pkg.name %>.min.css': 'src/sao.less'
+                'dist/coog-sao.min.css': 'theme/coog/coog-sao.less',
+                'dist/<%= pkg.name %>.min.css': 'src/*.less'
             }
         }
     },
