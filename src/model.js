@@ -724,7 +724,6 @@
                     fnames.push(fname);
                 }
             }
-
             var fnames_to_fetch = fnames.slice();
             var rec_named_fields = ['many2one', 'one2one', 'reference'];
             for (var i in fnames) {
@@ -1774,7 +1773,8 @@
     Sao.field.Char = Sao.class_(Sao.field.Field, {
         _default: '',
         set: function(record, value) {
-            if (this.description.strip) {
+            // JMO merge_60 : value can apparently be undefined
+            if (this.description.strip && value) {
                 value = value.trim();
             }
             Sao.field.Char._super.set.call(this, record, value);

@@ -5001,10 +5001,10 @@ function eval_pyson(value){
               ).appendTo(jQuery('<div/>', {
                   'class': 'input-group-btn'
               }).appendTo(group));
+              this.but_add.click(this.add.bind(this));
             }
 
 
-            this.but_add.click(this.add.bind(this));
 
             this._readonly = false;
             this._record_id = null;

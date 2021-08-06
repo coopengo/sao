@@ -94,7 +94,7 @@
                 params.tab_domain = [];
                 action.domains.forEach(function(element, index) {
                     params.tab_domain.push(
-                        [element[0], [ctx, element[1]], element[2]]);
+                        [element[0], decoder.decode(element[1]), element[2]]);
                 });
                 name_prm = jQuery.when(action.name);
                 params.model = action.res_model || data.res_model;
