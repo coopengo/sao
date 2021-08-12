@@ -2319,6 +2319,7 @@
             var fields, new_fields;
             // JMO merge_60 , here we add : record.load(this.name);
             record._changed[this.name] = true;
+            this._set_default_value(record);
             if (value instanceof Array) {
                 return this._set_value(record, value, false, true);
             }
