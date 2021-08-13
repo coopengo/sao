@@ -2008,7 +2008,6 @@ function eval_pyson(value){
                 if (value) {
                     value = this._parse(this._input_format, value);
                     value = this._format(this.get_format(), value);
-                    // JMO: temporary fix for on_change not called
                     this.date.val(value).change();
                     this.date.focus();
                 }
@@ -5554,7 +5553,7 @@ function eval_pyson(value){
                 if (value) {
                     value = this._parse(this._input_format, value);
                     value = this._format(this.format, value);
-                    this.input.val(value);
+                    this.input.val(value).change();
                     this.input.focus();
                 }
             }.bind(this));
