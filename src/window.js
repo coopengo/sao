@@ -3,6 +3,53 @@
 (function() {
     'use strict';
 
+    var ENCODINGS = ["866", "ansi_x3.4-1968", "arabic", "ascii",
+        "asmo-708", "big5", "big5-hkscs", "chinese", "cn-big5", "cp1250",
+        "cp1251", "cp1252", "cp1253", "cp1254", "cp1255", "cp1256",
+        "cp1257", "cp1258", "cp819", "cp866", "csbig5", "cseuckr",
+        "cseucpkdfmtjapanese", "csgb2312", "csibm866", "csiso2022jp",
+        "csiso2022kr", "csiso58gb231280", "csiso88596e", "csiso88596i",
+        "csiso88598e", "csiso88598i", "csisolatin1", "csisolatin2",
+        "csisolatin3", "csisolatin4", "csisolatin5", "csisolatin6",
+        "csisolatin9", "csisolatinarabic", "csisolatincyrillic",
+        "csisolatingreek", "csisolatinhebrew", "cskoi8r", "csksc56011987",
+        "csmacintosh", "csshiftjis", "cyrillic", "dos-874", "ecma-114",
+        "ecma-118", "elot_928", "euc-jp", "euc-kr", "gb18030", "gb2312",
+        "gb_2312", "gb_2312-80", "gbk", "greek", "greek8", "hebrew",
+        "hz-gb-2312", "ibm819", "ibm866", "iso-2022-cn", "iso-2022-cn-ext",
+        "iso-2022-jp", "iso-2022-kr", "iso-8859-1", "iso-8859-10",
+        "iso-8859-11", "iso-8859-13", "iso-8859-14", "iso-8859-15",
+        "iso-8859-16", "iso-8859-2", "iso-8859-3", "iso-8859-4",
+        "iso-8859-5", "iso-8859-6", "iso-8859-6-e", "iso-8859-6-i",
+        "iso-8859-7", "iso-8859-8", "iso-8859-8-e", "iso-8859-8-i",
+        "iso-8859-9", "iso-ir-100", "iso-ir-101", "iso-ir-109",
+        "iso-ir-110", "iso-ir-126", "iso-ir-127", "iso-ir-138",
+        "iso-ir-144", "iso-ir-148", "iso-ir-149", "iso-ir-157", "iso-ir-58",
+        "iso8859-1", "iso8859-10", "iso8859-11", "iso8859-13", "iso8859-14",
+        "iso8859-15", "iso8859-2", "iso8859-3", "iso8859-4", "iso8859-5",
+        "iso8859-6", "iso8859-7", "iso8859-8", "iso8859-9", "iso88591",
+        "iso885910", "iso885911", "iso885913", "iso885914", "iso885915",
+        "iso88592", "iso88593", "iso88594", "iso88595", "iso88596",
+        "iso88597", "iso88598", "iso88599", "iso_8859-1", "iso_8859-15",
+        "iso_8859-1:1987", "iso_8859-2", "iso_8859-2:1987", "iso_8859-3",
+        "iso_8859-3:1988", "iso_8859-4", "iso_8859-4:1988", "iso_8859-5",
+        "iso_8859-5:1988", "iso_8859-6", "iso_8859-6:1987", "iso_8859-7",
+        "iso_8859-7:1987", "iso_8859-8", "iso_8859-8:1988", "iso_8859-9",
+        "iso_8859-9:1989", "koi", "koi8", "koi8-r", "koi8-ru", "koi8-u",
+        "koi8_r", "korean", "ks_c_5601-1987", "ks_c_5601-1989", "ksc5601",
+        "ksc_5601", "l1", "l2", "l3", "l4", "l5", "l6", "l9", "latin1",
+        "latin2", "latin3", "latin4", "latin5", "latin6", "logical", "mac",
+        "macintosh", "ms932", "ms_kanji", "shift-jis", "shift_jis", "sjis",
+        "sun_eu_greek", "tis-620", "unicode-1-1-utf-8", "us-ascii",
+        "utf-16", "utf-16be", "utf-16le", "utf-8", "utf8", "visual",
+        "windows-1250", "windows-1251", "windows-1252", "windows-1253",
+        "windows-1254", "windows-1255", "windows-1256", "windows-1257",
+        "windows-1258", "windows-31j", "windows-874", "windows-949",
+        "x-cp1250", "x-cp1251", "x-cp1252", "x-cp1253", "x-cp1254",
+        "x-cp1255", "x-cp1256", "x-cp1257", "x-cp1258", "x-euc-jp", "x-gbk",
+        "x-mac-cyrillic", "x-mac-roman", "x-mac-ukrainian", "x-sjis",
+        "x-user-defined", "x-x-big5"];
+
     Sao.Window = {};
 
     Sao.Window.InfoBar = Sao.class_(Object, {
@@ -14,11 +61,12 @@
                 'role': 'alert'
             }).append(jQuery('<button/>', {
                 'type': 'button',
-                'class': 'close',
+                'class': 'close stretched-link',
                 'aria-label': Sao.i18n.gettext('Close')
             }).append(jQuery('<span/>', {
                 'aria-hidden': true
             }).append('&times;')).click(function() {
+                this.text.text('');
                 this.el.hide();
             }.bind(this))).append(this.text);
             this.el.hide();
@@ -31,6 +79,7 @@
                 this.text.text(message);
                 this.el.show();
             } else {
+                this.text.text('');
                 this.el.hide();
             }
         }
@@ -45,10 +94,43 @@
             this.domain = kwargs.domain || null;
             this.context = kwargs.context || null;
             this.save_current = kwargs.save_current;
-            var title_prm = jQuery.when(kwargs.title || '');
-            title_prm.then(function(title) {
-                this.title = title;
-            }.bind(this));
+            var title_prm = jQuery.when(kwargs.title || '').then(
+                function(title) {
+                    if (screen.breadcrumb.length) {
+                        var breadcrumb = jQuery.extend([], screen.breadcrumb);
+                        if (title) {
+                            breadcrumb.push(title);
+                        }
+                        this.title = breadcrumb.slice(-3, -1).map(function(x) {
+                            return Sao.common.ellipsize(x, 30);
+                        }).concat(breadcrumb.slice(-1)).join(' › ');
+                        if (breadcrumb.length > 3) {
+                            this.title = '... › ' + this.title;
+                        }
+                    } else {
+                        if (!title) {
+                            title = Sao.common.MODELNAME.get(this.screen.model_name);
+                        }
+                        this.title = title;
+                    }
+                    var revision = this.screen.context._datetime;
+                    var label;
+                    if (revision &&
+                        Sao.common.MODELHISTORY.contains(this.screen.model_name)) {
+                        var date_format = Sao.common.date_format(
+                            this.screen.context.date_format);
+                        var time_format = '%H:%M:%S.%f';
+                        var revision_label = ' @ ' + Sao.common.format_datetime(
+                            date_format + ' ' + time_format, revision);
+                        label = Sao.common.ellipsize(
+                            this.title, 80 - revision_label.length) +
+                            revision_label;
+                        title = this.title + revision_label;
+                    } else {
+                        label = Sao.common.ellipsize(this.title, 80);
+                    }
+                    return label;
+                }.bind(this));
 
             this.prev_view = screen.current_view;
             this.screen.screen_container.alternate_view = true;
@@ -81,7 +163,15 @@
                     button_text = Sao.i18n.gettext('Delete');
                 } else {
                     button_text = Sao.i18n.gettext('Cancel');
-                    this._initial_value = this.screen.current_record.get_eval();
+                    var record = this.screen.current_record;
+                    this._initial_value = record.get_on_change_value();
+                    if (record.group.parent &&
+                        record.model.fields[record.group.parent_name]) {
+                        var parent_field = record.model.fields[
+                            record.group.parent_name];
+                        this._initial_value[record.group.parent_name] = (
+                            parent_field.get_eval(record));
+                    }
                 }
 
                 dialog.footer.append(jQuery('<button/>', {
@@ -268,7 +358,8 @@
         record_label: function(data) {
             var name = '_';
             var access = Sao.common.MODELACCESS.get(this.screen.model_name);
-            var readonly = this.screen.group.readonly;
+            var deletable = this.screen.deletable;
+            var readonly = this.screen.group.readonly || this.screen.readonly;
             if (data[0] >= 1) {
                 name = data[0];
                 if (this.domain) {
@@ -276,7 +367,7 @@
                 }
                 this.but_next.prop('disabled', data[0] >= data[1]);
                 this.but_previous.prop('disabled', data[0] <= 1);
-                if (access.delete && !readonly) {
+                if (access.delete && !readonly && deletable) {
                     this.but_del.prop('disabled', false);
                     this.but_undel.prop('disabled', false);
                 }
@@ -416,17 +507,24 @@
                     !readonly &&
                     this.screen.current_record) {
                 result = false;
-                if ((this.screen.current_record.id < 0) || this.save_current) {
+                var record = this.screen.current_record;
+                var added = record._changed.id;
+                if ((record.id < 0) || this.save_current) {
                     cancel_prm = this.screen.cancel_current(
                         this._initial_value);
-                } else if (this.screen.current_record.has_changed()) {
-                    this.screen.current_record.cancel();
-                    cancel_prm = this.screen.current_record.reload();
+                } else if (record.has_changed()) {
+                    record.cancel();
+                    cancel_prm = record.reload().then(function() {
+                        this.screen.display();
+                    }.bind(this));
+                }
+                if (added) {
+                    record._changed.id = added;
                 }
             } else {
                 result = response_id != 'RESPONSE_CANCEL';
             }
-            (cancel_prm || jQuery.when()).done(function() {
+            (cancel_prm || jQuery.when()).then(function() {
                 this.callback(result);
                 this.destroy();
             }.bind(this));
@@ -602,7 +700,11 @@
             this.views_preload = views_preload;
             this.sel_multi = kwargs.sel_multi;
             this.callback = callback;
-            this.title = kwargs.title || '';
+            var title = kwargs.title;
+            if (!title) {
+                title = Sao.common.MODELNAME.get(model);
+            }
+            this.title = title;
             this.exclude_field = kwargs.exclude_field || null;
             var dialog = new Sao.Dialog(Sao.i18n.gettext(
                 'Search %1', this.title), '', 'lg');
@@ -646,6 +748,7 @@
                 views_preload: views_preload,
                 row_activate: this.activate.bind(this),
                 readonly: true,
+                breadcrumb: [this.title],
             });
             this.screen.load_next_view().done(function() {
                 this.screen.switch_view().done(function() {
@@ -708,7 +811,6 @@
                 new Sao.Window.Form(screen, callback.bind(this), {
                     new_: true,
                     save_current: true,
-                    title: this.title
                 });
                 return;
             }
@@ -849,7 +951,7 @@
                 this.select.append(jQuery('<option/>', {
                     value: revision.valueOf(),
                     text: Sao.common.format_datetime(
-                        date_format, time_format, revision) + ' ' + name,
+                        date_format + ' ' + time_format, revision) + ' ' + name,
                 }));
             }.bind(this));
             this.el.modal('show');
@@ -872,52 +974,6 @@
 
     Sao.Window.CSV = Sao.class_(Object, {
         init: function(title) {
-            this.encodings = ["866", "ansi_x3.4-1968", "arabic", "ascii",
-            "asmo-708", "big5", "big5-hkscs", "chinese", "cn-big5", "cp1250",
-            "cp1251", "cp1252", "cp1253", "cp1254", "cp1255", "cp1256",
-            "cp1257", "cp1258", "cp819", "cp866", "csbig5", "cseuckr",
-            "cseucpkdfmtjapanese", "csgb2312", "csibm866", "csiso2022jp",
-            "csiso2022kr", "csiso58gb231280", "csiso88596e", "csiso88596i",
-            "csiso88598e", "csiso88598i", "csisolatin1", "csisolatin2",
-            "csisolatin3", "csisolatin4", "csisolatin5", "csisolatin6",
-            "csisolatin9", "csisolatinarabic", "csisolatincyrillic",
-            "csisolatingreek", "csisolatinhebrew", "cskoi8r", "csksc56011987",
-            "csmacintosh", "csshiftjis", "cyrillic", "dos-874", "ecma-114",
-            "ecma-118", "elot_928", "euc-jp", "euc-kr", "gb18030", "gb2312",
-            "gb_2312", "gb_2312-80", "gbk", "greek", "greek8", "hebrew",
-            "hz-gb-2312", "ibm819", "ibm866", "iso-2022-cn", "iso-2022-cn-ext",
-            "iso-2022-jp", "iso-2022-kr", "iso-8859-1", "iso-8859-10",
-            "iso-8859-11", "iso-8859-13", "iso-8859-14", "iso-8859-15",
-            "iso-8859-16", "iso-8859-2", "iso-8859-3", "iso-8859-4",
-            "iso-8859-5", "iso-8859-6", "iso-8859-6-e", "iso-8859-6-i",
-            "iso-8859-7", "iso-8859-8", "iso-8859-8-e", "iso-8859-8-i",
-            "iso-8859-9", "iso-ir-100", "iso-ir-101", "iso-ir-109",
-            "iso-ir-110", "iso-ir-126", "iso-ir-127", "iso-ir-138",
-            "iso-ir-144", "iso-ir-148", "iso-ir-149", "iso-ir-157", "iso-ir-58",
-            "iso8859-1", "iso8859-10", "iso8859-11", "iso8859-13", "iso8859-14",
-            "iso8859-15", "iso8859-2", "iso8859-3", "iso8859-4", "iso8859-5",
-            "iso8859-6", "iso8859-7", "iso8859-8", "iso8859-9", "iso88591",
-            "iso885910", "iso885911", "iso885913", "iso885914", "iso885915",
-            "iso88592", "iso88593", "iso88594", "iso88595", "iso88596",
-            "iso88597", "iso88598", "iso88599", "iso_8859-1", "iso_8859-15",
-            "iso_8859-1:1987", "iso_8859-2", "iso_8859-2:1987", "iso_8859-3",
-            "iso_8859-3:1988", "iso_8859-4", "iso_8859-4:1988", "iso_8859-5",
-            "iso_8859-5:1988", "iso_8859-6", "iso_8859-6:1987", "iso_8859-7",
-            "iso_8859-7:1987", "iso_8859-8", "iso_8859-8:1988", "iso_8859-9",
-            "iso_8859-9:1989", "koi", "koi8", "koi8-r", "koi8-ru", "koi8-u",
-            "koi8_r", "korean", "ks_c_5601-1987", "ks_c_5601-1989", "ksc5601",
-            "ksc_5601", "l1", "l2", "l3", "l4", "l5", "l6", "l9", "latin1",
-            "latin2", "latin3", "latin4", "latin5", "latin6", "logical", "mac",
-            "macintosh", "ms932", "ms_kanji", "shift-jis", "shift_jis", "sjis",
-            "sun_eu_greek", "tis-620", "unicode-1-1-utf-8", "us-ascii",
-            "utf-16", "utf-16be", "utf-16le", "utf-8", "utf8", "visual",
-            "windows-1250", "windows-1251", "windows-1252", "windows-1253",
-            "windows-1254", "windows-1255", "windows-1256", "windows-1257",
-            "windows-1258", "windows-31j", "windows-874", "windows-949",
-            "x-cp1250", "x-cp1251", "x-cp1252", "x-cp1253", "x-cp1254",
-            "x-cp1255", "x-cp1256", "x-cp1257", "x-cp1258", "x-euc-jp", "x-gbk",
-            "x-mac-cyrillic", "x-mac-roman", "x-mac-ukrainian", "x-sjis",
-            "x-user-defined", "x-x-big5"];
             this.dialog = new Sao.Dialog(title, 'csv', 'lg');
             this.el = this.dialog.modal;
 
@@ -1011,7 +1067,6 @@
                 'text': Sao.i18n.gettext('Fields Selected')
             })))).appendTo(row_fields);
 
-            // TODO: Make them draggable to re-order
             this.fields_selected = jQuery('<ul/>', {
                 'class': 'list-unstyled column-fields panel-body',
             }).css('cursor', 'pointer')
@@ -1026,15 +1081,13 @@
 
             var csv_param_label = jQuery('<label/>', {
                 'text': Sao.i18n.gettext('CSV Parameters')
-            }).css('cursor', 'pointer')
-            .on('click', function(){
-                this.expander_csv.collapse('toggle');
-            }.bind(this)).appendTo(row_csv_param);
-
-            var expander_icon = jQuery('<span/>', {
+            }).append(jQuery('<span/>', {
                 'class': 'caret',
-            }).css('cursor', 'pointer').html('&nbsp;')
-            .appendTo(row_csv_param);
+            }).html('&nbsp;'))
+                .css('cursor', 'pointer')
+                .on('click', function(){
+                    this.expander_csv.collapse('toggle');
+                }.bind(this)).appendTo(row_csv_param);
 
             this.expander_csv = jQuery('<div/>', {
                 'id': 'expander_csv',
@@ -1087,38 +1140,6 @@
                 'class': 'form-group'
             }).append(quotechar_label)
                 .append(this.el_csv_quotechar)
-                .appendTo(this.expander_csv);
-            this.expander_csv.append(' ');
-
-            var encoding_label = jQuery('<label/>', {
-                'text': Sao.i18n.gettext('Encoding:'),
-                'class': 'control-label',
-                'for': 'input-encoding'
-            });
-
-            this.el_csv_encoding = jQuery('<select/>', {
-                'class': 'form-control',
-                'id': 'input-encoding'
-            });
-
-            for(var i=0; i<this.encodings.length; i++) {
-                jQuery('<option/>', {
-                    'val': this.encodings[i]
-                }).append(this.encodings[i]).appendTo(this.el_csv_encoding);
-            }
-
-            var enc = 'utf-8';
-            if (navigator.platform &&
-                    navigator.platform.slice(0, 3) == 'Win') {
-                enc = 'cp1252';
-            }
-            this.el_csv_encoding.children('option[value="' + enc + '"]')
-            .attr('selected', 'selected');
-
-            jQuery('<div/>', {
-                'class': 'form-group'
-            }).append(encoding_label)
-                .append(this.el_csv_encoding)
                 .appendTo(this.expander_csv);
             this.expander_csv.append(' ');
 
@@ -1181,6 +1202,38 @@
             }).append(this.file_input))
             .appendTo(this.chooser_form);
 
+            var encoding_label = jQuery('<label/>', {
+                'text': Sao.i18n.gettext('Encoding:'),
+                'class': 'control-label',
+                'for': 'input-encoding'
+            });
+
+            this.el_csv_encoding = jQuery('<select/>', {
+                'class': 'form-control',
+                'id': 'input-encoding'
+            });
+
+            for(var i=0; i < ENCODINGS.length; i++) {
+                jQuery('<option/>', {
+                    'val': ENCODINGS[i]
+                }).append(ENCODINGS[i]).appendTo(this.el_csv_encoding);
+            }
+
+            var enc = 'utf-8';
+            if (navigator.platform &&
+                    navigator.platform.slice(0, 3) == 'Win') {
+                enc = 'cp1252';
+            }
+            this.el_csv_encoding.children('option[value="' + enc + '"]')
+            .attr('selected', 'selected');
+
+            jQuery('<div/>', {
+                'class': 'form-group'
+            }).append(encoding_label)
+                .append(this.el_csv_encoding)
+                .appendTo(this.expander_csv);
+            this.expander_csv.append(' ');
+
             var skip_label = jQuery('<label/>', {
                 'text': Sao.i18n.gettext('Lines to Skip:'),
                 'class': 'control-label',
@@ -1200,13 +1253,20 @@
                 .append(this.el_csv_skip)
                 .appendTo(this.expander_csv);
             this.expander_csv.append(' ');
+            Sortable.create(this.fields_selected.get(0), {
+                handle: '.draggable-handle',
+                ghostClass: 'dragged-row'
+            });
         },
         sig_sel_add: function(el_field) {
             el_field = jQuery(el_field);
             var field = el_field.attr('field');
             var node = jQuery('<li/>', {
                 'field': field,
-            }).text(el_field.attr('name')).click(function(e) {
+                'class': 'draggable-handle',
+            }).text(el_field.attr('name')).prepend(
+                Sao.common.ICONFACTORY.get_icon_img('tryton-drag')
+            ).click(function(e) {
                 if (e.ctrlKey) {
                     node.toggleClass('bg-primary');
                 } else {
@@ -1496,9 +1556,11 @@
                 'id': 'input-records',
             }).append(jQuery('<option/>', {
                 'val': true,
+                'selected': this.screen_is_tree ? false : true,
             }).text(Sao.i18n.gettext("Selected Records")))
                 .append(jQuery('<option/>', {
                     'val': false,
+                    'selected': this.screen_is_tree ? true : false,
                 }).text(Sao.i18n.gettext("Listed Records")));
 
             this.ignore_search_limit = jQuery('<input/>', {
@@ -1507,7 +1569,8 @@
 
             this.selected_records.change(function() {
                 this.ignore_search_limit.parents('.form-group').first().toggle(
-                    !JSON.parse(this.selected_records.val()));
+                    !JSON.parse(this.selected_records.val()) &&
+                    !this.screen_is_tree);
             }.bind(this));
 
             jQuery('<div/>', {
@@ -1554,9 +1617,19 @@
             this.expander_csv.append(' ');
 
             this.set_url();
+            Sortable.create(this.fields_selected.get(0), {
+                handle: '.draggable-handle',
+                ghostClass: 'dragged-row'
+            });
         },
         get context() {
             return this.screen.context;
+        },
+        get screen_is_tree() {
+            return Boolean(
+                this.screen.current_view &&
+                (this.screen.current_view.view_type == 'tree') &&
+                this.screen.current_view.children_field);
         },
         view_populate: function(parent_node, parent_view) {
             var names = Object.keys(parent_node).sort(function(a, b) {
@@ -1640,11 +1713,7 @@
 
                 items.forEach(function(item) {
                     var path = prefix_field + item.name;
-                    var long_string = item.string;
-
-                    if (prefix_field) {
-                        long_string = prefix_name + item.string;
-                    }
+                    var long_string = prefix_name + item.string;
 
                     var node = {
                         path: path,
@@ -1666,7 +1735,7 @@
             if (jQuery.isEmptyObject(node.children)) {
                 this.model_populate(
                     this._get_fields(node.relation), node.children,
-                    node.path + '/', node.string + '/');
+                    node.path + '/', node.long_string + '/');
             }
         },
         sig_sel_add: function(el_field) {
@@ -1823,6 +1892,7 @@
             }
             var node = jQuery('<li/>', {
                 'path': name,
+                'class': 'draggable-handle',
             }).text(long_string).click(function(e) {
                 if(e.ctrlKey) {
                     node.toggleClass('bg-primary');
@@ -1830,7 +1900,9 @@
                     jQuery(e.target).addClass('bg-primary')
                         .siblings().removeClass('bg-primary');
                 }
-            }).appendTo(this.fields_selected);
+            }).prepend(
+                Sao.common.ICONFACTORY.get_icon_img('tryton-drag')
+            ).appendTo(this.fields_selected);
         },
         response: function(response_id) {
             if(response_id == 'RESPONSE_OK') {
@@ -1841,11 +1913,23 @@
                     fields2.push(field.innerText);
                 });
 
-                var prm;
+                var prm, ids, paths;
                 if (JSON.parse(this.selected_records.val())) {
-                    var ids = this.screen.current_view.selected_records.map(function(r) {
+                    ids = this.screen.selected_records.map(function(r) {
                         return r.id;
                     });
+                    paths = this.screen.selected_paths;
+                    prm = Sao.rpc({
+                        'method': (
+                            'model.' + this.screen.model_name +
+                            '.export_data'),
+                        'params': [ids, fields, this.context]
+                    }, this.session);
+                } else if (this.screen_is_tree) {
+                    ids = this.screen.listed_records.map(function(r) {
+                        return r.id;
+                    });
+                    paths = this.screen.listed_paths;
                     prm = Sao.rpc({
                         'method': (
                             'model.' + this.screen.model_name +
@@ -1873,7 +1957,7 @@
                     }, this.session);
                 }
                 prm.then(function(data) {
-                    this.export_csv(fields2, data).then(function() {
+                    this.export_csv(fields2, data, paths).then(function() {
                         this.destroy();
                     }.bind(this));
                 }.bind(this));
@@ -1881,12 +1965,13 @@
                 this.destroy();
             }
         },
-        export_csv: function(fields, data) {
-            var encoding = this.el_csv_encoding.val();
+        export_csv: function(fields, data, paths) {
             var locale_format = this.el_csv_locale.prop('checked');
             var unparse_obj = {};
-            unparse_obj.data = data.map(function(row) {
-                return Sao.Window.Export.format_row(row, locale_format);
+            unparse_obj.data = data.map(function(row, i) {
+                var indent = paths && paths[i] ? paths[i].length -1 : 0;
+                return Sao.Window.Export.format_row(
+                    row, indent, locale_format);
             });
             if (this.el_add_field_names.is(':checked')) {
                 unparse_obj.fields = fields;
@@ -1895,8 +1980,12 @@
                 quoteChar: this.el_csv_quotechar.val(),
                 delimiter: this.el_csv_delimiter.val()
             });
+            if (navigator.platform &&
+                navigator.platform.slice(0, 3) == 'Win') {
+                csv = Sao.BOM_UTF8 + csv;
+            }
             Sao.common.download_file(
-                csv, this.name + '.csv', {type: 'text/csv;charset=' + encoding});
+                csv, this.name + '.csv', {type: 'text/csv;charset=utf-8'});
             return Sao.common.message.run(
                 Sao.i18n.ngettext('%1 record saved', '%1 records saved',
                     data.length));
@@ -1928,15 +2017,15 @@
             }
             query_string.splice(
                 0, 0, ['d', JSON.stringify(Sao.rpc.prepareObject(domain))]);
+            if (!jQuery.isEmptyObject(this.screen.local_context)) {
+                query_string.push(
+                    ['c', JSON.stringify(Sao.rpc.prepareObject(
+                        this.screen.local_context))]);
+            }
 
             this.fields_selected.children('li').each(function(i, field) {
                 query_string.push(['f', field.getAttribute('path')]);
             });
-
-            var encoding = this.el_csv_encoding.val();
-            if (encoding) {
-                query_string.push(['enc', encoding]);
-            }
 
             query_string.push(['dl', this.el_csv_delimiter.val()]);
             query_string.push(['qc', this.el_csv_quotechar.val()]);
@@ -1955,12 +2044,15 @@
         },
     });
 
-    Sao.Window.Export.format_row = function(line, locale_format) {
+    Sao.Window.Export.format_row = function(line, indent, locale_format) {
+        if (indent === undefined) {
+            indent = 0;
+        }
         if (locale_format === undefined) {
             locale_format = true;
         }
         var row = [];
-        line.forEach(function(val) {
+        line.forEach(function(val, i) {
             if (locale_format) {
                 if (val.isDateTime) {
                     val = val.format(
@@ -1968,16 +2060,307 @@
                         Sao.common.moment_format('%X'));
                 } else if (val.isDate) {
                     val = val.format(Sao.common.date_format());
+                } else if (val.isTimeDelta) {
+                    val = Sao.common.timedelta.format(
+                        val, {'s': 1, 'm': 60, 'h': 60 * 60});
                 } else if (!isNaN(Number(val))) {
                     val = val.toLocaleString(
                         Sao.i18n.BC47(Sao.i18n.getlang()));
                 }
+            } else if (val.isTimeDelta) {
+                val = val.asSeconds();
             } else if (typeof(val) == 'boolean') {
                 val += 0;
+            }
+            if ((i === 0) && indent && (typeof(val) == 'string')) {
+                val = '  '.repeat(indent) + val;
             }
             row.push(val);
         });
         return row;
     };
+
+    Sao.Window.EmailEntry = Sao.class_(Sao.common.InputCompletion, {
+        init: function(el, session) {
+            this.session = session;
+            Sao.Window.EmailEntry._super.init.call(
+                this, el,
+                this._email_source,
+                this._email_match_selected,
+                this._email_format);
+        },
+        _email_match_selected: function(value) {
+            this.input.val(value[2]);
+        },
+        _email_source: function(text) {
+            if (this.input[0].selectionStart < this.input.val().length) {
+                return jQuery.when([]);
+            }
+            return Sao.rpc({
+                'method': 'model.ir.email.complete',
+                'params': [text, Sao.config.limit, {}],
+            }, this.session);
+        },
+        _email_format: function(value) {
+            return value[1];
+        },
+    });
+
+    Sao.Window.Email = Sao.class_(Object, {
+        init: function(name, record, prints, template) {
+            this.record = record;
+            this.dialog = new Sao.Dialog(
+                Sao.i18n.gettext('E-mail %1', name), 'email', 'lg');
+            this.el = this.dialog.modal;
+            this.dialog.content.addClass('form-horizontal');
+
+            var body = this.dialog.body;
+            function add_group(name, label, required) {
+                var group = jQuery('<div/>', {
+                    'class': 'form-group',
+                }).appendTo(body);
+                jQuery('<label/>', {
+                    'class': 'control-label col-sm-1',
+                    'text': label,
+                    'for': 'email-' + name,
+                }).appendTo(group);
+                var input = jQuery('<input/>', {
+                    'type': 'text',
+                    'class':'form-control input-sm',
+                    'id': 'email-' + name,
+                }).appendTo(jQuery('<div/>', {
+                    'class': 'col-sm-11',
+                }).appendTo(group));
+                if (required) {
+                    input.attr('required', true);
+                }
+                return input;
+            }
+
+            this.to = add_group('to', Sao.i18n.gettext('To:'), true);
+            this.cc = add_group('cc', Sao.i18n.gettext('Cc:'));
+            this.bcc = add_group('bcc', Sao.i18n.gettext('Bcc:'));
+            [this.to, this.cc, this.bcc].forEach(function(input) {
+                new Sao.Window.EmailEntry(input, this.record.model.session);
+            }.bind(this));
+            this.subject = add_group(
+                'subject', Sao.i18n.gettext('Subject:'), true);
+
+            var panel = jQuery('<div/>', {
+                'class': 'panel panel-default',
+            }).appendTo(body
+            ).append(jQuery('<div/>', {
+                'class': 'panel-heading',
+            }).append(Sao.common.richtext_toolbar()));
+            this.body = jQuery('<div>', {
+                'class': 'email-richtext form-control input-sm mousetrap',
+                'contenteditable': true,
+                'spellcheck': true,
+                'id': 'email-body',
+            }).appendTo(jQuery('<div/>', {
+                'class': 'panel-body',
+            }).appendTo(panel));
+
+            var print_frame = jQuery('<div/>', {
+                'class': 'col-md-4',
+            }).appendTo(body);
+            jQuery('<label/>', {
+                'text': Sao.i18n.gettext("Reports"),
+            }).appendTo(print_frame);
+            this.print_actions = {};
+            for (var i = 0; i < prints.length; i++) {
+                var print = prints[i];
+                var print_check = jQuery('<input/>', {
+                    'type': 'checkbox',
+                });
+                jQuery('<div/>', {
+                    'class': 'checkbox',
+                }).append(jQuery('<label/>'
+                ).text(Sao.i18n.gettext(print.name)
+                ).prepend(print_check)).appendTo(print_frame);
+                this.print_actions[print.id] = print_check;
+            }
+
+            var attachment_frame = jQuery('<div/>', {
+                'class': 'col-md-4',
+            }).appendTo(body);
+            jQuery('<label/>', {
+                'text': Sao.i18n.gettext("Attachments"),
+            }).appendTo(attachment_frame);
+            this.attachments = jQuery('<select/>', {
+                'class': 'form-control input-sm',
+                'name': 'attachments',
+                'multiple': true,
+            }).appendTo(attachment_frame);
+            Sao.rpc({
+                'method': 'model.ir.attachment.search_read',
+                'params': [
+                    [
+                        ['resource', '=', record.model.name + ',' + record.id],
+                        ['OR',
+                            ['data', '!=', null],
+                            ['file_id', '!=', null],
+                        ],
+                    ],
+                    0, null, null, ['rec_name'], record.get_context()],
+            }, record.model.session).then(function(attachments) {
+                attachments.forEach(function(attachment) {
+                    this.attachments.append(jQuery('<option/>', {
+                        'value': JSON.stringify(attachment.id),
+                        'text': attachment.rec_name,
+                    }));
+                }.bind(this));
+            }.bind(this));
+
+            this.files = jQuery('<div/>', {
+                'class': 'col-md-4',
+            }).appendTo(body);
+            jQuery('<label/>', {
+                'text': Sao.i18n.gettext("Files"),
+            }).appendTo(this.files);
+            this._add_file_button();
+
+            jQuery('<button/>', {
+                'class': 'btn btn-link',
+                'type': 'button',
+            }).text(' ' + Sao.i18n.gettext('Cancel')).prepend(
+                Sao.common.ICONFACTORY.get_icon_img('tryton-cancel')
+            ).click(function() {
+                this.response('RESPONSE_CANCEL');
+            }.bind(this)).appendTo(this.dialog.footer);
+
+            jQuery('<button/>', {
+                'class': 'btn btn-primary',
+                'type': 'submit',
+            }).text(' ' + Sao.i18n.gettext('Send')).prepend(
+                Sao.common.ICONFACTORY.get_icon_img('tryton-send')
+            ).appendTo(this.dialog.footer);
+            this.dialog.content.submit(function(e) {
+                e.preventDefault();
+                this.response('RESPONSE_OK');
+            }.bind(this));
+
+            this._fill_with(template);
+
+            this.el.modal('show');
+            this.el.on('hidden.bs.modal', function() {
+                jQuery(this).remove();
+            });
+        },
+        _add_file_button: function() {
+            var row = jQuery('<div/>').appendTo(this.files);
+            var file = jQuery('<input/>', {
+                'type': 'file',
+            }).appendTo(row);
+            var button = jQuery('<a/>', {
+                'class': 'close',
+                'title': Sao.i18n.gettext("Remove File"),
+            }).append(jQuery('<span/>', {
+                'aria-hidden': true,
+                'text': 'x',
+            })).append(jQuery('<span/>', {
+                'class': 'sr-only',
+            }).text(Sao.i18n.gettext("Remove")));
+            button.hide();
+            button.appendTo(row);
+
+            file.on('change', function() {
+                button.show();
+                this._add_file_button();
+            }.bind(this));
+            button.click(function() {
+                row.remove();
+            });
+        },
+        get_files: function() {
+            var prms = [];
+            var files = [];
+            this.files.find('input[type=file]').each(function(i, input) {
+                if (input.files.length) {
+                    var dfd = jQuery.Deferred();
+                    prms.push(dfd);
+                    Sao.common.get_file_data(
+                        input.files[0], function(data, filename) {
+                            files.push([filename, data]);
+                            dfd.resolve();
+                        });
+                }
+            });
+            return jQuery.when.apply(jQuery, prms).then(function() {
+                return files;
+            });
+        },
+        get_attachments: function() {
+            var attachments = this.attachments.val();
+            if (attachments) {
+                return attachments.map(function(e) { return JSON.parse(e); });
+            }
+            return [];
+        },
+        _fill_with: function(template) {
+            var prm;
+            if (template) {
+                prm = Sao.rpc({
+                    'method': 'model.ir.email.template.get',
+                    'params': [template, this.record.id, {}],
+                }, this.record.model.session);
+            } else {
+                prm = Sao.rpc({
+                    'method': 'model.ir.email.template.get_default',
+                    'params': [this.record.model.name, this.record.id, {}],
+                }, this.record.model.session);
+            }
+            prm.then(function(values) {
+                this.to.val((values.to || []).join(', '));
+                this.cc.val((values.cc || []).join(', '));
+                this.bcc.val((values.bcc || []).join(', '));
+                this.subject.val(values.subject || '');
+                this.body.html(Sao.HtmlSanitizer.sanitize(values.body || ''));
+                var print_ids = (values.reports || []);
+                for (var print_id in this.print_actions) {
+                    var check = this.print_actions[print_id];
+                    check.prop(
+                        'checked', ~print_ids.indexOf(parseInt(print_id, 10)));
+                }
+            }.bind(this));
+        },
+        response: function(response_id) {
+            if (response_id == 'RESPONSE_OK') {
+                var to = this.to.val();
+                var cc = this.cc.val();
+                var bcc = this.bcc.val();
+                var subject = this.subject.val();
+                var body = Sao.common.richtext_normalize(this.body.html());
+                var reports = [];
+                for (var id in this.print_actions) {
+                    var check = this.print_actions[id];
+                    if (check.prop('checked')) {
+                        reports.push(id);
+                    }
+                }
+                var attachments = this.get_attachments();
+                var record = this.record;
+                this.get_files().then(function(files) {
+                    return Sao.rpc({
+                        'method': 'model.ir.email.send',
+                        'params': [
+                            to, cc, bcc, subject, body,
+                            files,
+                            [record.model.name, record.id],
+                            reports,
+                            attachments,
+                            {}],
+                    }, record.model.session);
+                }).then(function() {
+                    this.destroy();
+                }.bind(this));
+            } else {
+                this.destroy();
+            }
+        },
+        destroy: function() {
+            this.el.modal('hide');
+        },
+    });
 
 }());

@@ -61,6 +61,9 @@ msgstr "ກ່ຽວພັນກັບ"
 msgid "Print"
 msgstr "ພິມອອກ"
 
+msgid "E-Mail"
+msgstr ""
+
 msgid "Previous tab"
 msgstr ""
 
@@ -100,6 +103,134 @@ msgstr "ຊື່ຜູ້ໃຊ້"
 msgid "Database"
 msgstr "ຖານຂໍ້ມູນ"
 
+msgid "Your selection:"
+msgstr "ການເລືອກຂອງທ່ານ:"
+
+msgid "Cancel"
+msgstr "ຍົກເລີກ"
+
+msgid "OK"
+msgstr "ຕົກລົງ"
+
+msgid "Y"
+msgstr "ປ"
+
+msgid "M"
+msgstr "ດ"
+
+msgid "w"
+msgstr "ອ"
+
+msgid "d"
+msgstr "ວ"
+
+msgid "h"
+msgstr "ມ"
+
+msgid "m"
+msgstr "ນ"
+
+msgid "s"
+msgstr "ວ"
+
+msgid "By: "
+msgstr "ໂດຍ: "
+
+msgid ", "
+msgstr ", "
+
+msgid "y"
+msgstr "ມ"
+
+msgid "Yes"
+msgstr "ແມ່ນ"
+
+msgid "True"
+msgstr "ຈິງ"
+
+msgid "t"
+msgstr "ຈ"
+
+msgid "False"
+msgstr "ເທັດ"
+
+msgid "Message: "
+msgstr "ຂໍ້ຄວາມ: "
+
+msgid "Warning: "
+msgstr "ຄຳເຕືອນ: "
+
+msgid "Always ignore this warning."
+msgstr "ບໍ່ສົນກັບຄຳເຕືອນນີ້."
+
+msgid "Do you want to proceed?"
+msgstr "ທ່ານຕ້ອງການດຳເນີນບໍ່?"
+
+msgid "No"
+msgstr "ບໍ່"
+
+msgid "Confirmation: "
+msgstr "ຄຳຢັ້ງຢືນ: "
+
+msgid "Concurrency Exception"
+msgstr "ຍົກເວັ້ນສະກຸນເງິນ"
+
+msgid "Write Concurrency Warning: "
+msgstr "ຂຽນຄຳເຕືອນສະກຸນເງິນ: "
+
+msgid "This record has been modified while you were editing it."
+msgstr "ແຖວຂໍ້ມູນນີ້ຖືກດັດແປງແລ້ວໃນຂະນະທີ່ທ່ານແກ້ໄຂມັນ."
+
+msgid "Choose:"
+msgstr "ເລືອກເອົາ:"
+
+msgid "\"Cancel\" to cancel saving;"
+msgstr "\"ຍົກເລີກ\" ເພື່ອຍົກເລີກການບັນທຶກ;"
+
+msgid "\"Compare\" to see the modified version;"
+msgstr "\"ສົມທຽບ\" ເພື່ອເບິ່ງທຽບກັບສະບັບດັດແປງແລ້ວ;"
+
+msgid "\"Write Anyway\" to save your current version."
+msgstr "\"ຂຽນລົງເລີຍ\" ເພື່ອບັນທຶກສະບັບປັດຈຸບັນນີ້."
+
+msgid "Compare"
+msgstr "ສົມທຽບ"
+
+#, fuzzy
+msgid "Compare: %1"
+msgstr "ສົມທຽບ"
+
+msgid "Write Anyway"
+msgstr "ຂຽນລົງເລີຍ"
+
+msgid "Application Error"
+msgstr "ໂປຣແກຣມຜິດພາດ"
+
+msgid "Report Bug"
+msgstr "ລາຍງານຂໍ້ຜິດພາດ"
+
+#, fuzzy
+msgid "Processing"
+msgstr "ກຳລັງປະມວນຜົນ..."
+
+msgid "Search..."
+msgstr "ຄົ້ນຫາ..."
+
+msgid "Create..."
+msgstr "ສ້າງ..."
+
+msgid "Download"
+msgstr "ດາວໂຫຼດ"
+
+msgid "..."
+msgstr "..."
+
+msgid "Font"
+msgstr "ໂຕໜັງສື"
+
+msgid "Size"
+msgstr "ຂະໜາດ"
+
 msgid "Switch view"
 msgstr "ສະຫຼັບໜ້າເບິ່ງ"
 
@@ -128,6 +259,13 @@ msgid "Add an attachment to the record"
 msgstr "ເອົາຂໍ້ມູນຄັດຕິດເຂົ້າໃນແຖວຂໍ້ມູນນີ້"
 
 msgid "Add a note to the record"
+msgstr "ບັນທຶກຂໍ້ຄວາມໃສ່ແຖວຂໍ້ມູນນີ້"
+
+msgid "E-Mail..."
+msgstr ""
+
+#, fuzzy
+msgid "Send an e-mail using the record"
 msgstr "ບັນທຶກຂໍ້ຄວາມໃສ່ແຖວຂໍ້ມູນນີ້"
 
 msgid "Export"
@@ -206,6 +344,14 @@ msgid "Add..."
 msgstr ""
 
 #, fuzzy
+msgid "Preview"
+msgstr "ກ່ອນໜ້າ"
+
+#, fuzzy
+msgid "Template"
+msgstr "ກ່ຽວພັນກັບ"
+
+#, fuzzy
 msgid "Attachment (%1)"
 msgstr "ຄັດຕິດ(%1)"
 
@@ -213,7 +359,7 @@ msgid "Note (%1/%2)"
 msgstr ""
 
 msgid " of "
-msgstr ""
+msgstr " ຂອງ "
 
 msgid "Filters"
 msgstr "ກັ່ນຕອງ"
@@ -238,12 +384,6 @@ msgstr ""
 
 msgid "Show inactive records"
 msgstr ""
-
-msgid "True"
-msgstr "ຈິງ"
-
-msgid "False"
-msgstr "ເທັດ"
 
 msgid "Find"
 msgstr "ຄົ້ນຫາ"
@@ -296,12 +436,6 @@ msgstr ":"
 msgid "Translate"
 msgstr "ແປ"
 
-msgid "Cancel"
-msgstr "ຍົກເລີກ"
-
-msgid "OK"
-msgstr "ຕົກລົງ"
-
 msgid "Edit"
 msgstr "ແກ້ໄຂ"
 
@@ -319,12 +453,6 @@ msgstr "ສະແດງ"
 
 msgid "Hide"
 msgstr "ເຊື່ອງ"
-
-msgid "Font"
-msgstr "ໂຕໜັງສື"
-
-msgid "Size"
-msgstr "ຂະໜາດ"
 
 msgid "Open the record"
 msgstr ""
@@ -386,11 +514,8 @@ msgstr ""
 msgid "Day"
 msgstr ""
 
-msgid ", "
-msgstr ", "
-
-msgid ",…"
-msgstr ",…"
+msgid ",..."
+msgstr ""
 
 msgid "%1 (%2)"
 msgstr "%1 (%2)"
@@ -400,112 +525,6 @@ msgstr "ເລືອກການດຳເນີນການ"
 
 msgid "No action defined."
 msgstr "ບໍ່ມີການດຳເນີນການໃດຖືກກຳນົດໄວ້!"
-
-msgid "Your selection:"
-msgstr "ການເລືອກຂອງທ່ານ:"
-
-msgid "Y"
-msgstr "ປ"
-
-msgid "M"
-msgstr "ດ"
-
-msgid "w"
-msgstr "ອ"
-
-msgid "d"
-msgstr "ວ"
-
-msgid "h"
-msgstr "ມ"
-
-msgid "m"
-msgstr "ນ"
-
-msgid "s"
-msgstr "ວ"
-
-msgid "By: "
-msgstr "ໂດຍ: "
-
-msgid "y"
-msgstr "ມ"
-
-msgid "Yes"
-msgstr "ແມ່ນ"
-
-msgid "t"
-msgstr "ຈ"
-
-msgid "Message: "
-msgstr "ຂໍ້ຄວາມ: "
-
-msgid "Warning: "
-msgstr "ຄຳເຕືອນ: "
-
-msgid "Always ignore this warning."
-msgstr "ບໍ່ສົນກັບຄຳເຕືອນນີ້."
-
-msgid "Do you want to proceed?"
-msgstr "ທ່ານຕ້ອງການດຳເນີນບໍ່?"
-
-msgid "No"
-msgstr "ບໍ່"
-
-msgid "Confirmation: "
-msgstr "ຄຳຢັ້ງຢືນ: "
-
-msgid "Concurrency Exception"
-msgstr "ຍົກເວັ້ນສະກຸນເງິນ"
-
-msgid "Write Concurrency Warning: "
-msgstr "ຂຽນຄຳເຕືອນສະກຸນເງິນ: "
-
-msgid "This record has been modified while you were editing it."
-msgstr "ແຖວຂໍ້ມູນນີ້ຖືກດັດແປງແລ້ວໃນຂະນະທີ່ທ່ານແກ້ໄຂມັນ."
-
-msgid "Choose:"
-msgstr "ເລືອກເອົາ:"
-
-msgid "\"Cancel\" to cancel saving;"
-msgstr "\"ຍົກເລີກ\" ເພື່ອຍົກເລີກການບັນທຶກ;"
-
-msgid "\"Compare\" to see the modified version;"
-msgstr "\"ສົມທຽບ\" ເພື່ອເບິ່ງທຽບກັບສະບັບດັດແປງແລ້ວ;"
-
-msgid "\"Write Anyway\" to save your current version."
-msgstr "\"ຂຽນລົງເລີຍ\" ເພື່ອບັນທຶກສະບັບປັດຈຸບັນນີ້."
-
-msgid "Compare"
-msgstr "ສົມທຽບ"
-
-#, fuzzy
-msgid "Compare: %1"
-msgstr "ສົມທຽບ"
-
-msgid "Write Anyway"
-msgstr "ຂຽນລົງເລີຍ"
-
-msgid "Application Error"
-msgstr "ໂປຣແກຣມຜິດພາດ"
-
-msgid "Report Bug"
-msgstr "ລາຍງານຂໍ້ຜິດພາດ"
-
-msgid "Processing..."
-msgstr "ກຳລັງປະມວນຜົນ..."
-
-msgid "Search..."
-msgstr "ຄົ້ນຫາ..."
-
-msgid "Create..."
-msgstr "ສ້າງ..."
-
-msgid "Download"
-msgstr "ດາວໂຫຼດ"
-
-msgid "..."
-msgstr "..."
 
 msgid "Attachments (%1)"
 msgstr "ຄັດຕິດ(%1)"
@@ -534,9 +553,6 @@ msgstr "ຂັ້ນ:"
 msgid "Quote Char:"
 msgstr "Quote Char:"
 
-msgid "Encoding:"
-msgstr "ການເຂົ້າລະຫັດ:"
-
 msgid "CSV Import: %1"
 msgstr ""
 
@@ -545,6 +561,9 @@ msgstr "ກວດພົບອັດຕະໂນມັດ"
 
 msgid "File to Import"
 msgstr "ຟາຍລ໌ທີ່ຈະນຳເຂົ້າ"
+
+msgid "Encoding:"
+msgstr "ການເຂົ້າລະຫັດ:"
 
 msgid "Lines to Skip:"
 msgstr "ແຖວທີ່ຈະຂວ້າມ:"
@@ -617,6 +636,51 @@ msgstr "ຊື່ຂອງການສົ່ງອອກນີ້ແມ່ນຫ
 
 msgid "Override %1 definition?"
 msgstr "ຂຽນທັບຄຳອະທິບາຍ %1 ນີ້ບໍ?"
+
+msgid "E-mail %1"
+msgstr ""
+
+msgid "To:"
+msgstr ""
+
+msgid "Cc:"
+msgstr ""
+
+msgid "Bcc:"
+msgstr ""
+
+msgid "Subject:"
+msgstr ""
+
+#, fuzzy
+msgid "Reports"
+msgstr "ລາຍງານຂໍ້ຜິດພາດ"
+
+msgid ""
+msgstr ""
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-05-01 15:33+0000\n"
+"PO-Revision-Date: 2019-10-31 09:05+0000\n"
+"Last-Translator: Cedric Krier <cedric.krier@b2ck.com>\n"
+"Language: lo\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 3.8\n"
+
+#, fuzzy
+msgid "Attachments"
+msgstr "ຄັດຕິດ"
+
+msgid "Files"
+msgstr ""
+
+msgid "Send"
+msgstr ""
+
+#, fuzzy
+msgid "Remove File"
+msgstr "ເອົາອອກ"
 
 msgid "Wizard"
 msgstr "ນໍາພາສ້າງ"

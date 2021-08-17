@@ -44,7 +44,7 @@
                 }).join(Sao.i18n.gettext(', '));
 
                 if (data.ids.length > ids.length) {
-                    name_suffix += Sao.i18n.gettext(',\u2026');
+                    name_suffix += Sao.i18n.gettext(',...');
                 }
                 return Sao.i18n.gettext('%1 (%2)', name, name_suffix);
             });
@@ -94,7 +94,7 @@
                 params.tab_domain = [];
                 action.domains.forEach(function(element, index) {
                     params.tab_domain.push(
-                        [element[0], [ctx, element[1]], element[2]]);
+                        [element[0], decoder.decode(element[1]), element[2]]);
                 });
                 name_prm = jQuery.when(action.name);
                 params.model = action.res_model || data.res_model;
@@ -137,8 +137,6 @@
                 params.name = action.report_name;
                 params.data = data;
                 params.direct_print = action.direct_print;
-                params.email_print = action.email_print;
-                params.email = action.email;
                 params.context = context;
                 Sao.Action.exec_report(params);
                 return;
@@ -188,15 +186,10 @@
         if (!attributes.context) {
             attributes.context = {};
         }
-        if (!attributes.email) {
-            attributes.email = {};
-        }
         var data = jQuery.extend({}, attributes.data);
         var context = jQuery.extend({}, Sao.Session.current_session.context);
         jQuery.extend(context, attributes.context);
         context.direct_print = attributes.direct_print;
-        context.email_print = attributes.email_print;
-        context.email = attributes.email;
 
         var prm = Sao.rpc({
             'method': 'report.' + attributes.name + '.execute',

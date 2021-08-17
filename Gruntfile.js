@@ -8,6 +8,7 @@ module.exports = function(grunt) {
       'src/rpc.js',
       'src/pyson.js',
       'src/session.js',
+      'src/common.js',
       'src/model.js',
       'src/tab.js',
       'src/screen.js',
@@ -18,13 +19,19 @@ module.exports = function(grunt) {
       'src/view/calendar.js',
       'src/view/list_form.js',
       'src/action.js',
-      'src/common.js',
       'src/window.js',
       'src/wizard.js',
       'src/board.js',
       'src/bus.js',
       'src/plugins.js',
       'src/html_sanitizer.js'
+  ];
+  var less_paths = [
+      'src',
+      'bower_components',
+      'bower_components/bootstrap',
+      'bower_components/bootstrap/less',
+      'bower_components/bootstrap-rtl-ondemand/less',
   ];
 
   // Project configuration.
@@ -100,21 +107,19 @@ module.exports = function(grunt) {
     less: {
         dev: {
             options: {
-                paths: ['src', 'bower_components/bootstrap/less', 'theme/coog']
+                paths: less_paths,
             },
             files: {
-                'dist/coog-sao.css': 'theme/coog/coog-sao.less',
-                'dist/<%= pkg.name %>.css': 'src/*.less'
+                'dist/<%= pkg.name %>.css': 'src/sao.less'
             }
         },
         'default': {
             options: {
-                paths: ['src', 'bower_components/bootstrap/less'],
+                paths: less_paths,
                 yuicompress: true
             },
             files: {
-                'dist/coog-sao.min.css': 'theme/coog/coog-sao.less',
-                'dist/<%= pkg.name %>.min.css': 'src/*.less'
+                'dist/<%= pkg.name %>.min.css': 'src/sao.less'
             }
         }
     },
@@ -124,8 +129,7 @@ module.exports = function(grunt) {
             tasks: ['concat', 'jshint']
         },
         styles: {
-            files: ['src/*.less', 'theme/coog/*.less',
-                'theme/coog/elements/*.less'],
+            files: ['src/*.less'],
             tasks: 'less:dev'
         }
     },

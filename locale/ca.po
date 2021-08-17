@@ -76,6 +76,9 @@ msgstr "Relacionat"
 msgid "Print"
 msgstr "Imprimeix"
 
+msgid "E-Mail"
+msgstr "Correu electrònic"
+
 msgid "Previous tab"
 msgstr "Pestanya anterior"
 
@@ -115,6 +118,132 @@ msgstr "Nom d'usuari"
 msgid "Database"
 msgstr "Base de dades"
 
+msgid "Your selection:"
+msgstr "La vostra selecció:"
+
+msgid "Cancel"
+msgstr "Cancel·la"
+
+msgid "OK"
+msgstr "D'acord"
+
+msgid "Y"
+msgstr "A"
+
+msgid "M"
+msgstr "M"
+
+msgid "w"
+msgstr "S"
+
+msgid "d"
+msgstr "d"
+
+msgid "h"
+msgstr "h"
+
+msgid "m"
+msgstr "m"
+
+msgid "s"
+msgstr "s"
+
+msgid "By: "
+msgstr "Per: "
+
+msgid ", "
+msgstr ", "
+
+msgid "y"
+msgstr "a"
+
+msgid "Yes"
+msgstr "Si"
+
+msgid "True"
+msgstr "Verdader"
+
+msgid "t"
+msgstr "v"
+
+msgid "False"
+msgstr "Fals"
+
+msgid "Message: "
+msgstr "Missatge: "
+
+msgid "Warning: "
+msgstr "Avs: "
+
+msgid "Always ignore this warning."
+msgstr "Ignora sempre aquest advertiment."
+
+msgid "Do you want to proceed?"
+msgstr "Voleu continuar?"
+
+msgid "No"
+msgstr "No"
+
+msgid "Confirmation: "
+msgstr "Confirmaci: "
+
+msgid "Concurrency Exception"
+msgstr "Excepció de concurrència"
+
+msgid "Write Concurrency Warning: "
+msgstr "Avís de concurrència d'escriptura: "
+
+msgid "This record has been modified while you were editing it."
+msgstr "Aquest registre ha estat modificat mentre l'editàveu."
+
+msgid "Choose:"
+msgstr "Trieu:"
+
+msgid "\"Cancel\" to cancel saving;"
+msgstr "\"Cancel·la\" per no desar;"
+
+msgid "\"Compare\" to see the modified version;"
+msgstr "\"Compara\" per veure la versi modificada;"
+
+msgid "\"Write Anyway\" to save your current version."
+msgstr "\"Desa de totes formes\" per desar els vostres canvis."
+
+msgid "Compare"
+msgstr "Compara"
+
+msgid "Compare: %1"
+msgstr "Compara: %1"
+
+msgid "Write Anyway"
+msgstr "Desa de totes formes"
+
+msgid "Application Error"
+msgstr "Error d'aplicació"
+
+msgid "Report Bug"
+msgstr "Informa de l'error"
+
+msgid "Processing"
+msgstr "Processant"
+
+msgid "Search..."
+msgstr "Cerca..."
+
+msgid "Create..."
+msgstr "Crea..."
+
+msgid "Download"
+msgstr "Baixa"
+
+msgid "..."
+msgstr "..."
+
+msgid "Font"
+msgstr "Tipus de lletra"
+
+msgid "Size"
+msgstr "Mida"
+
 msgid "Switch view"
 msgstr "Canvia la vista"
 
@@ -144,6 +273,12 @@ msgstr "Afegeix un adjunt al registre"
 
 msgid "Add a note to the record"
 msgstr "Afegeix una nota al registre"
+
+msgid "E-Mail..."
+msgstr "Correu electrònic..."
+
+msgid "Send an e-mail using the record"
+msgstr "Envia un correu electrònic utilitzant el registre"
 
 msgid "Export"
 msgstr "Exporta"
@@ -216,6 +351,12 @@ msgstr "Model: "
 msgid "Add..."
 msgstr "Afegeix..."
 
+msgid "Preview"
+msgstr "Previsualitza"
+
+msgid "Template"
+msgstr "Plantilla"
+
 msgid "Attachment (%1)"
 msgstr "Adjunts (%1)"
 
@@ -249,12 +390,6 @@ msgstr "Mostra registres actius"
 msgid "Show inactive records"
 msgstr "Mostra registres inactius"
 
-msgid "True"
-msgstr "Verdader"
-
-msgid "False"
-msgstr "Fals"
-
 msgid "Find"
 msgstr "Cerca"
 
@@ -283,7 +418,7 @@ msgid "Modified at"
 msgstr "Modificat el"
 
 msgid "\"%1\" is required."
-msgstr "\"%1\" és obligatori."
+msgstr "\"%1\" s obligatori."
 
 msgid "\"%1\" is not valid according to its domain."
 msgstr "\"%1\" no és vàlid segons el seu domini."
@@ -299,12 +434,6 @@ msgstr ":"
 
 msgid "Translate"
 msgstr "Tradueix"
-
-msgid "Cancel"
-msgstr "Cancel·la"
-
-msgid "OK"
-msgstr "D'acord"
 
 msgid "Edit"
 msgstr "Edita"
@@ -323,12 +452,6 @@ msgstr "Mostra"
 
 msgid "Hide"
 msgstr "Amaga"
-
-msgid "Font"
-msgstr "Tipus de lletra"
-
-msgid "Size"
-msgstr "Mida"
 
 msgid "Open the record"
 msgstr "Obre el registre"
@@ -390,11 +513,8 @@ msgstr "Setmana"
 msgid "Day"
 msgstr "Dia"
 
-msgid ", "
-msgstr ", "
-
-msgid ",…"
-msgstr ",…"
+msgid ",..."
+msgstr ",..."
 
 msgid "%1 (%2)"
 msgstr "%1 (%2)"
@@ -404,111 +524,6 @@ msgstr "Seleccioneu la vostra acció"
 
 msgid "No action defined."
 msgstr "No s'ha definit cap acció."
-
-msgid "Your selection:"
-msgstr "La vostra selecció:"
-
-msgid "Y"
-msgstr "A"
-
-msgid "M"
-msgstr "M"
-
-msgid "w"
-msgstr "S"
-
-msgid "d"
-msgstr "d"
-
-msgid "h"
-msgstr "h"
-
-msgid "m"
-msgstr "m"
-
-msgid "s"
-msgstr "s"
-
-msgid "By: "
-msgstr "Per: "
-
-msgid "y"
-msgstr "a"
-
-msgid "Yes"
-msgstr "Si"
-
-msgid "t"
-msgstr "v"
-
-msgid "Message: "
-msgstr "Missatge: "
-
-msgid "Warning: "
-msgstr "Avís: "
-
-msgid "Always ignore this warning."
-msgstr "Ignora sempre aquest advertiment."
-
-msgid "Do you want to proceed?"
-msgstr "Voleu continuar?"
-
-msgid "No"
-msgstr "No"
-
-msgid "Confirmation: "
-msgstr "Confirmació: "
-
-msgid "Concurrency Exception"
-msgstr "Excepció de concurrència"
-
-msgid "Write Concurrency Warning: "
-msgstr "Avís de concurrència d'escriptura: "
-
-msgid "This record has been modified while you were editing it."
-msgstr "Aquest registre ha estat modificat mentre l'editàveu."
-
-msgid "Choose:"
-msgstr "Trieu:"
-
-msgid "\"Cancel\" to cancel saving;"
-msgstr "\"Cancel·la\" per no desar;"
-
-msgid "\"Compare\" to see the modified version;"
-msgstr "\"Compara\" per veure la versió modificada;"
-
-msgid "\"Write Anyway\" to save your current version."
-msgstr "\"Desa de totes formes\" per desar els vostres canvis."
-
-msgid "Compare"
-msgstr "Compara"
-
-msgid "Compare: %1"
-msgstr "Compara: %1"
-
-msgid "Write Anyway"
-msgstr "Desa de totes formes"
-
-msgid "Application Error"
-msgstr "Error d'aplicació"
-
-msgid "Report Bug"
-msgstr "Informa de l'error"
-
-msgid "Processing..."
-msgstr "Processant..."
-
-msgid "Search..."
-msgstr "Cerca..."
-
-msgid "Create..."
-msgstr "Crea..."
-
-msgid "Download"
-msgstr "Baixa"
-
-msgid "..."
-msgstr "..."
 
 msgid "Attachments (%1)"
 msgstr "Adjunts (%1)"
@@ -537,9 +552,6 @@ msgstr "Separador:"
 msgid "Quote Char:"
 msgstr "Delimitador de text:"
 
-msgid "Encoding:"
-msgstr "Codificació:"
-
 msgid "CSV Import: %1"
 msgstr "Importació CSV: %1"
 
@@ -548,6 +560,9 @@ msgstr "Detecta automàticament"
 
 msgid "File to Import"
 msgstr "Fitxer a importar"
+
+msgid "Encoding:"
+msgstr "Codificació:"
 
 msgid "Lines to Skip:"
 msgstr "Línies a ometre:"
@@ -586,7 +601,7 @@ msgid "Selected Records"
 msgstr "Registres seleccionats"
 
 msgid "Listed Records"
-msgstr "Registres seleccionats"
+msgstr "Registres llistats"
 
 msgid "Export:"
 msgstr "Exportar:"
@@ -614,6 +629,36 @@ msgstr "Quin és el nom d'aquesta exportació?"
 
 msgid "Override %1 definition?"
 msgstr "Voleu sobreescriure la definició %1?"
+
+msgid "E-mail %1"
+msgstr "Correu electrònic %1"
+
+msgid "To:"
+msgstr "A:"
+
+msgid "Cc:"
+msgstr "Cc:"
+
+msgid "Bcc:"
+msgstr "Cco:"
+
+msgid "Subject:"
+msgstr "Assumpte:"
+
+msgid "Reports"
+msgstr "Informes"
+
+msgid "Attachments"
+msgstr "Adjunts"
+
+msgid "Files"
+msgstr "Fitxers"
+
+msgid "Send"
+msgstr "Envia"
+
+msgid "Remove File"
+msgstr "Elimina fitxer"
 
 msgid "Wizard"
 msgstr "Assistent"

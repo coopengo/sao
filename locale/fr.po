@@ -76,6 +76,9 @@ msgstr "Relation"
 msgid "Print"
 msgstr "Imprimer"
 
+msgid "E-Mail"
+msgstr "E-mail"
+
 msgid "Previous tab"
 msgstr "Onglet précédent"
 
@@ -115,6 +118,134 @@ msgstr "Nom d'utilisateur"
 msgid "Database"
 msgstr "Base de données"
 
+msgid "Your selection:"
+msgstr "Votre sélection :"
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "OK"
+msgstr "Valider"
+
+msgid "Y"
+msgstr "A"
+
+msgid "M"
+msgstr "M"
+
+msgid "w"
+msgstr "S"
+
+msgid "d"
+msgstr "j"
+
+msgid "h"
+msgstr "h"
+
+msgid "m"
+msgstr "m"
+
+msgid "s"
+msgstr "s"
+
+msgid "By: "
+msgstr "Par : "
+
+msgid ", "
+msgstr ", "
+
+msgid "y"
+msgstr "y"
+
+msgid "Yes"
+msgstr "Oui"
+
+msgid "True"
+msgstr "Vrai"
+
+msgid "t"
+msgstr "v"
+
+msgid "False"
+msgstr "Faux"
+
+msgid "Message: "
+msgstr "Message : "
+
+msgid "Warning: "
+msgstr "Avertissement : "
+
+msgid "Always ignore this warning."
+msgstr "Toujours ignorer cet avertissement."
+
+msgid "Do you want to proceed?"
+msgstr "Souhaitez-vous continuer ?"
+
+msgid "No"
+msgstr "Non"
+
+msgid "Confirmation: "
+msgstr "Confirmation : "
+
+msgid "Concurrency Exception"
+msgstr "Erreur d'accès concurrent"
+
+msgid "Write Concurrency Warning: "
+msgstr "Attention, accès en écriture concurrents : "
+
+msgid "This record has been modified while you were editing it."
+msgstr ""
+"Cet enregistrement a été modifié pendant que vous étiez en train de "
+"l'éditer."
+
+msgid "Choose:"
+msgstr "Choisissez :"
+
+msgid "\"Cancel\" to cancel saving;"
+msgstr "« Annuler » pour annuler vos modifications ;"
+
+msgid "\"Compare\" to see the modified version;"
+msgstr "« Comparer » pour voir la nouvelle version ;"
+
+msgid "\"Write Anyway\" to save your current version."
+msgstr "« Écraser » pour sauver vos modifications."
+
+msgid "Compare"
+msgstr "Comparer"
+
+msgid "Compare: %1"
+msgstr "Comparer : %1"
+
+msgid "Write Anyway"
+msgstr "Écraser"
+
+msgid "Application Error"
+msgstr "Erreur applicative"
+
+msgid "Report Bug"
+msgstr "Rapporter un bogue"
+
+msgid "Processing"
+msgstr "Traitement en cours"
+
+msgid "Search..."
+msgstr "Recherche..."
+
+msgid "Create..."
+msgstr "Créer..."
+
+msgid "Download"
+msgstr "Télécharger"
+
+msgid "..."
+msgstr "..."
+
+msgid "Font"
+msgstr "Police"
+
+msgid "Size"
+msgstr "Taille"
+
 msgid "Switch view"
 msgstr "Basculer la vue"
 
@@ -144,6 +275,12 @@ msgstr "Ajouter un attachement à l'enregistrement"
 
 msgid "Add a note to the record"
 msgstr "Ajouter une note à l'enregistrement"
+
+msgid "E-Mail..."
+msgstr "E-mail..."
+
+msgid "Send an e-mail using the record"
+msgstr "Envoyer un e-mail en utilisant l'enregistrement"
 
 msgid "Export"
 msgstr "Exporter"
@@ -216,6 +353,12 @@ msgstr "Modèle : "
 msgid "Add..."
 msgstr "Ajouter..."
 
+msgid "Preview"
+msgstr "Aperçu"
+
+msgid "Template"
+msgstr "Modèle"
+
 msgid "Attachment (%1)"
 msgstr "Attachement (%1)"
 
@@ -248,12 +391,6 @@ msgstr "Montrer les enregistrements actifs"
 
 msgid "Show inactive records"
 msgstr "Montrer les enregistrements inactifs"
-
-msgid "True"
-msgstr "Vrai"
-
-msgid "False"
-msgstr "Faux"
 
 msgid "Find"
 msgstr "Chercher"
@@ -300,12 +437,6 @@ msgstr " :"
 msgid "Translate"
 msgstr "Traduire"
 
-msgid "Cancel"
-msgstr "Annuler"
-
-msgid "OK"
-msgstr "Valider"
-
 msgid "Edit"
 msgstr "Éditer"
 
@@ -324,12 +455,6 @@ msgstr "Afficher"
 
 msgid "Hide"
 msgstr "Masquer"
-
-msgid "Font"
-msgstr "Police"
-
-msgid "Size"
-msgstr "Taille"
 
 msgid "Open the record"
 msgstr "Ouvrir l'enregistrement"
@@ -391,11 +516,8 @@ msgstr "Semaine"
 msgid "Day"
 msgstr "Jour"
 
-msgid ", "
-msgstr ", "
-
-msgid ",…"
-msgstr ",…"
+msgid ",..."
+msgstr ",..."
 
 msgid "%1 (%2)"
 msgstr "%1 (%2)"
@@ -405,113 +527,6 @@ msgstr "Sélectionnez votre action"
 
 msgid "No action defined."
 msgstr "Pas d'action définie."
-
-msgid "Your selection:"
-msgstr "Votre sélection :"
-
-msgid "Y"
-msgstr "A"
-
-msgid "M"
-msgstr "M"
-
-msgid "w"
-msgstr "S"
-
-msgid "d"
-msgstr "j"
-
-msgid "h"
-msgstr "h"
-
-msgid "m"
-msgstr "m"
-
-msgid "s"
-msgstr "s"
-
-msgid "By: "
-msgstr "Par : "
-
-msgid "y"
-msgstr "y"
-
-msgid "Yes"
-msgstr "Oui"
-
-msgid "t"
-msgstr "v"
-
-msgid "Message: "
-msgstr "Message : "
-
-msgid "Warning: "
-msgstr "Avertissement : "
-
-msgid "Always ignore this warning."
-msgstr "Toujours ignorer cet avertissement."
-
-msgid "Do you want to proceed?"
-msgstr "Souhaitez-vous continuer ?"
-
-msgid "No"
-msgstr "Non"
-
-msgid "Confirmation: "
-msgstr "Confirmation : "
-
-msgid "Concurrency Exception"
-msgstr "Erreur d'accès concurrent"
-
-msgid "Write Concurrency Warning: "
-msgstr "Attention, accès en écriture concurrents : "
-
-msgid "This record has been modified while you were editing it."
-msgstr ""
-"Cet enregistrement a été modifié pendant que vous étiez en train de "
-"l'éditer."
-
-msgid "Choose:"
-msgstr "Choisissez :"
-
-msgid "\"Cancel\" to cancel saving;"
-msgstr "« Annuler » pour annuler vos modifications ;"
-
-msgid "\"Compare\" to see the modified version;"
-msgstr "« Comparer » pour voir la nouvelle version ;"
-
-msgid "\"Write Anyway\" to save your current version."
-msgstr "« Écraser » pour sauver vos modifications."
-
-msgid "Compare"
-msgstr "Comparer"
-
-msgid "Compare: %1"
-msgstr "Comparer : %1"
-
-msgid "Write Anyway"
-msgstr "Écraser"
-
-msgid "Application Error"
-msgstr "Erreur applicative"
-
-msgid "Report Bug"
-msgstr "Rapporter un bogue"
-
-msgid "Processing..."
-msgstr "Traitement en cours..."
-
-msgid "Search..."
-msgstr "Recherche..."
-
-msgid "Create..."
-msgstr "Créer..."
-
-msgid "Download"
-msgstr "Télécharger"
-
-msgid "..."
-msgstr "..."
 
 msgid "Attachments (%1)"
 msgstr "Attachements (%1)"
@@ -540,17 +555,17 @@ msgstr "Délimiteur :"
 msgid "Quote Char:"
 msgstr "Caractère de guillemet :"
 
-msgid "Encoding:"
-msgstr "Codage :"
-
 msgid "CSV Import: %1"
-msgstr "Import CSV: %1"
+msgstr "Import CSV : %1"
 
 msgid "Auto-Detect"
 msgstr "Détection automatique"
 
 msgid "File to Import"
-msgstr "Fichier à importer :"
+msgstr "Fichier à importer"
+
+msgid "Encoding:"
+msgstr "Codage :"
 
 msgid "Lines to Skip:"
 msgstr "Lignes à ignorer :"
@@ -571,7 +586,7 @@ msgid "Error occured in loading the file"
 msgstr "Une erreur a eu lieu au chargement du fichier"
 
 msgid "CSV Export: %1"
-msgstr "Export CSV: %1"
+msgstr "Export CSV : %1"
 
 msgid "Save Export"
 msgstr "Sauver l'exportation"
@@ -617,6 +632,51 @@ msgstr "Quel est le nom de cet export ?"
 
 msgid "Override %1 definition?"
 msgstr "Surcharger la définition %s ?"
+
+msgid "E-mail %1"
+msgstr "E-mail %1"
+
+msgid "To:"
+msgstr "À :"
+
+msgid "Cc:"
+msgstr "Cc :"
+
+msgid "Bcc:"
+msgstr "Cci :"
+
+msgid "Subject:"
+msgstr "Objet :"
+
+msgid "Reports"
+msgstr "Rapports"
+
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-04-19 21:49+0000\n"
+"PO-Revision-Date: 2021-04-19 21:49+0000\n"
+"Last-Translator: Cedric Krier <cedric.krier@b2ck.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 4.5.3\n"
+
+msgid "Attachments"
+msgstr "Pièces jointes"
+
+msgid "Files"
+msgstr "Fichiers"
+
+msgid "Send"
+msgstr "Envoyer"
+
+msgid "Remove File"
+msgstr "Supprimer le fichier"
 
 msgid "Wizard"
 msgstr "Assistant"

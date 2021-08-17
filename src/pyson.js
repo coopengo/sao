@@ -4,7 +4,10 @@
     'use strict';
 
     Sao.PYSON = {};
-    Sao.PYSON.eval = {};
+    Sao.PYSON.eval = {
+        True: true,
+        False: false,
+    };
     Sao.PYSON.toString = function(value) {
         if (value instanceof Sao.PYSON.PYSON) {
             return value.toString();
@@ -28,6 +31,18 @@
         },
         types: function() {
             throw 'NotImplementedError';
+        },
+        get: function(k, d) {
+            if (d === undefined) {
+                d = '';
+            }
+            return Sao.PYSON.Get(this, k, d);
+        },
+        in_: function(obj) {
+            return Sao.PYSON.In(this, obj);
+        },
+        contains: function(k) {
+            return Sao.PYSON.In(k, this);
         },
         toString: function() {
             var klass = this.pyson().__class__;
@@ -70,6 +85,8 @@
                             value.seconds(),
                             value.milliseconds() * 1000).pyson();
                     }
+                } else if (value instanceof Sao.Decimal) {
+                    value = value.valueOf();
                 } else if ((value instanceof Object) &&
                     !(value instanceof Sao.PYSON.PYSON)) {
                     value = jQuery.extend({}, value);
@@ -250,14 +267,12 @@
     };
 
 
-    Sao.PYSON.eval.And = function(statements) {
-        return new Sao.PYSON.And(statements);
+    Sao.PYSON.eval.And = function() {
+        return Sao.PYSON.And.new_(arguments);
     };
     Sao.PYSON.And = Sao.class_(Sao.PYSON.PYSON, {
-        init: function(statements) {
-            if (statements === undefined) {
-                statements = [];
-            }
+        init: function() {
+            var statements = jQuery.extend([], arguments);
             Sao.PYSON.And._super.init.call(this);
             for (var i = 0, len = statements.length; i < len; i++) {
                 var statement = statements[i];
@@ -298,12 +313,12 @@
         return result;
     };
     Sao.PYSON.And.init_from_object = function(obj) {
-        return new Sao.PYSON.And(obj.s);
+        return Sao.PYSON.And.new_(obj.s);
     };
 
 
-    Sao.PYSON.eval.Or = function(statements) {
-        return new Sao.PYSON.Or(statements);
+    Sao.PYSON.eval.Or = function() {
+        return Sao.PYSON.Or.new_(arguments);
     };
     Sao.PYSON.Or = Sao.class_(Sao.PYSON.And, {
         pyson: function() {
@@ -322,7 +337,7 @@
         return result;
     };
     Sao.PYSON.Or.init_from_object= function(obj) {
-        return new Sao.PYSON.Or(obj.s);
+        return new Sao.PYSON.Or.new_(obj.s);
     };
 
     Sao.PYSON.eval.Equal = function(statement1, statement2) {
@@ -389,12 +404,16 @@
             for (var i = 0; i < 2; i++) {
                 var statement = statements[i];
                 if (statement instanceof Sao.PYSON.PYSON) {
-                    if (jQuery(statement.types()).not(['number']).length) {
-                        throw 'statement must be an integer or a float';
+                    if ( (!(statement instanceof Sao.PYSON.DateTime ||
+                        statement instanceof Sao.PYSON.Date)) &&
+                        (jQuery(statement.types()).not(['number']).length) ) {
+                        throw 'statement must be an integer, float, ' +
+                            'date or datetime';
                     }
                 } else {
                     if (!~['number', 'object'].indexOf(typeof statement)) {
-                        throw 'statement must be an integer or a float';
+                        throw 'statement must be an integer, float, ' +
+                            'date or datetime';
                     }
                 }
             }
@@ -431,12 +450,24 @@
 
     Sao.PYSON.Greater._convert = function(value) {
         value = jQuery.extend({}, value);
-        value.s1 = Number(value.s1);
-        value.s2 = Number(value.s2);
+        var values = [value.s1, value.s2];
+        for (var i=0; i < 2; i++) {
+            if (values[i] instanceof moment) {
+                values[i] = values[i].unix();
+            }
+            else {
+                values[i] = Number(values[i]);
+            }
+        }
+        value.s1 = values[0];
+        value.s2 = values[1];
         return value;
     };
 
     Sao.PYSON.Greater.eval_ = function(value, context) {
+        if (value.s1 == null || value.s2 == null) {
+            return false;
+        }
         value = Sao.PYSON.Greater._convert(value);
         if (value.e) {
             return value.s1 >= value.s2;
@@ -462,6 +493,9 @@
     Sao.PYSON.Less._convert = Sao.PYSON.Greater._convert;
 
     Sao.PYSON.Less.eval_ = function(value, context) {
+        if (value.s1 == null || value.s2 == null) {
+            return false;
+        }
         value = Sao.PYSON.Less._convert(value);
         if (value.e) {
             return value.s1 <= value.s2;
@@ -726,10 +760,10 @@
     Sao.PYSON.Date.eval_ = function(value, context) {
         var date = value.start;
         if (date && date.isDateTime) {
-            date = Sao.Date(date.year(), date.month(), date.date());
+            date = Sao.Date(date.year(), date.month(), date.date(), true);
         }
         if (!date || !date.isDate) {
-            date = Sao.Date();
+            date = Sao.Date(undefined, undefined, undefined, true);
         }
         if (value.y) date.year(value.y);
         if (value.M) date.month(value.M - 1);

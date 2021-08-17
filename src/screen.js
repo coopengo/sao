@@ -29,7 +29,7 @@
             this.el.append(this.filter_box);
             this.filter_button = jQuery('<button/>', {
                 type: 'button',
-                'class': 'btn btn-default'
+                'class': 'btn btn-link'
             }).text(Sao.i18n.gettext('Filters'));
             this.filter_button.click(this.search_box.bind(this));
             this.search_entry = jQuery('<input/>', {
@@ -89,14 +89,13 @@
                 'aria-expanded': false,
                 'aria-label': Sao.i18n.gettext("Bookmarks"),
                 'title': Sao.i18n.gettext("Bookmarks"),
-                'id': 'bookmarks'
             }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-bookmark', {
                 'aria-hidden': true,
-            }));
+            })).uniqueId();
             var dropdown_bookmark = jQuery('<ul/>', {
                 'class': 'dropdown-menu dropdown-menu-right',
                 'role': 'menu',
-                'aria-labelledby': 'bookmarks'
+                'aria-labelledby': this.but_bookmark.attr('id'),
             });
             this.but_bookmark.click(function() {
                 dropdown_bookmark.empty();
@@ -212,7 +211,7 @@
                     e.preventDefault();
                     jQuery(this).tab('show');
                     self.do_search();
-                    self.screen.count_tab_domain();
+                    self.screen.count_tab_domain(true);
                 });
             } else {
                 this.tab = null;
@@ -303,20 +302,22 @@
             if (current_text) {
                 var current_domain = this.screen.domain_parser.parse(
                         current_text);
-                this.but_star.prop('disabled', !current_text);
                 var star = this.get_star();
                 var bookmarks = this.bookmarks();
                 for (var i=0; i < bookmarks.length; i++) {
                     var id = bookmarks[i][0];
                     var name = bookmarks[i][1];
                     var domain = bookmarks[i][2];
+                    var access = bookmarks[i][3];
                     var text = this.screen.domain_parser.string(domain);
                     if ((text === current_text) ||
                             (Sao.common.compare(domain, current_domain))) {
                         this.set_star(true);
+                        this.but_star.prop('disabled', !access);
                         return id;
                     }
                 }
+                this.but_star.prop('disabled', !current_text);
             }
             this.set_star(false);
         },
@@ -341,15 +342,21 @@
             this.but_active.attr('aria-label', tooltip);
             this.but_active.attr('title', tooltip);
         },
+        get_tab_index: function() {
+            if (!this.tab) {
+                return -1;
+            }
+            return this.tab.find('li').index(this.tab.find('li.active'));
+        },
         get_tab_domain: function() {
             if (!this.tab) {
                 return [];
             }
-            var i = this.tab.find('li').index(this.tab.find('li.active'));
-            var ctx = this.tab_domain[i][1][0];
-            var domain = this.tab_domain[i][1][1];
-            var decoder = new Sao.PYSON.Decoder(ctx);
-            return decoder.decode(domain);
+            var idx = this.get_tab_index();
+            if (idx < 0) {
+                return [];
+            }
+            return this.tab_domain[idx][1];
         },
         set_tab_counter: function(count, idx) {
             if (jQuery.isEmptyObject(this.tab_counter) || !this.tab) {
@@ -484,6 +491,7 @@
 
                     var input;
                     var entry;
+                    var format, date_format, time_format;
                     switch (field.type) {
                         case 'boolean':
                             entry = input = jQuery('<select/>', {
@@ -502,25 +510,29 @@
                             input = entry.el;
                             break;
                         case 'date':
-                        case 'datetime':
-                        case 'time':
-                            var format;
-                            var date_format = Sao.common.date_format(
+                            format = Sao.common.date_format(
                                 this.screen.context.date_format);
-                            if (field.type == 'date') {
-                                format = date_format;
-                            } else {
-                                var time_format = new Sao.PYSON.Decoder({}).decode(
-                                        field.format);
-                                time_format = Sao.common.moment_format(time_format);
-                                if (field.type == 'time') {
-                                    format = time_format;
-                                } else if (field.type == 'datetime') {
-                                    format = date_format + ' ' + time_format;
-                                }
-                            }
+                            entry = new Sao.ScreenContainer.Dates(
+                                format, prefix + field.name);
+                            input = entry.el;
+                            break;
+                        case 'datetime':
+                            date_format = Sao.common.date_format(
+                                this.screen.context.date_format);
+                            time_format = new Sao.PYSON.Decoder({}).decode(
+                                field.format);
+                            time_format = Sao.common.moment_format(time_format);
+                            format = date_format + ' ' + time_format;
                             entry = new Sao.ScreenContainer.DateTimes(
-                                    format, prefix + field.name);
+                                format, prefix + field.name);
+                            input = entry.el;
+                            break;
+                        case 'time':
+                            time_format = new Sao.PYSON.Decoder({}).decode(
+                                field.format);
+                            format = Sao.common.moment_format(time_format);
+                            entry = new Sao.ScreenContainer.Times(
+                                format, prefix + field.name);
                             input = entry.el;
                             break;
                         case 'integer':
@@ -554,17 +566,12 @@
             if (this.last_search_text.trim() !== this.get_text().trim()) {
                 for (var j = 0; j < this.search_form.fields.length; j++) {
                     var fentry = this.search_form.fields[j][1];
-                    switch(fentry.type) {
-                        case 'selection':
-                            fentry.set_value([]);
-                            break;
-                        case 'date':
-                        case 'datetime':
-                        case 'time':
-                            fentry.set_value(null, null);
-                            break;
-                        default:
-                            fentry.val('');
+                    if (fentry instanceof Sao.ScreenContainer.Selection) {
+                        fentry.set_value([]);
+                    } else if (fentry instanceof Sao.ScreenContainer.Between) {
+                        fentry.set_value(null, null);
+                    } else {
+                        fentry.val('');
                     }
                 }
                 this.search_form.fields[0][2].focus();
@@ -612,8 +619,8 @@
         _get_value: function(entry) {
         },
         set_value: function(from, to) {
-            this._set_value(self.from, from);
-            this._set_value(self.to, to);
+            this._set_value(this.from, from);
+            this._set_value(this.to, to);
         },
         _set_value: function(entry, value) {
         },
@@ -629,74 +636,109 @@
             this.from.on('dp.change', this._from_changed.bind(this));
         },
         _get_value: function(entry, value) {
-            return entry.find('input').val();
+            return entry.find('input[type=text]').val();
         },
         _set_value: function(entry, value) {
-            entry.data('DateTimePicker').date(value);
+            entry.find('input[type=text]').val(value);
         },
     });
 
-    Sao.ScreenContainer.DateTimes = Sao.class_(
+    Sao.ScreenContainer.Dates = Sao.class_(
         Sao.ScreenContainer.BetweenDates, {
-        build_entry: function(placeholder, el) {
+            _input: 'date',
+            _input_format: '%Y-%m-%d',
+            _format: Sao.common.format_date,
+            _parse: Sao.common.parse_date,
+            build_entry: function(placeholder, el) {
                 var entry = jQuery('<div/>', {
-                    'class': 'input-group input-group-sm'
+                    'class': ('input-group input-group-sm ' +
+                        'input-icon input-icon-secondary ' +
+                        'input-' + this._input),
                 }).appendTo(el);
-                jQuery('<span/>', {
-                    'class': 'input-group-btn'
-                }).append(jQuery('<button/>', {
-                    'class': 'datepickerbutton btn btn-default',
-                    type: 'button',
-                    'tabindex': -1,
-                    'aria-label': Sao.i18n.gettext("Open the calendar"),
-                    'title': Sao.i18n.gettext("Open the calendar"),
-                }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-date')
-                )).appendTo(entry);
-                jQuery('<input/>', {
-                    'class': 'form-control input-sm',
-                    type: 'text',
-                    placeholder: placeholder,
+                var date = jQuery('<input/>', {
+                    'type': 'text',
+                    'class': 'form-control input-sm mousetrap',
                 }).appendTo(entry);
-                entry.datetimepicker({
-                    'locale': moment.locale(),
-                    'keyBinds': null,
+                var input = jQuery('<input/>', {
+                    'type': this._input,
+                    'role': 'button',
+                    'tabindex': -1,
                 });
-                entry.data('DateTimePicker').format(this.format);
-                // We must set the overflow of the modal-body
-                // containing the input to visible to prevent vertical scrollbar
-                // inherited from the auto overflow-x
-                // (see http://www.w3.org/TR/css-overflow-3/#overflow-properties)
-                entry.on('dp.hide', function() {
-                    entry.closest('.modal-body').css('overflow', '');
-                });
-                entry.on('dp.show', function() {
-                    entry.closest('.modal-body').css('overflow', 'visible');
-                });
-
-                var mousetrap = new Mousetrap(el[0]);
+                input.click(function() {
+                    var value = this._parse(this.format, date.val());
+                    value = this._format(this._input_format, value);
+                    input.val(value);
+                }.bind(this));
+                input.change(function() {
+                    var value = input.val();
+                    if (value) {
+                        value = this._parse(this._input_format, value);
+                        value = this._format(this.format, value);
+                        date.val(value);
+                        date.focus();
+                    }
+                }.bind(this));
+                if (input[0].type == this._input) {
+                    var icon = jQuery('<div/>', {
+                        'class': 'icon-input icon-secondary',
+                        'aria-label': Sao.i18n.gettext("Open the calendar"),
+                        'title': Sao.i18n.gettext("Open the calendar"),
+                    }).appendTo(entry);
+                    input.appendTo(icon);
+                    Sao.common.ICONFACTORY.get_icon_img('tryton-date')
+                        .appendTo(icon);
+                }
+                var mousetrap = new Mousetrap(date[0]);
 
                 mousetrap.bind('enter', function(e, combo) {
-                    entry.data('DateTimePicker').date();
+                    var value = this._parse(this.format, date.val());
+                    value = this._format(this.format, value);
+                    date.val(value);
                 });
                 mousetrap.bind('=', function(e, combo) {
                     e.preventDefault();
-                    entry.data('DateTimePicker').date(moment());
+                    date.val(this._format(this.format, moment()));
                 });
 
                 Sao.common.DATE_OPERATORS.forEach(function(operator) {
                     mousetrap.bind(operator[0], function(e, combo) {
                         e.preventDefault();
-                        var dp = entry.data('DateTimePicker');
-                        var date = dp.date();
-                        date.add(operator[1]);
-                        dp.date(date);
-                    });
-                });
+                        var value = (this._parse(this.format, date.val()) ||
+                            Sao.DateTime());
+                        value.add(operator[1]);
+                        date.val(this._format(this.format, value));
+                    }.bind(this));
+                }.bind(this));
                 return entry;
         },
     });
 
-    Sao.ScreenContainer.Numbers = Sao.class_(Sao.ScreenContainer.BetweenDates, {
+    Sao.ScreenContainer.DateTimes = Sao.class_(
+        Sao.ScreenContainer.Dates, {
+            _input: 'datetime-local',
+            _input_format: '%Y-%m-%dT%H:%M:%S',
+            _format: Sao.common.format_datetime,
+            _parse: Sao.common.parse_datetime,
+        });
+
+    Sao.ScreenContainer.Times = Sao.class_(
+        Sao.ScreenContainer.Dates, {
+            _input: 'time',
+            _input_format: '%H:%M:%S',
+            _format: Sao.common.format_time,
+            _parse: Sao.common.parse_time,
+            build_entry: function(placeholder, el) {
+                var entry = Sao.ScreenContainer.Times._super.build_entry.call(
+                    this, placeholder, el);
+                if (~navigator.userAgent.indexOf("Firefox")) {
+                    // time input on Firefox does not have a pop-up
+                    entry.find('.icon-input').hide();
+                }
+                return entry;
+            },
+        });
+
+    Sao.ScreenContainer.Numbers = Sao.class_(Sao.ScreenContainer.Between, {
         init: function(id) {
             Sao.ScreenContainer.Numbers._super.init.call(this, id);
             this.from.change(this._from_changed.bind(this));
@@ -780,6 +822,7 @@
             this.search_count = 0;
             this.screen_container = new Sao.ScreenContainer(
                 attributes.tab_domain);
+            this.breadcrumb = attributes.breadcrumb || [];
 
             this.context_screen = null;
             if (attributes.context_model) {
@@ -824,6 +867,17 @@
             // count_tab_domain is called in Sao.Tab.Form.init after
             // switch_view to avoid unnecessary call to fields_view_get by
             // domain_parser.
+        },
+        get readonly() {
+            var readonly_records = this.selected_records.some(function(r) {
+                return r.readonly;
+            });
+            return this.attributes.readonly || readonly_records;
+        },
+        get deletable() {
+            return this.selected_records.every(function(r) {
+                return r.deletable;
+            });
         },
         load_next_view: function() {
             if (!jQuery.isEmptyObject(this.view_to_load)) {
@@ -1089,11 +1143,11 @@
             }
 
             if (!jQuery.isEmptyObject(domain)) {
-                if (!jQuery.isEmptyObject(this.attributes.domain)) {
-                    domain = ['AND', domain, this.attributes.domain];
+                if (!jQuery.isEmptyObject(this.domain)) {
+                    domain = ['AND', domain, this.domain];
                 }
             } else {
-                domain = this.attributes.domain || [];
+                domain = this.domain;
             }
             if (this.screen_container.but_active.hasClass('active')) {
                 if (!jQuery.isEmptyObject(domain)) {
@@ -1123,17 +1177,16 @@
             }
             return domain;
         },
-        count_tab_domain: function() {
+        count_tab_domain: function(current) {
+            if (current === undefined) {
+                current = false;
+            }
             var screen_domain = this.search_domain(
                 this.screen_container.get_text(), false, false);
+            var index = this.screen_container.get_tab_index();
             this.screen_container.tab_domain.forEach(function(tab_domain, i) {
-                if (tab_domain[2]) {
-                    var ctx = tab_domain[1][0];
-                    var t_domain = tab_domain[1][1];
-                    var decoder = new Sao.PYSON.Decoder(ctx);
-
-                    var domain = ['AND', decoder.decode(t_domain),
-                        screen_domain];
+                if (tab_domain[2] && (!current || (i == index))) {
+                    var domain = ['AND', tab_domain[1], screen_domain];
                     this.screen_container.set_tab_counter(null, i);
                     this.group.model.execute(
                         'search_count', [domain], this.context)
@@ -1182,9 +1235,11 @@
             this.views.map(function(view) {
                 view.reset();
             });
-            this.order = null;
             this.group = group;
             this.model = group.model;
+            if (this.group.parent) {
+                this.order = null;
+            }
             if (group && group.length) {
                 this.current_record = group[0];
             } else {
@@ -1205,7 +1260,7 @@
                 context = this.context;
             }
             var group = new Sao.Group(this.model, context, []);
-            group.readonly = this.attributes.readonly || false;
+            group.readonly = this.attributes.readonly;
             this.set_group(group);
         },
         get current_record() {
@@ -1252,7 +1307,6 @@
             if (set_cursor === undefined) {
                 set_cursor = true;
             }
-            this.tree_states = {};
             this.tree_states_done = [];
             this.group.load(ids, modified);
             if (ids.length && this.current_view.view_type != 'calendar') {
@@ -1361,6 +1415,31 @@
             this.set_cursor(false, false);
             return view.display();
         },
+        get selected_records() {
+            if (this.current_view) {
+                return this.current_view.selected_records;
+            }
+            return [];
+        },
+        get selected_paths() {
+            if (this.current_view && this.current_view.view_type == 'tree') {
+                return this.current_view.get_selected_paths();
+            }
+        },
+        get listed_records() {
+            if (this.current_view && this.current_view.view_type == 'tree') {
+                return this.current_view.listed_records;
+            } else if (this.current_record) {
+                return [this.current_record];
+            } else {
+                return [];
+            }
+        },
+        get listed_paths() {
+            if (this.current_view && this.current_view.view_type == 'tree') {
+                return this.current_view.get_listed_paths();
+            }
+        },
         clear: function() {
             this.current_record = null;
             this.group.clear();
@@ -1434,10 +1513,16 @@
             }.bind(this));
         },
         get new_position() {
-            if (this.order) {
-                for (var j = 0; j < this.order.length; j++) {
-                    var oexpr = this.order[j][0],
-                        otype = this.order[j][1];
+            var order;
+            if (this.order !== null) {
+                order = this.order;
+            } else {
+                order = this.default_order;
+            }
+            if (order) {
+                for (var j = 0; j < order.length; j++) {
+                    var oexpr = order[j][0],
+                        otype = order[j][1];
                     if ((oexpr == 'id') && otype) {
                         if (otype.startsWith('DESC')) {
                             return 0;
@@ -1573,8 +1658,10 @@
             var path = top_record.get_path(this.group);
             return prm.then(function() {
                 records.forEach(function(record) {
-                    record.group.remove(record, remove, true, force_remove);
+                    record.group.remove(record, remove, true, force_remove, false);
                 });
+                // trigger changed only once
+                records[0].group.changed();
                 var prms = [];
                 if (delete_) {
                     records.forEach(function(record) {
@@ -1618,7 +1705,7 @@
             var records = this.current_view.selected_records;
             this.model.copy(records, this.context)
                 .then(function(new_ids) {
-                this.group.load(new_ids);
+                this.group.load(new_ids, false, this.new_position);
                 if (!jQuery.isEmptyObject(new_ids)) {
                     this.current_record = this.group.get(new_ids[0]);
                 }
@@ -1682,6 +1769,10 @@
                                     dom_fields[name][attr] = node.getAttribute(attr);
                                 }
                             });
+                        }
+                        var symbol = node.getAttribute('symbol');
+                        if (symbol && !(symbol in dom_fields)) {
+                            dom_fields[symbol] = fields[symbol];
                         }
                     }
                 });
@@ -1955,7 +2046,9 @@
                     this.new_();
                 }
             } else if (action == 'delete') {
-                if (access['delete']) {
+                if (access['delete'] && (
+                        this.current_record ? this.current_record.deletable :
+                        true)) {
                     this.remove(!this.group.parent, false, !this.group.parent);
                 }
             } else if (action == 'remove') {
@@ -2007,12 +2100,13 @@
             if (name) {
                 query_string.push(['name', dumps(name)]);
             }
+            // JMO merge_60 , this is on commented out on master
             // XXX: Evaluate tab domain later
             // Dynamic domain evaluation in screens and tabs
-            // if (!jQuery.isEmptyObject(this.attributes.tab_domain)) {
-            //     query_string.push([
-            //         'tab_domain', dumps(this.attributes.tab_domain)]);
-            // }
+            if (!jQuery.isEmptyObject(this.attributes.tab_domain)) {
+                query_string.push([
+                    'tab_domain', dumps(this.attributes.tab_domain)]);
+            }
             var path = ['model', this.model_name];
             var view_ids = this.views.map(
                 function(v) {return v.view_id;}).concat(this.view_ids);
@@ -2050,6 +2144,10 @@
             store = (store === undefined) ? true : store;
             var i, len, view, widgets, wi, wlen;
             var parent_ = this.group.parent ? this.group.parent.id : null;
+            var clear_cache = function() {
+                Sao.Session.current_session.cache.clear(
+                    'model.ir.ui.view_tree_state.get');
+            };
             for (i = 0, len = this.views.length; i < len; i++) {
                 view = this.views[i];
                 if (view.view_type == 'form') {
@@ -2089,15 +2187,13 @@
                                 this.get_tree_domain(parent_),
                                 view.children_field,
                                 JSON.stringify(paths),
-                                JSON.stringify(selected_paths)], {});
+                                JSON.stringify(selected_paths)], {})
+                            .then(clear_cache);
                         prms.push(prm);
                     }
                 }
             }
-            return jQuery.when.apply(jQuery, prms).then(function() {
-                Sao.Session.current_session.cache.clear(
-                    'model.ir.ui.view_tree_state.get');
-            });
+            return jQuery.when.apply(jQuery, prms);
         },
         get_tree_domain: function(parent_) {
             var domain;
