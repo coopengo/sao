@@ -610,6 +610,10 @@
                     if (Sao.common.contains(expanded, path)) {
                         var children = record.field_get_client(
                             this.children_field);
+                        // JMO add_fields here is to prevent error
+                        // in field_get_client with 'multi_mixed_view'
+                        // on loan contracts. Not sure this is exactly right.
+                        children.model.add_fields(this.children_definitions[children.model.name]);
                         Array.prototype.push.apply(
                             records, group_records(children, path));
                     }
@@ -1588,7 +1592,6 @@
                     var children = this.record.field_get_client(
                         this.children_field);
                     // [Coog Specific]  needed for multi_mixed_view
-                    // MAB: not sure we still need this
                     if (children.model.name != this.record.model.name)
                         children.model.add_fields(this.children_definitions[children.model.name]);
                     children.forEach(function(record, pos, group) {
