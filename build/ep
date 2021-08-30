@@ -3,7 +3,7 @@
 move_res() {
     local base
     base=$(basename "$1")
-    cp "$1" dist/ && sed -i "s;$1;$base;g" dist/index.html
+    cp -r "$1" dist/ && sed -i "s;$1;$base;g" dist/index.html
 }
 
 # pick the files needed to run and flatten them on dist folder
@@ -13,26 +13,30 @@ pack() {
         && cp -r locale dist/ \
         && cp -r images dist/ \
         && cp -r bower_components/bootstrap/dist/fonts dist/ \
-        && move_res bower_components/jquery/dist/jquery.min.js \
-        && move_res bower_components/bootstrap/dist/js/bootstrap.min.js \
-        && move_res bower_components/moment/min/moment.min.js \
-        && move_res bower_components/moment/min/locales.min.js \
-        && move_res bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js \
-        && move_res bower_components/gettext.js/dist/gettext.min.js \
-        && move_res bower_components/d3/d3.min.js \
-        && move_res bower_components/c3/c3.min.js \
-        && move_res bower_components/papaparse/papaparse.min.js \
-        && move_res bower_components/fullcalendar/dist/fullcalendar.min.js \
-        && move_res bower_components/fullcalendar/dist/locale-all.js \
         && move_res bower_components/Sortable/Sortable.js \
-        && move_res bower_components/mousetrap/mousetrap.min.js \
         && move_res bower_components/bootstrap/dist/css/bootstrap.min.css \
-        && move_res bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css \
+        && move_res bower_components/bootstrap/dist/css/bootstrap-theme.min.css \
+        && move_res bower_components/bootstrap/dist/js/bootstrap.min.js \
+        && move_res bower_components/bootstrap-rtl-ondemand/dist/css/bootstrap-rtl-ondemand.min.css \
+        && move_res bower_components/bootstrap-rtl-ondemand/dist/js/holder.js \
+        && move_res bower_components/bootstrap-rtl-ondemand/dist/js/html5shiv.js \
+        && move_res bower_components/bootstrap-rtl-ondemand/dist/js/respond.min.js \
         && move_res bower_components/c3/c3.min.css \
+        && move_res bower_components/c3/c3.min.js \
         && move_res bower_components/codemirror/lib/codemirror.css \
         && move_res bower_components/codemirror/lib/codemirror.js \
+        && move_res bower_components/d3/d3.min.js \
         && move_res bower_components/fullcalendar/dist/fullcalendar.min.css \
-        && rm dist/tryton-sao.js dist/tryton-sao.css dist/coog-sao.css \
+        && move_res bower_components/fullcalendar/dist/fullcalendar.min.js \
+        && move_res bower_components/fullcalendar/dist/locale-all.js \
+        && move_res bower_components/gettext.js/dist/gettext.min.js \
+        && move_res bower_components/jquery/dist/jquery.min.js \
+        && move_res bower_components/moment/min/locales.min.js \
+        && move_res bower_components/moment/min/moment.min.js \
+        && move_res bower_components/mousetrap/mousetrap.min.js \
+        && move_res bower_components/papaparse/papaparse.min.js \
+        && move_res bower_components/popper.js \
+        && rm -f dist/tryton-sao.js dist/tryton-sao.css dist/coog-sao.css \
         && sed -i "s;\.\./fonts;fonts;g" dist/bootstrap.min.css \
         && sed -i "s;dist/tryton-sao.js;tryton-sao.js;g" dist/index.html \
         && sed -i "s;dist/tryton-sao.min.js;tryton-sao.min.js;g" dist/index.html \
