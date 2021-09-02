@@ -2077,7 +2077,8 @@ function eval_pyson(value){
         },
         get modified() {
             if (this.record && this.field) {
-                var field_value = this.field.get_client(this.record);
+                var field_value = this.cast(
+                    this.field.get_client(this.record));
                 return (JSON.stringify(field_value) !=
                     JSON.stringify(this.get_value()));
             }
@@ -2096,7 +2097,13 @@ function eval_pyson(value){
                     this.icon.show();
                 }
             }
-        }
+        },
+        cast: function(value){
+            if (value && value.isDateTime) {
+                value = value.todate();
+            }
+            return value;
+        },
     });
 
     Sao.View.Form.DateTime = Sao.class_(Sao.View.Form.Date, {
@@ -2114,6 +2121,9 @@ function eval_pyson(value){
             } else {
                 return this._default_format;
             }
+        },
+        cast: function(value){
+            return value;
         },
     });
 
@@ -2138,6 +2148,12 @@ function eval_pyson(value){
             } else {
                 return this._default_format;
             }
+        },
+        cast: function(value){
+            if (value && value.isDateTime) {
+                value = value.totime();
+            }
+            return value;
         },
     });
 
