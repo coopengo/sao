@@ -657,7 +657,7 @@
                 }).appendTo(el);
                 var date = jQuery('<input/>', {
                     'type': 'text',
-                    'class': 'form-control input-sm mousetrap',
+                    'class': 'form-control input-sm mousetrap input-date',
                 }).appendTo(entry);
                 var input = jQuery('<input/>', {
                     'type': this._input,

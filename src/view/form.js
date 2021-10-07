@@ -1975,7 +1975,7 @@ function eval_pyson(value){
             }).appendTo(this.el);
             this.date = this.labelled = jQuery('<input/>', {
                 'type': 'text',
-                'class': 'form-control input-sm mousetrap',
+                'class': 'form-control input-sm mousetrap input-date',
                 'name': attributes.name,
             }).appendTo(group);
             this.date.uniqueId();
@@ -2460,7 +2460,7 @@ function eval_pyson(value){
             });
             this.input = this.labelled = jQuery('<input/>', {
                 'type': 'checkbox',
-                'class': 'form-control input-sm mousetrap',
+                'class': 'form-control input-sm mousetrap input-checkbox',
                 'name': attributes.name,
             }).appendTo(this.el);
             this.input.change(this.focus_out.bind(this));
