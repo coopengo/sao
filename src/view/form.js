@@ -2976,6 +2976,7 @@ function eval_pyson(value){
                     // JMO merge_60 , here we add 'tree' after 'form'
                     params.mode = ['form'];
                     params.name = this.attributes.string;
+                    params.context = this.field.get_context(this.record);
                     Sao.Tab.create(params);
                     return;
                 }
