@@ -833,7 +833,8 @@
                     var more_cell = jQuery('<td/>');
                     var more_button = jQuery('<button/>', {
                         'class': 'btn btn-default btn-block',
-                        'type': 'button'
+                        'type': 'button',
+                        'title': Sao.i18n.gettext("More"),
                     }).text(Sao.i18n.gettext('More')
                     ).click(function() {
                         this.display_size += Sao.config.display_size;
@@ -2595,6 +2596,7 @@
                 button = jQuery('<button/>', {
                     'class': 'btn btn-default btn-sm',
                     'type': 'button',
+                    'title': Sao.i18n.gettext("Save As..."),
                 }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-save')
                 ).appendTo(cell)
                     .click(record, function(event) {

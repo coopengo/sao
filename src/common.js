@@ -156,14 +156,16 @@
 
         jQuery('<button/>', {
             'class': 'btn btn-link',
-            'type': 'button'
+            'type': 'button',
+            'title': Sao.i18n.gettext("Cancel"),
         }).text(Sao.i18n.gettext('Cancel')).click(function() {
             dialog.modal.modal('hide');
             prm.reject();
         }).appendTo(dialog.footer);
         jQuery('<button/>', {
             'class': 'btn btn-primary',
-            'type': 'button'
+            'type': 'button',
+            'title': Sao.i18n.gettext("OK"),
         }).text(Sao.i18n.gettext('OK')).click(function() {
             var i = dialog.body.find('input:checked').attr('value');
             dialog.modal.modal('hide');
@@ -3215,7 +3217,8 @@
                 .css('white-space', 'pre-wrap')));
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("OK"),
             }).text(Sao.i18n.gettext('OK')).click(function() {
                 this.close(dialog);
                 prm.resolve('ok');
@@ -3253,7 +3256,8 @@
             dialog.body.append(content);
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("OK"),
             }).text(Sao.i18n.gettext('OK')).click(function() {
                 this.close(dialog);
                 prm.resolve('ok');
@@ -3283,14 +3287,16 @@
             dialog.footer.empty();
             jQuery('<button/>', {
                 'class': 'btn btn-link',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("No"),
             }).text(Sao.i18n.gettext('No')).click(function() {
                 this.close(dialog);
                 prm.reject();
             }.bind(this)).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("Yes"),
             }).text(Sao.i18n.gettext('Yes')).click(function() {
                 this.close(dialog);
                 // Coog specific : always is not displayed cf bug #9035
@@ -3331,14 +3337,16 @@
                 this, message);
             jQuery('<button/>', {
                 'class': 'btn btn-link',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("Cancel"),
             }).text(Sao.i18n.gettext('Cancel')).click(function() {
                 this.close(dialog);
                 prm.reject();
             }.bind(this)).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("OK"),
             }).text(Sao.i18n.gettext('OK')).click(function() {
                 this.close(dialog);
                 prm.resolve();
@@ -3354,21 +3362,24 @@
                 this, message);
             jQuery('<button/>', {
                 'class': 'btn btn-link',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("Cancel"),
             }).text(Sao.i18n.gettext('Cancel')).click(function() {
                 this.close(dialog);
                 prm.resolve('cancel');
             }.bind(this)).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("No"),
             }).text(Sao.i18n.gettext('No')).click(function() {
                 this.close(dialog);
                 prm.resolve('ko');
             }.bind(this)).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("Yes"),
             }).text(Sao.i18n.gettext('Yes')).click(function() {
                 this.close(dialog);
                 prm.resolve('ok');
@@ -3402,14 +3413,16 @@
             }).text(question)).append(entry));
             jQuery('<button/>', {
                 'class': 'btn btn-link',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("Cancel"),
             }).text(Sao.i18n.gettext('Cancel')).click(function() {
                 this.close(dialog);
                 prm.reject();
             }.bind(this)).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("OK"),
             }).text(Sao.i18n.gettext('OK')).click(function() {
                 this.close(dialog);
                 prm.resolve(entry.val());
@@ -3451,14 +3464,16 @@
                 );
             jQuery('<button/>', {
                 'class': 'btn btn-link',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("Cancel"),
             }).text(Sao.i18n.gettext('Cancel')).click(function() {
                 this.close(dialog);
                 prm.reject();
             }.bind(this)).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("Compare"),
             }).text(Sao.i18n.gettext('Compare')).click(function() {
                 this.close(dialog);
                 Sao.rpc({
@@ -3479,7 +3494,8 @@
             }.bind(this)).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("Write Anyway"),
             }).text(Sao.i18n.gettext('Write Anyway')).click(function() {
                 this.close(dialog);
                 prm.resolve();
@@ -3517,7 +3533,8 @@
                     }).text(Sao.i18n.gettext('Report Bug')))));
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
+                'type': 'button',
+                'title': Sao.i18n.gettext("Close"),
             }).text(Sao.i18n.gettext('Close')).click(function() {
                 this.close(dialog);
                 prm.resolve();
@@ -3925,7 +3942,8 @@
                 .click(close);
         var button = jQuery('<button/>', {
             'class': 'btn btn-default',
-            'type': 'button'
+            'type': 'button',
+            'title': Sao.i18n.gettext("Close"),
         }).text(Sao.i18n.gettext('Close')).click(close)
             .appendTo(dialog.footer);
         dialog.modal.on('shown.bs.modal', function() {
@@ -4111,7 +4129,8 @@
                 var properties = buttons[i];
                 var button = jQuery('<button/>', {
                     'class': 'btn btn-default',
-                    'type': 'button'
+                    'type': 'button',
+                    'title': properties.label,
                 }).append(Sao.common.ICONFACTORY.get_icon_img(
                     'tryton-format-' + properties.icon)
                 ).appendTo(group);
@@ -4122,13 +4141,16 @@
         add_buttons([
             {
                 'icon': 'bold',
-                'command': 'bold'
+                'command': 'bold',
+                'label': Sao.i18n.gettext("Bold"),
             }, {
                 'icon': 'italic',
-                'command': 'italic'
+                'command': 'italic',
+                'label': Sao.i18n.gettext("Italic"),
             }, {
                 'icon': 'underline',
-                'command': 'underline'
+                'command': 'underline',
+                'label': Sao.i18n.gettext("Underline"),
             }]);
 
         var selections = [
@@ -4177,15 +4199,23 @@
             {
                 'icon': 'align-left',
                 'command': Sao.i18n.rtl? 'justifyRight' : 'justifyLeft',
+                'label': (Sao.i18n.rtl?
+                    Sao.i18n.gettext("Justify Right") :
+                    Sao.i18n.gettext("Justify Left")),
             }, {
                 'icon': 'align-center',
-                'command': 'justifyCenter'
+                'command': 'justifyCenter',
+                'label': Sao.i18n.gettext("Justify Center"),
             }, {
                 'icon': 'align-right',
                 'command': Sao.i18n.rtl? 'justifyLeft': 'justifyRight',
+                'label': (Sao.i18n.rtl?
+                    Sao.i18n.gettext("Justify Left") :
+                    Sao.i18n.gettext("Justify Right")),
             }, {
                 'icon': 'align-justify',
-                'command': 'justifyFull'
+                'command': 'justifyFull',
+                'label': Sao.i18n.gettext("Justify Full"),
             }]);
 
         // TODO backColor
