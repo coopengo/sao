@@ -2762,10 +2762,8 @@
             if (states.invisible || states.readonly) {
                 return;
             }
-            button.el.prop('disabled', true);
-            this.view.screen.button(this.attributes).always(function() {
-                button.el.prop('disabled', false);
-            });
+            button.el.prop('disabled', true);  // state will be reset at display
+            this.view.screen.button(this.attributes);
         }
     });
 
