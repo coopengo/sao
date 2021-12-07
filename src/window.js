@@ -81,7 +81,15 @@
                     button_text = Sao.i18n.gettext('Delete');
                 } else {
                     button_text = Sao.i18n.gettext('Cancel');
-                    this._initial_value = this.screen.current_record.get_eval();
+                    var record = this.screen.current_record;
+                    this._initial_value = record.get_on_change_value();
+                    if (record.group.parent &&
+                        record.model.fields[record.group.parent_name]) {
+                        var parent_field = record.model.fields[
+                            record.group.parent_name];
+                        this._initial_value[record.group.parent_name] = (
+                            parent_field.get_eval(record));
+                    }
                 }
 
                 dialog.footer.append(jQuery('<button/>', {
@@ -416,17 +424,24 @@
                     !readonly &&
                     this.screen.current_record) {
                 result = false;
-                if ((this.screen.current_record.id < 0) || this.save_current) {
+                var record = this.screen.current_record;
+                var added = record._changed.id;
+                if ((record.id < 0) || this.save_current) {
                     cancel_prm = this.screen.cancel_current(
                         this._initial_value);
-                } else if (this.screen.current_record.has_changed()) {
-                    this.screen.current_record.cancel();
-                    cancel_prm = this.screen.current_record.reload();
+                } else if (record.has_changed()) {
+                    record.cancel();
+                    cancel_prm = record.reload().then(function() {
+                        this.screen.display();
+                    }.bind(this));
+                }
+                if (added) {
+                    record._changed.id = added;
                 }
             } else {
                 result = response_id != 'RESPONSE_CANCEL';
             }
-            (cancel_prm || jQuery.when()).done(function() {
+            (cancel_prm || jQuery.when()).then(function() {
                 this.callback(result);
                 this.destroy();
             }.bind(this));
@@ -1640,11 +1655,7 @@
 
                 items.forEach(function(item) {
                     var path = prefix_field + item.name;
-                    var long_string = item.string;
-
-                    if (prefix_field) {
-                        long_string = prefix_name + item.string;
-                    }
+                    var long_string = prefix_name + item.string;
 
                     var node = {
                         path: path,
@@ -1666,7 +1677,7 @@
             if (jQuery.isEmptyObject(node.children)) {
                 this.model_populate(
                     this._get_fields(node.relation), node.children,
-                    node.path + '/', node.string + '/');
+                    node.path + '/', node.long_string + '/');
             }
         },
         sig_sel_add: function(el_field) {

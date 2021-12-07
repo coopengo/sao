@@ -45,6 +45,8 @@
     QUnit.test('PYSON Encoder', function() {
         var encoder = new Sao.PYSON.Encoder();
         var none;
+        var decimal = Sao.Decimal(1.1);
+        var pyson_decimal = 1.1;
         var date = Sao.Date(2002, 0, 1);
         var datetime = Sao.DateTime(2002, 0, 1, 12, 30, 0, 0);
         var pyson_date = new Sao.PYSON.Date(2002, 1, 1).pyson();
@@ -63,6 +65,8 @@
         QUnit.strictEqual(encoder.encode(), 'null', "encode()");
         QUnit.strictEqual(encoder.encode(none), 'null', "encode(none)");
         QUnit.strictEqual(encoder.encode(null), 'null', "encode()");
+        QUnit.strictEqual(encoder.encode(decimal),
+            JSON.stringify(pyson_decimal), "encode(decimal)");
         QUnit.strictEqual(encoder.encode(date),
             JSON.stringify(pyson_date), "encode(date)");
         QUnit.strictEqual(encoder.encode(datetime),
@@ -253,7 +257,7 @@
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
                 'decode(And([false, false, true]))');
         QUnit.strictEqual(new Sao.PYSON.And([false, true, true]).toString(),
-                "And(false, true, true)");
+                "And([false, true, true])");
     });
 
     QUnit.test('PYSON Or', function() {
@@ -321,7 +325,7 @@
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
                 'decode(Or([false, false, true]))');
         QUnit.strictEqual(new Sao.PYSON.Or([false, true, true]).toString(),
-                "Or(false, true, true)");
+                "Or([false, true, true])");
     });
 
     QUnit.test('PYSON Equal', function() {
@@ -1409,6 +1413,24 @@
         });
     });
 
+    QUnit.test('DomainParser.likify', function() {
+        var parser = new Sao.common.DomainParser();
+
+        [
+            ['', '%'],
+            ['foo', '%foo%'],
+            ['foo%', 'foo%'],
+            ['foo_bar', 'foo_bar'],
+            ['foo\\%', '%foo\\%%'],
+            ['foo\\_bar', '%foo\\_bar%'],
+        ].forEach(function(test) {
+            var value = test[0];
+            var result = test[1];
+            QUnit.ok(Sao.common.compare(parser.likify(value), result),
+                'likify(' + JSON.stringify(value) + ')');
+        });
+    });
+
     QUnit.test('DomainParser.quote', function() {
         var parser = new Sao.common.DomainParser();
 
@@ -1789,7 +1811,9 @@
         [0, '0'],
         [0.0, '0'],
         [false, ''],
-        [null, '']
+        [null, ''],
+        [1e-12, '0.000000000001'],
+        [1.0579e-10, '0.00000000010579'],
         ].forEach(test_func, field);
 
         test_func.call({'type': 'float', 'factor': '100'}, [0.42, '42']);
@@ -2695,17 +2719,67 @@
         var domain = [['x', 'like', 'A%']];
         QUnit.ok(compare(
             prepare_reference_domain(domain, 'x'),
-            [['x', 'like', 'A%']]));
+            [[]]));
 
-        domain = [['x.y', 'like', 'A%', 'model']];
+        domain = [['x', '=', 'A']];
         QUnit.ok(compare(
             prepare_reference_domain(domain, 'x'),
-            [['y', 'like', 'A%']]));
+            [[]]));
 
         domain = [['x.y', 'child_of', [1], 'model', 'parent']];
         QUnit.ok(compare(
             prepare_reference_domain(domain, 'x'),
-            [['y', 'child_of', [1], 'parent']]));
+            [['x.y', 'child_of', [1], 'model', 'parent']]));
+
+        domain = [['x.y', 'like', 'A%', 'model']];
+        QUnit.ok(compare(
+            prepare_reference_domain(domain, 'x'),
+            [['x.y', 'like', 'A%', 'model']]));
+
+        domain = [['x', '=', 'model,1']];
+        QUnit.ok(compare(
+            prepare_reference_domain(domain, 'x'),
+            [['x.id', '=', 1, 'model']]));
+
+        domain = [['x', '!=', 'model,1']];
+        QUnit.ok(compare(
+            prepare_reference_domain(domain, 'x'),
+            [['x.id', '!=', 1, 'model']]));
+
+        domain = [['x', '=', 'model,%']];
+        QUnit.ok(compare(
+            prepare_reference_domain(domain, 'x'),
+            [['x.id', '!=', null, 'model']]));
+
+        domain = [['x', '!=', 'model,%']];
+        QUnit.ok(compare(
+            prepare_reference_domain(domain, 'x'),
+            [['x', 'not like', 'model,%']]));
+
+        domain = [['x', 'in',
+            ['model_a,1', 'model_b,%', 'model_c,3', 'model_a,2']]];
+        QUnit.ok(compare(
+            prepare_reference_domain(domain, 'x'),
+            [['OR',
+                ['x.id', 'in', [1, 2], 'model_a'],
+                ['x.id', '!=', null, 'model_b'],
+                ['x.id', 'in', [3], 'model_c'],
+                ]]));
+
+        domain = [['x', 'not in',
+            ['model_a,1', 'model_b,%', 'model_c,3', 'model_a,2']]];
+        QUnit.ok(compare(
+            prepare_reference_domain(domain, 'x'),
+            [['AND',
+                ['x.id', 'not in', [1, 2], 'model_a'],
+                ['x', 'not like', 'model_b,%'],
+                ['x.id', 'not in', [3], 'model_c'],
+                ]]));
+
+        domain = [['x', 'in', ['model_a,1', 'foo']]];
+        QUnit.ok(compare(
+            prepare_reference_domain(domain, 'x'),
+            [[]]));
     });
 
     QUnit.test('DomainInversion.extract_reference_models', function() {
@@ -2798,6 +2872,27 @@
             ["Active: True", "Active: False"]));
         QUnit.ok(compare(parser.completion("Active: f"),
             ["Active: False", "Active: True"]));
+    });
+
+    QUnit.test('Date.toString', function() {
+        QUnit.strictEqual(Sao.Date(2020, 8, 11).toString(), '2020-09-11');
+    });
+
+    QUnit.test('DateTime.toString', function() {
+        QUnit.strictEqual(
+            Sao.DateTime(2020, 8, 11, 10, 30, 42).toString(),
+            '2020-09-11 10:30:42');
+
+        QUnit.strictEqual(
+            Sao.DateTime(2020, 8, 11, 10, 30, 42, 123).toString(),
+            '2020-09-11 10:30:42.123000');
+    });
+
+    QUnit.test('Time.toString', function() {
+        QUnit.strictEqual(Sao.Time(10, 30, 42).toString(), '10:30:42');
+
+        QUnit.strictEqual(
+            Sao.Time(10, 30, 42, 123).toString(), '10:30:42.123000');
     });
 
     QUnit.test('HTML Sanitization', function() {

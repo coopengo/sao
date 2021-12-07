@@ -790,8 +790,8 @@ function eval_pyson(value){
                     'data-toggle': 'tab',
                     'href': '#' + tab_id
                 })
-                .append(img)
-                .text(text))
+                .text(text)
+                .prepend(img))
                 .appendTo(this.nav);
             pane.append(tab).appendTo(this.panes);
             if (!this.selected) {
@@ -1204,7 +1204,6 @@ function eval_pyson(value){
         },
         set_readonly: function(readonly) {
             this._readonly = readonly;
-            this.el.prop('disabled', readonly);
         },
         set_required: function(required) {
         },
@@ -1617,11 +1616,11 @@ function eval_pyson(value){
                 dialog.modal.find('input,select')
                     .filter(':visible').first().focus();
             });
-        },
-        close: function(dialog) {
-            dialog.modal.on('hidden.bs.modal', function(event) {
+            dialog.modal.on('hide.bs.modal', function(){
                 jQuery(this).remove();
             });
+        },
+        close: function(dialog) {
             dialog.modal.modal('hide');
         },
         read: function(widget, dialog) {
@@ -1889,6 +1888,7 @@ function eval_pyson(value){
             return this.input.val();
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Char._super.set_readonly.call(this, readonly);
             this.input.prop('readonly', readonly);
         },
         focus: function() {
@@ -2052,6 +2052,7 @@ function eval_pyson(value){
             this.field.set_client(this.record, this.get_value());
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Date._super.set_readonly.call(this, readonly);
             this.date.find('button').prop('disabled', readonly);
             this.date.find('input').prop('readonly', readonly);
         }
@@ -2126,6 +2127,7 @@ function eval_pyson(value){
             this.field.set_client(this.record, this.input.val());
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.TimeDelta._super.set_readonly.call(this, readonly);
             this.input.prop('readonly', readonly);
         }
     });
@@ -2217,7 +2219,9 @@ function eval_pyson(value){
             Sao.View.Form.Integer._super.display.call(this);
             var field = this.field;
             var value = '';
-            this.el.css('width', this.width + 'ch');
+            if (this.width !== null){
+                this.el.css('width', this.width + 'ch');
+            }
             if (field) {
                 value = field.get_client(this.record, this.factor);
             }
@@ -2366,6 +2370,7 @@ function eval_pyson(value){
             this.field.set_client(this.record, value);
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Selection._super.set_readonly.call(this, readonly);
             this.select.prop('disabled', readonly);
         }
     });
@@ -2405,6 +2410,7 @@ function eval_pyson(value){
             this.field.set_client(this.record, value);
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Boolean._super.set_readonly.call(this, readonly);
             this.input.prop('readonly', readonly);
         }
     });
@@ -2466,6 +2472,7 @@ function eval_pyson(value){
             this.field.set_client(this.record, this.get_value());
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Text._super.set_readonly.call(this, readonly);
             this.input.prop('readonly', readonly);
         },
         translate_widget: function() {
@@ -2698,6 +2705,7 @@ function eval_pyson(value){
             return false;
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.RichText._super.set_readonly.call(this, readonly);
             this.input.prop('contenteditable', !readonly);
             if (this.toolbar) {
                 this.toolbar.find('button,input,select')
@@ -2887,6 +2895,7 @@ function eval_pyson(value){
             this.entry.focus();
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Many2One._super.set_readonly.call(this, readonly);
             this._readonly = readonly;
             this._set_button_sensitive();
         },
@@ -3645,7 +3654,7 @@ function eval_pyson(value){
             return this.screen.current_view.modified;
         },
         set_readonly: function(readonly) {
-            this._readonly = readonly;
+            Sao.View.Form.One2Many._super.set_readonly.call(this, readonly);
             this._set_button_sensitive();
             this._set_label_state();
         },
@@ -4124,7 +4133,7 @@ function eval_pyson(value){
             }.bind(this));
         },
         set_readonly: function(readonly) {
-            this._readonly = readonly;
+            Sao.View.Form.Many2Many._super.set_readonly.call(this, readonly);
             this._set_button_sensitive();
             this._set_label_state();
         },
@@ -4501,7 +4510,7 @@ function eval_pyson(value){
             this.update_buttons(Boolean(size));
         },
         key_press: function(evt) {
-            var editable = !this.wid_text.prop('readonly');
+            var editable = !this.text.prop('readonly');
             if (evt.which == Sao.common.F3_KEYCODE && editable) {
                 this.new_();
                 evt.preventDefault();
@@ -4517,10 +4526,11 @@ function eval_pyson(value){
             }
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Binary._super.set_readonly.call(this, readonly);
             this.but_select.prop('disabled', readonly);
             this.but_clear.prop('disabled', readonly);
-            if (this.wid_text) {
-                this.wid_text.prop('readonly', readonly);
+            if (this.text) {
+                this.text.prop('readonly', readonly);
             }
         }
     });
@@ -4595,6 +4605,7 @@ function eval_pyson(value){
             }
         },
         set_readonly: function(readonly) {
+            Sao.View.Form.Image._super.set_readonly.call(this, readonly);
             this.but_select.prop('disable', readonly);
             this.but_clear.prop('disable', readonly);
         },
@@ -4620,6 +4631,9 @@ function eval_pyson(value){
             }
             value.done(function(data) {
                 var url, blob;
+                if (record !== this.record) {
+                    return;
+                }
                 if (!data) {
                     url = null;
                 } else {
@@ -4954,7 +4968,7 @@ function eval_pyson(value){
             return false;
         },
         set_readonly: function(readonly) {
-            this._readonly = readonly;
+            Sao.View.Form.Dict._super.set_readonly.call(this, readonly);
             this._set_button_sensitive();
             for (var key in this.fields) {
                 var widget = this.fields[key];
@@ -5253,12 +5267,37 @@ function eval_pyson(value){
             }
         });
 
-    Sao.View.Form.Dict.Float = Sao.class_(Sao.View.Form.Dict.Entry, {
-        class_: 'dict-float',
+    Sao.View.Form.Dict.Integer = Sao.class_(Sao.View.Form.Dict.Entry, {
+        class_: 'dict-integer',
         create_widget: function() {
-            Sao.View.Form.Dict.Float._super.create_widget.call(this);
+            Sao.View.Form.Dict.Integer._super.create_widget.call(this);
             this.input_text = this.labelled = integer_input(this.input);
         },
+        get_value: function() {
+            var value = parseInt(this.input.val(), 10);
+            if (isNaN(value)) {
+                return null;
+            }
+            return value;
+        },
+        set_value: function(value, options) {
+            if (value !== null) {
+                this.input.val(value);
+                this.input_text.val(value.toLocaleString(
+                    Sao.i18n.BC47(Sao.i18n.getlang()), options));
+            } else {
+                this.input.val('');
+                this.input_text.val('');
+            }
+        },
+        set_readonly: function(readonly) {
+            Sao.View.Form.Dict.Integer._super.set_readonly.call(this, readonly);
+            this.input_text.prop('readonly', readonly);
+        },
+    });
+
+    Sao.View.Form.Dict.Float = Sao.class_(Sao.View.Form.Dict.Integer, {
+        class_: 'dict-float',
         get digits() {
             var record = this.parent_widget.record;
             if (record) {
@@ -5288,18 +5327,8 @@ function eval_pyson(value){
                 options.maximumFractionDigits = digits[1];
             }
             this.input.attr('step', step);
-            Sao.View.Form.Dict.Float._super.set_value.call(this, value);
-            if (value !== null) {
-                this.input_text.val(value.toLocaleString(
-                    Sao.i18n.BC47(Sao.i18n.getlang()), options));
-            } else {
-                this.input_text.val('');
-            }
+            Sao.View.Form.Dict.Float._super.set_value.call(this, value, options);
         },
-        set_readonly: function(readonly) {
-            Sao.View.Form.Dict.Float._super.set_readonly.call(this, readonly);
-            this.input_text.prop('disabled', readonly);
-        }
     });
 
     Sao.View.Form.Dict.Numeric = Sao.class_(Sao.View.Form.Dict.Float, {
@@ -5312,18 +5341,6 @@ function eval_pyson(value){
             return value;
         }
     });
-
-    Sao.View.Form.Dict.Integer = Sao.class_(Sao.View.Form.Dict.Float, {
-        class_: 'dict-integer',
-        get_value: function() {
-            var value = parseInt(this.input.val(), 10);
-            if (isNaN(value)) {
-                return null;
-            }
-            return value;
-        },
-    });
-
 
     Sao.View.Form.Dict.Date = Sao.class_(Sao.View.Form.Dict.Entry, {
         class_: 'dict-date',

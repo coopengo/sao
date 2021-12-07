@@ -298,6 +298,7 @@
                 name = order[0][0];
                 direction = order[0][1];
                 if (direction) {
+                    direction = direction.trim().split(' ', 1)[0];
                     icon = {
                         'ASC': 'tryton-arrow-down',
                         'DESC': 'tryton-arrow-up',
@@ -1950,6 +1951,7 @@
             var render = function() {
                 var value;
                 var field = record.model.fields[this.attributes.name];
+                field.set_state(record, ['invisible']);
                 var invisible = field.get_state_attrs(record).invisible;
                 if (invisible) {
                     cell.hide();
@@ -2608,7 +2610,10 @@
             Sao.View.EditableTree.Integer._super.init.call(
                 this, view, attributes);
             Sao.View.EditableTree.editable_mixin(this);
-        }
+        },
+        get width() {
+            return;
+        },
     });
 
     Sao.View.EditableTree.Float = Sao.class_(Sao.View.Form.Float, {
@@ -2617,7 +2622,10 @@
             Sao.View.EditableTree.Float._super.init.call(
                 this, view, attributes);
             Sao.View.EditableTree.editable_mixin(this);
-        }
+        },
+        get width() {
+            return;
+        },
     });
 
     Sao.View.EditableTree.Selection = Sao.class_(Sao.View.Form.Selection, {

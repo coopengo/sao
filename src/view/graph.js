@@ -97,9 +97,12 @@
                     var x = record.field_get_client(this.xfield.name);
                     // c3 does not support moment
                     if (x && (x.isDate || x.isDateTime)) {
-                        x = x.toDate();
+                        x = x.toString();
                     }
-                    data.columns[0][index + 1] = x;
+                    var pos = data.columns[0].indexOf(x);
+                    if (pos < 0) {
+                        pos = data.columns[0].push(x) - 1;
+                    }
                     this._add_id(x, record.id);
 
                     var column;
@@ -107,28 +110,33 @@
                         yfield = this.yfields[j];
                         key = yfield.key || yfield.name;
                         column = data.columns[key2columns[key]];
+                        if (column[pos] === undefined) {
+                            column[pos] = null;
+                        }
                         if (yfield.domain) {
                             var ctx = jQuery.extend({},
-                                    Sao.session.current_session.context);
+                                    Sao.Session.current_session.context);
                             ctx.context = ctx;
-                            ctx._user = Sao.session.current_session.user_id;
+                            ctx._user = Sao.Session.current_session.user_id;
                             for (var field in group.model.fields) {
                                 ctx[field] = record.field_get(field);
                             }
                             var decoder = new Sao.PYSON.Decoder(ctx);
                             if (!decoder.decode(yfield.domain)) {
-                                column[index + 1] = 0;
                                 continue;
                             }
                         }
+                        if (!column[pos]) {
+                            column[pos] = 0;
+                        }
                         if (yfield.name == '#') {
-                            column[index + 1] = 1;
+                            column[pos] += 1;
                         } else {
                             var value = record.field_get(yfield.name);
                             if (value && value.isTimeDelta) {
                                 value = value.asSeconds();
                             }
-                            column[index + 1] = value || 0;
+                            column[pos] += value || 0;
                         }
                     }
                 }.bind(this);
@@ -143,10 +151,6 @@
             for (i = 0, len = group.length; i < len; i++) {
                 record = group[i];
                 fields2load.forEach(load_field(group[i]));
-
-                for (j = 0, y_len = data.columns.length; j < y_len; j++) {
-                    data.columns[j].push(undefined);
-                }
                 r_prms.push(
                         jQuery.when.apply(jQuery, prms).then(set_data(i)));
             }
@@ -176,18 +180,21 @@
             c3_config.data.x = 'labels';
             c3_config.data.onclick = this.action.bind(this);
 
-            var type = this.xfield.type;
+            var type = this.view.screen.model.fields[this.xfield.name]
+                .description.type;
             if ((type == 'date') || (type == 'datetime')) {
                 var format_func, date_format, time_format;
                 date_format = Sao.common.date_format(
                     this.view.screen.context.date_format);
                 time_format = '%X';
                 if (type == 'datetime') {
+                    c3_config.data.xFormat = '%Y-%m-%d %H:%M:%S';
                     format_func = function(dt) {
                         return Sao.common.format_datetime(date_format,
                                 time_format, moment(dt));
                     };
                 } else {
+                    c3_config.data.xFormat = '%Y-%m-%d';
                     format_func = function(dt) {
                         return Sao.common.format_date(date_format, moment(dt));
                     };
@@ -247,11 +254,20 @@
             var config = Sao.View.Graph.HorizontalBar._super._c3_config
                 .call(this, data);
             config.axis.rotated = true;
+            return config;
         }
     });
 
     Sao.View.Graph.Line = Sao.class_(Sao.View.Graph.Chart, {
-        _chart_type: 'line'
+        _chart_type: 'line',
+        _c3_config: function(data) {
+            var config =  Sao.View.Graph.Line._super._c3_config
+                .call(this, data);
+            config.line = {
+                connectNull: true,
+            };
+            return config;
+        }
     });
 
     Sao.View.Graph.Pie = Sao.class_(Sao.View.Graph.Chart, {
@@ -274,7 +290,8 @@
             delete config.axis;
             delete config.data.x;
             var format_func;
-            var type = this.xfield.type;
+            var type = this.view.screen.model.fields[this.xfield.name]
+                .description.type;
             if ((type == 'date') || (type == 'datetime')) {
                 var date_format = Sao.common.date_format(
                     this.view.screen.context.date_format);

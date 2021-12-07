@@ -554,17 +554,12 @@
             if (this.last_search_text.trim() !== this.get_text().trim()) {
                 for (var j = 0; j < this.search_form.fields.length; j++) {
                     var fentry = this.search_form.fields[j][1];
-                    switch(fentry.type) {
-                        case 'selection':
-                            fentry.set_value([]);
-                            break;
-                        case 'date':
-                        case 'datetime':
-                        case 'time':
-                            fentry.set_value(null, null);
-                            break;
-                        default:
-                            fentry.val('');
+                    if (fentry instanceof Sao.ScreenContainer.Selection) {
+                        fentry.set_value([]);
+                    } else if (fentry instanceof Sao.ScreenContainer.Between) {
+                        fentry.set_value(null, null);
+                    } else {
+                        fentry.val('');
                     }
                 }
                 this.search_form.fields[0][2].focus();
@@ -612,8 +607,8 @@
         _get_value: function(entry) {
         },
         set_value: function(from, to) {
-            this._set_value(self.from, from);
-            this._set_value(self.to, to);
+            this._set_value(this.from, from);
+            this._set_value(this.to, to);
         },
         _set_value: function(entry, value) {
         },
@@ -1182,9 +1177,11 @@
             this.views.map(function(view) {
                 view.reset();
             });
-            this.order = null;
             this.group = group;
             this.model = group.model;
+            if (this.group.parent) {
+                this.order = null;
+            }
             if (group && group.length) {
                 this.current_record = group[0];
             } else {
@@ -1252,7 +1249,6 @@
             if (set_cursor === undefined) {
                 set_cursor = true;
             }
-            this.tree_states = {};
             this.tree_states_done = [];
             this.group.load(ids, modified);
             if (ids.length && this.current_view.view_type != 'calendar') {
@@ -1434,10 +1430,16 @@
             }.bind(this));
         },
         get new_position() {
-            if (this.order) {
-                for (var j = 0; j < this.order.length; j++) {
-                    var oexpr = this.order[j][0],
-                        otype = this.order[j][1];
+            var order;
+            if (this.order !== null) {
+                order = this.order;
+            } else {
+                order = this.default_order;
+            }
+            if (order) {
+                for (var j = 0; j < order.length; j++) {
+                    var oexpr = order[j][0],
+                        otype = order[j][1];
                     if ((oexpr == 'id') && otype) {
                         if (otype.startsWith('DESC')) {
                             return 0;

@@ -142,6 +142,7 @@
             if ((position === undefined) || (position == -1)) {
                 position = this.length;
             }
+            position = Math.min(position, this.length);
             if (changed === undefined) {
                 changed = true;
             }
@@ -195,13 +196,17 @@
                         this.record_deleted.splice(
                                 this.record_deleted.indexOf(record), 1);
                     }
-                    this.record_removed.push(record);
+                    if (!~this.record_removed.indexOf(record)) {
+                        this.record_removed.push(record);
+                    }
                 } else {
                     if (~this.record_removed.indexOf(record)) {
                         this.record_removed.splice(
                                 this.record_removed.indexOf(record), 1);
                     }
-                    this.record_deleted.push(record);
+                    if (!~this.record_deleted.indexOf(record)) {
+                        this.record_deleted.push(record);
+                    }
                 }
             }
             if (record.group.parent) {
@@ -264,6 +269,7 @@
             context._timestamp = {};
             records.forEach(function(record) {
                 jQuery.extend(context._timestamp, record.get_timestamp());
+                record.destroy();
             });
             var record_ids = records.map(function(record) {
                 return record.id;
@@ -553,6 +559,7 @@
             this.state_attrs = {};
             this.autocompletion = {};
             this.exception = false;
+            this.destroyed = false;
         },
         has_changed: function() {
             var result = !jQuery.isEmptyObject(this._changed);
@@ -583,7 +590,13 @@
                         this.id = this.model.execute(
                             'create', [[values]], context,  false)[0];
                     } catch (e) {
-                        return jQuery.Deferred().reject();
+                        if (e.promise) {
+                            return e.then(function() {
+                                return this.save(force_reload);
+                            }.bind(this));
+                        } else {
+                            return jQuery.Deferred().reject();
+                        }
                     }
                 } else {
                     if (!jQuery.isEmptyObject(values)) {
@@ -631,7 +644,7 @@
         load: function(name) {
             var fname;
             var prm;
-            if (this.is_loaded(name)) {
+            if (this.destroyed || this.is_loaded(name)) {
                 return jQuery.when();
             }
             if (this.group.prm.state() == 'pending') {
@@ -701,7 +714,9 @@
                         10);
 
                 var filter_group = function(record) {
-                    return !(name in record._loaded) && (record.id >= 0);
+                    return (!record.destroyed &&
+                        (record.id >= 0) &&
+                        !(name in record._loaded));
                 };
                 var filter_parent_group = function(record) {
                     return (filter_group(record) &&
@@ -1247,7 +1262,8 @@
             if (jQuery.isEmptyObject(this._changed)) {
                 return jQuery.Deferred().resolve(true);
             }
-            var values = this._get_on_change_args(Object.keys(this._changed));
+            var values = this._get_on_change_args(
+                Object.keys(this._changed).concat(['id']));
             return this.model.execute('pre_validate',
                     [values], this.get_context())
                 .then(function() {
@@ -1413,6 +1429,16 @@
                 this.button_clicks[name] = clicks;
                 return clicks;
             }.bind(this));
+        },
+        destroy: function() {
+            var vals = Object.values(this._values);
+            for (var i=0; i < vals.length; i++) {
+                var val = vals[i];
+                if (val && val.hasOwnProperty('destroy')) {
+                    val.destroy();
+                }
+            }
+            this.destroyed = true;
         }
     });
 
@@ -1860,8 +1886,9 @@
                 if (digits) {
                     // Round to avoid float precision error
                     // after the division by factor
-                    value = this.convert(value.toFixed(digits[1]));
+                    value = value.toFixed(digits[1]);
                 }
+                value = this.convert(value);
             }
             return value;
         },
@@ -2086,7 +2113,7 @@
                         group.remove(old_record, true, true, false, false);
                     }
                 }
-                group.load(value, modified);
+                group.load(value, modified || default_);
             } else {
                 value.forEach(function(vals) {
                     var new_record = group.new_(false);
@@ -2213,16 +2240,16 @@
             return this.set(record, value, true);
         },
         set_on_change: function(record, value) {
-            var fields;
-            record.load(this.name);
+            var fields, new_fields;
             record._changed[this.name] = true;
+            this._set_default_value(record);
             if (value instanceof Array) {
                 return this._set_value(record, value, false, true);
             }
             if (value.add || value.update) {
                 var context = this.get_context(record);
                 fields = record._values[this.name].model.fields;
-                var field_names = {};
+                var new_field_names = {};
                 var adding_values = [];
                 if (value.add) {
                     for (var i=0; i < value.add.length; i++) {
@@ -2236,25 +2263,25 @@
                                 if (!(f in fields) &&
                                     (f != 'id') &&
                                     (!~f.indexOf('.'))) {
-                                        field_names[f] = true;
+                                        new_field_names[f] = true;
                                     }
                             });
                         });
                     }
                 });
-                if (!jQuery.isEmptyObject(field_names)) {
+                if (!jQuery.isEmptyObject(new_field_names)) {
                     var args = {
                         'method': 'model.' + this.description.relation +
                             '.fields_get',
-                        'params': [Object.keys(field_names), context]
+                        'params': [Object.keys(new_field_names), context]
                     };
                     try {
-                        fields = Sao.rpc(args, record.model.session, false);
+                        new_fields = Sao.rpc(args, record.model.session, false);
                     } catch (e) {
                         return;
                     }
                 } else {
-                    fields = {};
+                    new_fields = {};
                 }
             }
 
@@ -2284,20 +2311,20 @@
                         if (!vals.id) {
                             return;
                         }
-                        var vals_to_set = {};
-                        for (var key in vals) {
-                            if (!(key in field_names)) {
-                                vals_to_set[key] = vals[key];
-                            }
-                        }
                         var record2 = group.get(vals.id);
                         if (record2) {
+                            var vals_to_set = {};
+                            for (var key in vals) {
+                                if (!(key in new_field_names)) {
+                                    vals_to_set[key] = vals[key];
+                                }
+                            }
                             record2.set_on_change(vals_to_set);
                         }
                     });
                 }
 
-                group.add_fields(fields);
+                group.add_fields(new_fields);
                 if (value.add) {
                     value.add.forEach(function(vals) {
                         var new_record;
@@ -2578,14 +2605,16 @@
             screen_domain = inversion.prepare_reference_domain(
                 screen_domain, this.name);
             return inversion.concat([
-                inversion.localize_domain(screen_domain, undefined, true),
+                inversion.localize_domain(screen_domain, this.name, true),
                 attr_domain]);
         },
         get_models: function(record) {
             var domains = this.get_domains(record);
             var inversion = new Sao.common.DomainInversion();
+            var screen_domain = inversion.prepare_reference_domain(
+                domains[0], this.name);
             return inversion.extract_reference_models(
-                inversion.concat([domains[0], domains[1]]),
+                inversion.concat([screen_domain, domains[1]]),
                 this.name);
         },
         _is_empty: function(record) {
@@ -2617,7 +2646,9 @@
                 var context = record.get_context();
                 prm = record.model.execute('read', [[record.id], [this.name]],
                     context).then(function(data) {
-                        return data[0][this.name];
+                        data = data[0][this.name];
+                        this.set(record, data);
+                        return data;
                     }.bind(this));
             }
             return prm;
