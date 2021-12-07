@@ -2134,7 +2134,10 @@
             return Sao.rpc({
                 'method': 'model.ir.email.complete',
                 'params': [text, Sao.config.limit, {}],
-            }, this.session);
+            }, this.session)
+            .fail(function() {
+                Sao.Logger.warn("Unable to complete email entry");
+            });
         },
         _email_format: function(value) {
             return value[1];
@@ -2245,7 +2248,11 @@
                         'text': attachment.rec_name,
                     }));
                 }.bind(this));
-            }.bind(this));
+            }.bind(this))
+            .fail(function() {
+                Sao.Logger.error(
+                    "Could not fetch attachment for", record);
+            });
 
             this.files = jQuery('<div/>', {
                 'class': 'col-md-4',
