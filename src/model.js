@@ -589,8 +589,11 @@
             if (result === false) {
                 return result;
             }
+            Sao.Logger.info(
+                "Modified fields of %s@%s", this.id, this.model.name,
+                Object.keys(this._changed));
             return Object.keys(this._changed).some(
-          this.check_field_never_modified.bind(this));
+                this.check_field_never_modified.bind(this));
         },
         check_field_never_modified: function(field) {
             var fields = this.group.model.fields;
