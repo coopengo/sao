@@ -2242,6 +2242,7 @@
         set_on_change: function(record, value) {
             var fields, new_fields;
             record._changed[this.name] = true;
+            this._set_default_value(record);
             if (value instanceof Array) {
                 return this._set_value(record, value, false, true);
             }
