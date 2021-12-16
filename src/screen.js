@@ -957,7 +957,7 @@
         get number_of_views() {
             return this.views.length + this.view_to_load.length;
         },
-        switch_view: function(view_type, view_id, display) {
+        switch_view: function(view_type, view_id, creatable, display) {
             display = display === undefined ? true : display;
             if ((view_id !== undefined) && (view_id !== null)) {
                 view_id = Number(view_id);
@@ -985,14 +985,17 @@
                 if (!this.current_view) {
                     return false;
                 }
-                else if (!view_type && (view_id === null)) {
-                    return false;
+                var result = true;
+                if ((view_type !== undefined) && (view_type !== null)) {
+                    result &= this.current_view.view_type == view_type;
                 }
-                else if (view_id !== null) {
-                    return this.current_view.view_id == view_id;
-                } else {
-                    return this.current_view.view_type == view_type;
+                if ((view_id !== undefined) && (view_id !== null)) {
+                    result &= this.current_view.view_id == view_id;
                 }
+                if ((creatable !== undefined) && (creatable !== null)) {
+                    result &= this.current_view.creatable == creatable;
+                }
+                return result;
             }.bind(this);
             var _switch = function() {
                 var set_container = function() {
@@ -1011,21 +1014,12 @@
                             }
                         }.bind(this));
                 }.bind(this);
-                var continue_loop = function() {
-                    if (!view_type && (view_id === null)) {
-                        return false;
-                    }
-                    if (view_type && !view_id && !this.view_to_load.length) {
-                        return false;
-                    }
-                    return true;
-                }.bind(this);
                 var set_current_view = function() {
                     this.current_view = this.views[this.views.length - 1];
                 }.bind(this);
                 var switch_current_view = (function() {
                     set_current_view();
-                    if (continue_loop()) {
+                    if (!found()) {
                         return _switch();
                     } else {
                         return set_container();
@@ -1035,7 +1029,7 @@
                     return view.view_id == view_id;
                 };
 
-                while (!found()) {
+                for (var n = 0; n < this.views.length + this.view_to_load.length; n++) {
                     if (this.view_to_load.length) {
                         return this.load_next_view().then(switch_current_view);
                     } else if ((view_id !== null) &&
@@ -1048,7 +1042,7 @@
                         this.current_view = this.views[
                             (i + 1) % this.views.length];
                     }
-                    if (!continue_loop()) {
+                    if (found()) {
                         break;
                     }
                 }
@@ -1488,13 +1482,9 @@
             var prm = jQuery.when();
             if (this.current_view.view_type == 'calendar') {
                 var selected_date = this.current_view.get_selected_date();
-                prm = this.switch_view('form', undefined, false);
             }
-            if (this.current_view &&
-                    ((this.current_view.view_type == 'tree' &&
-                      !this.current_view.editable) ||
-                     this.current_view.view_type == 'graph')) {
-                prm = this.switch_view('form', undefined, false);
+            if (this.current_view && !this.current_view.creatable) {
+                prm = this.switch_view('form', undefined, true, false);
             }
             return prm.then(function() {
                 if (!this.current_view.editable) {

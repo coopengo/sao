@@ -288,6 +288,17 @@
             return (parseInt(this.attributes.editable || 0, 10) &&
                 !this.screen.attributes.readonly);
         },
+        get creatable() {
+            if (this.editable) {
+                if (this.attributes.creatable) {
+                    return Boolean(parseInt(this.attributes.creatable, 10));
+                } else {
+                    return true;
+                }
+            } else {
+                return false;
+            }
+        },
         unfold: function() {
             if (!this.expander) {
                 return;
@@ -2068,7 +2079,7 @@
                                         this.tree.screen.model_name);
                                     var limit = ((this.tree.screen.size_limit !== null) &&
                                         (model.length >= this.tree.screen.size_limit));
-                                    if (access.create && !limit) {
+                                    if (this.tree.creatable && access.create && !limit) {
                                         prm.then(function() {
                                             return this.tree.screen.new_();
                                         }.bind(this))
