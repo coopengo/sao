@@ -1431,7 +1431,11 @@
                 Object.keys(this._values).reduce(function(values, name) {
                     var field = this.model.fields[name];
                     if (field) {
-                        values[name] = field.get(this);
+                        if (field instanceof Sao.field.Binary) {
+                            values[name] = field.get_size(this);
+                        } else {
+                            values[name] = field.get(this);
+                        }
                     }
                     return values;
                 }.bind(this), {}));
@@ -1573,12 +1577,14 @@
             }
             return value;
         },
+        _has_changed: function(previous, value) {
+            // Use stringify to compare object instance like Number for Decimal
+            return JSON.stringify(previous) != JSON.stringify(value);
+        },
         set_client: function(record, value, force_change) {
             var previous_value = this.get(record);
             this.set(record, value);
-            // Use stringify to compare object instance like Number for Decimal
-            if (JSON.stringify(previous_value) !=
-                JSON.stringify(this.get(record))) {
+            if (this._has_changed(previous_value, this.get(record))) {
                 record._changed[this.name] = true;
                 this.changed(record);
                 record.validate(null, true, false, true);
@@ -2761,6 +2767,9 @@
 
     Sao.field.Binary = Sao.class_(Sao.field.Field, {
         _default: null,
+        _has_changed: function(previous, value) {
+            return previous != value;
+        },
         get_size: function(record) {
             var data = record._values[this.name] || 0;
             if (data instanceof Uint8Array) {
