@@ -48,6 +48,10 @@ button {
     text-overflow: ellipsis;
 }
 
+.input-group > .form-control-feedback {
+    z-index: 3;
+}
+
 .navbar-inverse {
     .close {
         color: @navbar-inverse-link-color;
@@ -195,7 +199,7 @@ button {
 
 html.accesskey {
 
-    *[accesskey]+span[data-accesskey]:after,
+    *[accesskey] ~ span[data-accesskey]:after,
     *[accesskey]:after {
         background-color: @brand-info;
         color: #fff;
@@ -211,7 +215,7 @@ html.accesskey {
         background-color: initial;
     }
 
-    *[accesskey]+span[data-accesskey] {
+    *[accesskey] ~ span[data-accesskey] {
         float: right;
         position: relative;
 
@@ -227,7 +231,7 @@ html.accesskey {
     input[accesskey][type="checkbox"],
     input[accesskey][type="checkbox"],
     select[accesskey] {
-        &+span[data-accesskey] {
+        & ~ span[data-accesskey] {
             bottom: 1em;
         }
     }
