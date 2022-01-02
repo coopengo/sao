@@ -116,13 +116,9 @@
             this.record_deleted = record_deleted;
             if (new_records.length && modified) {
                 new_records.forEach(function(record) {
-                    record._changed.id = true;
+                    record.modified_fields.id = true;
                 });
-                var root_group = this.root_group;
-                this.changed();
-                root_group.screens.forEach(function(screen) {
-                    screen.display();
-                });
+                this.record_modified();
             }
         };
         array.get = function(id) {
@@ -168,9 +164,8 @@
                             this.record_deleted.indexOf(record_del), 1);
                 }
             }
-            record._changed.id = true;
+            record.set_modified('id');
             if (changed) {
-                this.changed();
                 // Set parent field to trigger on_change
                 if (this.parent && this.model.fields[this.parent_name]) {
                     var field = this.model.fields[this.parent_name];
@@ -214,16 +209,16 @@
                 }
             }
             if (record.group.parent) {
-                record.group.parent._changed.id = true;
+                record.group.parent.set_modified('id');
             }
             if (modified) {
-                record._changed.id = true;
+                record.set_modified('id');
             }
             if ((record.id < 0) || force_remove) {
                 this._remove(record);
             }
             if (signal) {
-                record.group.changed();
+                this.record_modified();
             }
         };
         array._remove = function(record) {
@@ -233,27 +228,24 @@
         array.unremove = function(record) {
             this.record_removed.splice(this.record_removed.indexOf(record), 1);
             this.record_deleted.splice(this.record_deleted.indexOf(record), 1);
-            record.group.changed();
+            record.group.record_modified();
         };
         array.clear = function() {
             this.splice(0, this.length);
             this.record_removed = [];
             this.record_deleted = [];
         };
-        array.changed = function() {
+        array.record_modified = function() {
             if (!this.parent) {
-                return jQuery.when.apply(jQuery,
-                    this.screens.map(function(screen) {
-                        if (screen.group_changed_callback) {
-                            screen.group_changed_callback();
-                        }
-                        return screen.display();
-                    }));
+                this.screens.forEach(function(screen) {
+                    screen.record_modified();
+                });
+            } else {
+                this.parent.modified_fields[this.child_name] = true;
+                this.parent.model.fields[this.child_name].changed(this.parent);
+                this.parent.validate(null, true, false, true);
+                this.parent.group.record_modified();
             }
-            this.parent._changed[this.child_name] = true;
-            this.parent.model.fields[this.child_name].changed(this.parent);
-            this.parent.validate(null, true, false, true);
-            this.parent.group.changed();
         };
         array.delete_ = function(records) {
             if (jQuery.isEmptyObject(records)) {
@@ -332,7 +324,7 @@
             });
             ids.forEach(function(id) {
                 var record = this.get(id);
-                if (record && jQuery.isEmptyObject(record._changed)) {
+                if (record && !record.modified_fields) {
                     record.cancel();
                 }
             }.bind(this));
@@ -376,9 +368,7 @@
                         new_.forEach(function(record) {
                             record.set_default(values, true, false);
                         });
-                        this.root_group.screens.forEach(function(screen) {
-                            return screen.display();
-                        });
+                        this.changed();
                     }.bind(this));
             }
         };
@@ -568,7 +558,7 @@
                 Sao.Record.prototype.id_counter--;
             }
             this._values = {};
-            this._changed = {};
+            this.modified_fields = {};
             this._loaded = {};
             this.fields = {};
             this._timestamp = null;
@@ -582,7 +572,7 @@
             this.exception = false;
             this.destroyed = false;
         },
-        has_changed: function() {
+        get modified() {
             var result = !jQuery.isEmptyObject(this._changed);
             // JCA : #15014 Add a way to make sure some fields are always
             // ignored when detecting whether the record needs saving or not
@@ -606,7 +596,7 @@
             }
             var context = this.get_context();
             var prm = jQuery.when();
-            if ((this.id < 0) || this.has_changed()) {
+            if ((this.id < 0) || this.modified) {
                 var values = this.get();
                 if (this.id < 0) {
                     // synchronous call to avoid multiple creation
@@ -642,7 +632,7 @@
                 }
             }
             if (this.group.parent) {
-                delete this.group.parent._changed[this.group.child_name];
+                delete this.group.parent.modified_fields[this.group.child_name];
                 prm = prm.done(function() {
                     return this.group.parent.save(force_reload);
                 }.bind(this));
@@ -824,8 +814,8 @@
                     }
                     var value = id2value[id];
                     if (record && value) {
-                        for (var key in this._changed) {
-                            if (!this._changed.hasOwnProperty(key)) {
+                        for (var key in this.modified_fields) {
+                            if (!this.modified_fields.hasOwnProperty(key)) {
                                 continue;
                             }
                             delete value[key];
@@ -927,7 +917,7 @@
                             !(field instanceof Sao.field.Many2Many))) {
                     continue;
                 }
-                if ((this._changed[name] === undefined) && this.id >= 0) {
+                if ((this.modified_fields[name] === undefined) && this.id >= 0) {
                     continue;
                 }
                 value[name] = field.get(this);
@@ -1077,7 +1067,7 @@
                     continue;
                 }
                 if ((this.id >= 0) &&
-                        (!this._loaded[key] || !this._changed[key])) {
+                        (!this._loaded[key] || !this.modified_fields[key])) {
                     continue;
                 }
                 value[key] = this.model.fields[key].get_on_change_value(this);
@@ -1310,11 +1300,11 @@
             }
         },
         pre_validate: function() {
-            if (jQuery.isEmptyObject(this._changed)) {
+            if (jQuery.isEmptyObject(this.modified_fields)) {
                 return jQuery.Deferred().resolve(true);
             }
             var values = this._get_on_change_args(
-                Object.keys(this._changed).concat(['id']));
+                Object.keys(this.modified_fields).concat(['id']));
             return this.model.execute('pre_validate',
                     [values], this.get_context())
                 .then(function() {
@@ -1325,7 +1315,7 @@
         },
         cancel: function() {
             this._loaded = {};
-            this._changed = {};
+            this.modified_fields = {};
             this._timestamp = null;
             this.button_clicks = {};
             this.links_counts = {};
@@ -1340,7 +1330,7 @@
             if (!jQuery.isEmptyObject(fields)) {
                 var result = true;
                 fields.forEach(function(field) {
-                    if (!(field in this._loaded) && !(field in this._changed)) {
+                    if (!(field in this._loaded) && !(field in this.modified_fields)) {
                         result = false;
                     }
                 }.bind(this));
@@ -1491,6 +1481,12 @@
                 return clicks;
             }.bind(this));
         },
+        set_modified: function(field) {
+            if (field) {
+                this.modified_fields[field] = true;
+            }
+            this.group.record_modified();
+        },
         destroy: function() {
             var vals = Object.values(this._values);
             for (var i=0; i < vals.length; i++) {
@@ -1585,18 +1581,13 @@
             var previous_value = this.get(record);
             this.set(record, value);
             if (this._has_changed(previous_value, this.get(record))) {
-                record._changed[this.name] = true;
                 this.changed(record);
                 record.validate(null, true, false, true);
-                record.group.changed();
+                record.set_modified(this.name);
             } else if (force_change) {
-                record._changed[this.name] = true;
                 this.changed(record);
                 record.validate(null, true, false, true);
-                var root_group = record.group.root_group;
-                root_group.screens.forEach(function(screen) {
-                    screen.display();
-                });
+                this.set_modified();
             }
         },
         get_client: function(record) {
@@ -1604,12 +1595,12 @@
         },
         set_default: function(record, value) {
             var promise = this.set(record, value);
-            record._changed[this.name] = true;
+            record.modified_fields[this.name] = true;
             return promise;
         },
         set_on_change: function(record, value) {
             this.set(record, value);
-            record._changed[this.name] = true;
+            record.modified_fields[this.name] = true;
         },
         changed: function(record) {
             record.on_change([this.name]);
@@ -2303,7 +2294,7 @@
                 }
                 var values;
                 if (record2.id >= 0) {
-                    if (record2.has_changed()) {
+                    if (record2.modified) {
                         values = record2.get();
                         delete values[parent_name];
                         if (!jQuery.isEmptyObject(values)) {
@@ -2354,18 +2345,13 @@
                 previous_ids.sort(), value.sort());
             this._set_value(record, value, false, modified);
             if (modified) {
-                record._changed[this.name] = true;
                 this.changed(record);
                 record.validate(null, true, false, true);
-                record.group.changed();
+                record.set_modified(this.name);
             } else if (force_change) {
-                record._changed[this.name] = true;
                 this.changed(record);
                 record.validate(null, true, false, true);
-                var root_group = record.group.root_group;
-                root_group.screens.forEach(function(screen) {
-                    screen.display();
-                });
+                record.set_modified();
             }
         },
         get_client: function(record) {
@@ -2373,13 +2359,13 @@
             return record._values[this.name];
         },
         set_default: function(record, value) {
-            record._changed[this.name] = true;
+            record.modified_fields[this.name] = true;
             return this.set(record, value, true);
         },
         set_on_change: function(record, value) {
             var fields, new_fields;
             // JMO merge_60 , here we add : record.load(this.name);
-            record._changed[this.name] = true;
+            record.modified_fields[this.name] = true;
             this._set_default_value(record);
             if (value instanceof Array) {
                 return this._set_value(record, value, false, true);
@@ -2515,7 +2501,7 @@
             var timestamps = {};
             var group = record._values[this.name] || [];
             var records = group.filter(function(record) {
-                return record.has_changed();
+                return record.modified;
             });
             var record2;
             jQuery.extend(records, group.record_removed, group.record_deleted)
