@@ -2003,13 +2003,13 @@
                         var values = record._get_on_change_args(args);
                         return record.model.execute(attributes.name, [values],
                             this.context).then(function(changes) {
-                            record.set_on_change(changes).then(function() {
+                                record.set_on_change(changes);
+                                record._set_modified();
                                 record.group.root_group.screens.forEach(
                                     function(screen) {
                                         screen.display();
                                     });
                             });
-                        });
                     } else {
                         return record.save(false).then(function() {
                             var context = this.context;
