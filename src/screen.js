@@ -871,9 +871,6 @@
             this.parent = null;
             // end
             this.switch_callback = null;
-            // count_tab_domain is called in Sao.Tab.Form.init after
-            // switch_view to avoid unnecessary call to fields_view_get by
-            // domain_parser.
         },
         get readonly() {
             var readonly_records = this.selected_records.some(function(r) {
