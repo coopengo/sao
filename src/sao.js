@@ -858,6 +858,10 @@ var Sao = {};
                 }.bind(this));
             return cell;
         },
+        set_visible: function() {
+        },
+        get_visible: function() {
+        },
         favorite_click: function(e) {
             // Prevent activate the action of the row
             e.stopImmediatePropagation();
