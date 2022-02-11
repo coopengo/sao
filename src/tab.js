@@ -1445,9 +1445,9 @@
                 this.menu_buttons.save.toggleClass(
                     'disabled', this.screen.readonly);
 
-                var msg = name + ' / ' + data[1];
+                var msg = name + ' / ' + Sao.common.humanize(data[1]);
                 if (data[1] < data[2]) {
-                    msg += Sao.i18n.gettext(' of ') + data[2];
+                    msg += Sao.i18n.gettext(' of ') + Sao.common.humanize(data[2]);
                 }
                 this.status_label.text(msg).attr('title', msg);
             }
