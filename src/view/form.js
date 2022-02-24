@@ -3195,9 +3195,11 @@ function eval_pyson(value){
         // [Coog specific]
         // > multi_mixed_view see tryton/8fa02ed59d03aa52600fb8332973f6a88d46d8c0
         group_sync: function(screen, current_record){
+            if (!this.view || !this.view.widgets)
+                return;
             if (this.attributes.mode == 'form')
                 return;
-            if (!this.view || !this.view.widgets)
+            if (screen.current_record != current_record)
                 return;
 
             function is_compatible(screen, record){
@@ -3246,7 +3248,7 @@ function eval_pyson(value){
 
             function display_form(widget, record) {
                 return function () {
-                    widget.display(widget.record, widget.field);
+                    widget.display();
                 };
             }
 

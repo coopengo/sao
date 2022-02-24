@@ -1076,22 +1076,25 @@
             var row_id_path = this.get_id_path();
             this.set_selection(Sao.common.contains(selected, row_id_path));
             if (this.children_field) {
-                this.record.load(this.children_field).done(function() {
-                    var length = this.record.field_get_client(
-                        this.children_field).length;
-                    if (length && (
-                        this.is_expanded() ||
-                        Sao.common.contains(expanded, row_id_path))) {
-                        this.expander.css('visibility', 'visible');
-                        this.tree.expanded[this.path] = this;
-                        this.expand_children(selected, expanded);
-                        this.update_expander(true);
-                    } else {
-                        this.expander.css('visibility',
-                            length ? 'visible' : 'hidden');
-                        this.update_expander(false);
-                    }
-                }.bind(this));
+                // multi_mixed_view leaf do not have the this.children_field field
+                if (this.children_field in this.record.model.fields) {
+                    this.record.load(this.children_field).done(function() {
+                        var length = this.record.field_get_client(
+                            this.children_field).length;
+                        if (length && (
+                            this.is_expanded() ||
+                            Sao.common.contains(expanded, row_id_path))) {
+                            this.expander.css('visibility', 'visible');
+                            this.tree.expanded[this.path] = this;
+                            this.expand_children(selected, expanded);
+                            this.update_expander(true);
+                        } else {
+                            this.expander.css('visibility',
+                                length ? 'visible' : 'hidden');
+                            this.update_expander(false);
+                        }
+                    }.bind(this));
+                }
             }
             if (this.record.deleted || this.record.removed) {
                 this.el.css('text-decoration', 'line-through');
@@ -1137,6 +1140,10 @@
             this.rows = [];
         },
         expand_children: function(selected, expanded) {
+            // multi_mixed_view leaf do not have the this.children_field field
+            if (!(this.children_field in this.record.model.fields)) {
+                return;
+            }
             return this.record.load(this.children_field).done(function() {
                 if (this.rows.length === 0) {
                     var children = this.record.field_get_client(
