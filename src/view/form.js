@@ -4227,7 +4227,8 @@ function eval_pyson(value){
             var domain = this.field.get_domain(this.record);
             var add_remove = this.record.expr_eval(
                 this.attributes.add_remove);
-            if (!jQuery.isEmptyObject(add_remove)) {
+            if ((!jQuery.isEmptyObject(add_remove)) &&
+                (!Sao.common.DomainInversion.equals(domain, add_remove))) {
                 domain = [domain, add_remove];
             }
             var context = this.field.get_search_context(this.record);
