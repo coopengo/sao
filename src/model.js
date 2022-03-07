@@ -1593,8 +1593,9 @@
             return this.get(record);
         },
         set_default: function(record, value) {
-            this.set(record, value);
+            var promise = this.set(record, value);
             record._changed[this.name] = true;
+            return promise
         },
         set_on_change: function(record, value) {
             this.set(record, value);
@@ -2065,6 +2066,7 @@
             return rec_name;
         },
         set: function(record, value) {
+            var promise;
             var rec_name = (
                 record._values[this.name + '.'] || {}).rec_name || '';
             var store_rec_name = function(rec_name) {
@@ -2075,7 +2077,7 @@
             if (!rec_name && (value >= 0) && (value !== null)) {
                 var model_name = record.model.fields[this.name].description
                     .relation;
-                Sao.rpc({
+                promise = Sao.rpc({
                     'method': 'model.' + model_name + '.read',
                     'params': [[value], ['rec_name'], record.get_context()]
                 }, record.model.session).done(store_rec_name.bind(this)).done(
@@ -2089,6 +2091,7 @@
                 store_rec_name.call(this, [{'rec_name': rec_name}]);
             }
             record._values[this.name] = value;
+            return promise;
         },
         set_client: function(record, value, force_change) {
             var rec_name;
