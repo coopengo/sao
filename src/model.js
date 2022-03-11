@@ -1555,7 +1555,7 @@
         set_default: function(record, value) {
             var promise = this.set(record, value);
             record.modified_fields[this.name] = true;
-            return promise
+            return promise;
         },
         set_on_change: function(record, value) {
             this.set(record, value);
