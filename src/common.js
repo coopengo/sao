@@ -2503,22 +2503,54 @@
                 return models;
             }
         },
-        simplify: function(domain) {
+        _simplify_in_domain: function(domain) {
             if (this.is_leaf(domain)) {
                 return domain;
-            } else if (~['OR', 'AND'].indexOf(domain)) {
-                return domain;
-            } else if ((domain instanceof Array) && (domain.length == 1) &&
-                    (~['OR', 'AND'].indexOf(domain[0]))) {
-                return [];
-            } else if ((domain instanceof Array) && (domain.length == 1) &&
-                    (!this.is_leaf(domain[0]))) {
-                return this.simplify(domain[0]);
-            } else if ((domain instanceof Array) && (domain.length == 2) &&
-                    ~['AND', 'OR'].indexOf(domain[0])) {
-                return [this.simplify(domain[1])];
+            } else if ((domain instanceof Array) && (domain.length == 1)) {
+                return this._simplify_in_domain(domain[0]);
             } else {
-                return domain.map(this.simplify.bind(this));
+                return domain.map(this._simplify_in_domain.bind(this));
+            }
+        },
+        simplify: function(domain) {
+            if (this.is_leaf(domain)) {
+                return [domain];
+            } else if (!domain.length) {
+                return [];
+            } else {
+                var dedup_branches = [];
+                var bool_op = null;
+                if (~['AND', 'OR'].indexOf(domain[0])) {
+                    bool_op = domain[0];
+                    domain = domain.slice(1);
+                }
+                for (var branch of domain) {
+                    var simplified_branch = this._simplify_in_domain(
+                        this.simplify(branch));
+                    if (simplified_branch.length == 0) {
+                        if (bool_op === 'OR') {
+                            return [];
+                        } else {
+                            continue;
+                        }
+                    }
+                    var found_branch = false;
+                    for (var duped_branch of dedup_branches) {
+                        if (Sao.common.compare(
+                            simplified_branch, duped_branch)) {
+                            found_branch = true;
+                            break;
+                        }
+                    }
+                    if (!found_branch) {
+                        dedup_branches.push(simplified_branch);
+                    }
+                }
+
+                if (bool_op && (dedup_branches.length > 1)) {
+                    dedup_branches.unshift(bool_op);
+                }
+                return dedup_branches;
             }
         },
         merge: function(domain, domoperator) {
