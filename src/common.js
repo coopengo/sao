@@ -2506,8 +2506,6 @@
         _simplify_in_domain: function(domain) {
             if (this.is_leaf(domain)) {
                 return domain;
-            } else if ((domain == 'OR') || (domain == 'AND')) {
-                return domain;
             } else if ((domain instanceof Array) && (domain.length == 1)) {
                 return this._simplify_in_domain(domain[0]);
             } else {
