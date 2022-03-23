@@ -1,5 +1,6 @@
 {
     "browser": true,
     "devel": true,
-    "jquery": true
+    "jquery": true,
+    "esversion": 6
 }
