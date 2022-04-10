@@ -3,17 +3,11 @@
 (function() {
     'use strict';
 
-    Sao.rpc = function(args, session, async, process_exception) {
+    Sao.rpc = function(args, session=null, async=true, process_exception=true) {
         var dfd = jQuery.Deferred(),
             result;
         if (!session) {
             session = new Sao.Session();
-        }
-        if (async === undefined) {
-            async = true;
-        }
-        if (process_exception === undefined) {
-            process_exception = true;
         }
         var params = jQuery.extend([], args.params);
         params.push(jQuery.extend({}, session.context, params.pop()));
