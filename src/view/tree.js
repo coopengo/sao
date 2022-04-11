@@ -152,12 +152,12 @@
             }).appendTo(this.el);
 
             // Synchronize both scrollbars
-            this.treeview.scroll(function() {
+            this.treeview.scroll(() => {
                 this.scrollbar.parent().scrollLeft(this.treeview.scrollLeft());
-            }.bind(this));
-            this.scrollbar.parent().scroll(function() {
+            });
+            this.scrollbar.parent().scroll(() => {
                 this.treeview.scrollLeft(this.scrollbar.parent().scrollLeft());
-            }.bind(this));
+            });
 
             this.expanded = new Set();
 
@@ -222,9 +222,9 @@
                     Sao.common.click_press(this.unfold.bind(this)));
                 Sao.common.ICONFACTORY.get_icon_url(
                     'tryton-unfold-' + this.expander.action)
-                    .then(function(url) {
+                    .then(url => {
                         this.expander.children().attr('src', url);
-                    }.bind(this));
+                    });
             }
 
             for (const column of this.columns) {
@@ -310,14 +310,14 @@
                 }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-menu'))
                     .click(menu, this.optional_menu.bind(this))
                 ).append(menu);
-                dropdown.on('hide.bs.dropdown', function() {
+                dropdown.on('hide.bs.dropdown', () => {
                     this.save_optional(true);
-                }.bind(this));
+                });
                 th.append(dropdown);
             }
         },
         optional_menu: function(evt) {
-            var toggle = function(evt) {
+            const toggle = evt => {
                 var column = evt.data;
                 column.set_visible(jQuery(evt.delegateTarget).prop('checked'));
                 this.save_optional();
@@ -325,7 +325,7 @@
                 for (const row of this.rows) {
                     row.update_visible();
                 }
-            }.bind(this);
+            };
             var menu = evt.data;
             menu.empty();
             for (const optional of this.optionals) {
@@ -407,9 +407,9 @@
             }
             Sao.common.ICONFACTORY.get_icon_url(
                 'tryton-unfold-' + this.expander.action)
-                .then(function(url) {
+                .then(url => {
                     this.expander.children().attr('src', url);
-                }.bind(this));
+                });
             if (jQuery.isEmptyObject(this.selected_records)) {
                 this.expander.css('visibility', 'hidden');
             } else {
@@ -456,7 +456,7 @@
                     (this.screen.search_count == this.group.length) ||
                     (this.group.parent)) {
                 this.screen.search_filter(search_string, true).then(
-                function(ids) {
+                ids => {
                     this.group.sort(function(a, b) {
                         a = ids.indexOf(a.id);
                         a = a < 0 ? ids.length : a;
@@ -471,7 +471,7 @@
                         }
                     });
                     this.screen.display();
-                }.bind(this));
+                });
             } else {
                 this.screen.search_filter(search_string);
             }
@@ -637,7 +637,7 @@
                 dest_group_prm = jQuery.Deferred().resolve(this.group);
             }
 
-            dest_group_prm.then(function(dest_group) {
+            dest_group_prm.then(dest_group => {
                 var origin_rows, dest_rows;
                 if (row.parent_) {
                     origin_rows = row.parent_.rows;
@@ -696,7 +696,7 @@
                     row.record.group.set_sequence(
                         this.attributes.sequence, this.screen.new_position);
                 }
-            }.bind(this));
+            });
         },
         get_fields: function() {
             return Object.keys(this.widgets);
@@ -745,7 +745,7 @@
                 this.selection.hide();
             }
 
-            var group_records = function(group, root) {
+            const group_records = (group, root) => {
                 var records = [];
                 for (const record of group) {
                     records.push(record);
@@ -762,9 +762,9 @@
                     }
                 }
                 return records;
-            }.bind(this);
+            };
 
-            var row_records = function(rows) {
+            const row_records = rows => {
                 var records = [];
                 for (const row of rows) {
                     records.push(row.record);
@@ -774,7 +774,7 @@
                     }
                 }
                 return records;
-            }.bind(this);
+            };
             var min_display_size = Math.min(
                     this.group.length, this.display_size);
             if (this.children_field) {
@@ -883,7 +883,7 @@
                 }
             }
             if (this.children_field) {
-                this.columns.every(function(column) {
+                this.columns.every(column => {
                     if (column.col.hasClass('draggable-handle') ||
                         column.header.hasClass('invisible')) {
                         return true;
@@ -893,7 +893,7 @@
                         }
                         return false;
                     }
-                }.bind(this));
+                });
             }
             this.table.css('min-width', 'calc(' + min_width.join(' + ') + ')');
             this.scrollbar.css('min-width', this.table.css('min-width'));
@@ -912,7 +912,7 @@
             }
 
             this.update_arrow();
-            return this.redraw(selected, expanded).then(function() {
+            return this.redraw(selected, expanded).then(() => {
                 var tbody = this.table.children('tbody');
                 if (!tbody.length) {
                     this.table.append(this.tbody);
@@ -934,10 +934,10 @@
                         'type': 'button',
                         'title': Sao.i18n.gettext("More"),
                     }).text(Sao.i18n.gettext('More')
-                    ).click(function() {
+                    ).click(() => {
                         this.display_size += Sao.config.display_size;
                         this.display();
-                    }.bind(this));
+                    });
                     more_cell.append(more_button);
                     more_row.append(more_cell);
                     this.tbody.append(more_row);
@@ -945,7 +945,7 @@
                         moreObserver.observe(more_button[0]);
                     }
                 }
-            }.bind(this)).done(
+            }).done(
                 Sao.common.debounce(this.update_sum.bind(this), 250));
         },
         construct: function(extend) {
@@ -976,9 +976,9 @@
             }
         },
         redraw: function(selected, expanded) {
-            return redraw_async(this.rows, selected, expanded).then(function() {
+            return redraw_async(this.rows, selected, expanded).then(() => {
                 this.update_selection();
-            }.bind(this));
+            });
         },
         switch_: function(path) {
             this.screen.row_activate();
@@ -1089,7 +1089,7 @@
                 return this.group.slice();
             }
 
-            var get_listed_records = function(start) {
+            const get_listed_records = start => {
                 var records = [];
                 var row = this.find_row(start);
                 var children_rows = row ? row.rows : this.rows;
@@ -1106,7 +1106,7 @@
                     }
                 }
                 return records;
-            }.bind(this);
+            };
             return get_listed_records([]).concat(this.group.slice(this.rows.length));
         },
         get_listed_paths: function() {
@@ -1116,7 +1116,7 @@
                 });
             }
 
-            var get_listed_paths = function(start, start_path) {
+            const get_listed_paths = (start, start_path) => {
                 var paths = [];
                 var row = this.find_row(start);
                 var children_rows = row ? row.rows : this.rows;
@@ -1134,7 +1134,7 @@
                     }
                 }
                 return paths;
-            }.bind(this);
+            };
             return get_listed_paths([], []).concat(
                 this.group.slice(this.rows.length).map(function(record) {
                     return [record.id];
@@ -1289,7 +1289,7 @@
                     })]);
             }
 
-            var focus = function() {
+            const focus = () => {
                 row = this.find_row(path);
                 if (row) {
                     column = row.next_column(null, new_);
@@ -1301,7 +1301,7 @@
                         td.find(':input,[tabindex=0]').focus();
                     }
                 }
-            }.bind(this);
+            };
 
             if (prm) {
                 prm.then(focus);
@@ -1340,14 +1340,14 @@
             } else {
                 prm = jQuery.when();
             }
-            prm.fail(function() {
+            prm.fail(() => {
                 if (this.edited_row != edited_row) {
                     this.edit_row(null);
                     edited_row.set_selection(true);
                     edited_row.selection_changed();
                     this.edit_row(edited_row);
                 }
-            }.bind(this));
+            });
             return prm;
         },
         edit_row: function(row) {
@@ -1472,10 +1472,10 @@
             }
             td = jQuery('<td/>', {
                 'class': 'selection-state',
-            }).click(function(event_) {
+            }).click(event_ => {
                 event_.stopPropagation();
                 this.selection.click();
-            }.bind(this));
+            });
             this.el.append(td);
             this.selection = jQuery('<input/>', {
                 'type': 'checkbox',
@@ -1487,13 +1487,13 @@
             this.selection.change(this.selection_changed.bind(this));
             td.append(this.selection);
 
-            var on_click = function(event_) {
+            const on_click = event_ => {
                 if (this.expander && !this.is_expanded() &&
                     (this.tree.n_children(this) <= Sao.config.limit)) {
                     this.toggle_row();
                 }
                 this.select_column(event_.data.index);
-            }.bind(this);
+            };
 
             if (this.children_field) {
                 this.expander = jQuery('<span/>', {
@@ -1664,7 +1664,7 @@
                 this.update_visible();
             }
             if (this.children_field) {
-                this.tree.columns.every(function(column, i) {
+                this.tree.columns.every((column, i) => {
                     if (column.col.hasClass('draggable-handle') ||
                         column.header.hasClass('invisible')) {
                         return true;
@@ -1676,7 +1676,7 @@
                         }
                         return false;
                     }
-                }.bind(this));
+                });
             }
             this._drawed_record = this.record.identity;
 
@@ -1690,7 +1690,7 @@
                 }
                 this.expander.children().css(margin, (depth - 1) + 'em');
 
-                var update_expander = function() {
+                const update_expander = () => {
                     var length = this.record.field_get_client(
                         this.children_field).length;
                     if (length && (
@@ -1705,7 +1705,7 @@
                             length ? 'visible' : 'hidden');
                         this.update_expander(false);
                     }
-                }.bind(this);
+                };
                 if (!this.record.is_loaded(this.children_field)) {
                     this.record.load(this.children_field).done(update_expander);
                 } else {
@@ -1766,9 +1766,9 @@
                 icon = 'tryton-arrow-right';
             }
             Sao.common.ICONFACTORY.get_icon_url(icon)
-                .then(function(url) {
+                .then(url => {
                     this.expander.children().attr('src', url);
-                }.bind(this));
+                });
         },
         collapse_children: function() {
             for (const row of this.rows) {
@@ -1779,29 +1779,29 @@
             this.rows = [];
         },
         expand_children: function(selected, expanded) {
-            return this.record.load(this.children_field).done(function() {
+            return this.record.load(this.children_field).done(() => {
                 if (this.rows.length === 0) {
                     var children = this.record.field_get_client(
                         this.children_field);
                     // [Coog Specific]  needed for multi_mixed_view
                     if (children.model.name != this.record.model.name)
                         children.model.add_fields(this.children_definitions[children.model.name]);
-                    children.forEach(function(record, pos, group) {
+                    children.forEach((record, pos, group) => {
                         // The rows are added to the tbody after being rendered
                         // to minimize browser reflow
                         this.rows.push(new this.Class(
                             this.tree, record, pos, this));
-                    }.bind(this));
+                    });
                 }
-                redraw_async(this.rows, selected, expanded).then(function() {
+                redraw_async(this.rows, selected, expanded).then(() => {
                     this.el.after(this.rows.filter(function(row) {
                         return !row.el.parent().length;
                     }).map(function(row) {
                         return row.el;
                     }));
                     this.tree.update_selection();
-                }.bind(this));
-            }.bind(this));
+                });
+            });
         },
         switch_row: function() {
             if (window.getSelection) {
@@ -1901,9 +1901,9 @@
                 this.expander.css('visibility', 'visible');
                 this.tree.expanded.add(this);
                 this.update_expander(true);
-                return this.expand_children(selected).done(function() {
+                return this.expand_children(selected).done(() => {
                     return this.rows[path[0]].expand_to_path(path.slice(1), selected);
-                }.bind(this));
+                });
             }
         },
         next_column: function(path, editable, sign) {
@@ -1955,13 +1955,13 @@
             Sao.View.Tree.RowEditable._super.init.call(this, tree, record, pos,
                 parent);
             this.edited_column = null;
-            this.el.on('keypress', function(event_) {
+            this.el.on('keypress', event_ => {
                 if ((event_.which == Sao.common.RETURN_KEYCODE) &&
                     (this.tree.edited_row != this)) {
                     this.tree.edit_row(this);
                     event_.preventDefault();
                 }
-            }.bind(this));
+            });
         },
         redraw: function(selected, expanded) {
             var i, cell, widget;
@@ -1969,14 +1969,14 @@
 
             Sao.View.Tree.RowEditable._super.redraw.call(this, selected,
                     expanded);
-            var display_callback = function(widget) {
+            const display_callback = widget => {
                 var record = this.record;
                 return function() {
                     var field = record.model.fields[widget.field_name];
                     field.set_state(record);
                     widget.display(record, field);
                 };
-            }.bind(this);
+            };
             // The autocompletion widget do not call display thus we have to
             // call it when redrawing the row
             for (i = 0; i < this.tree.columns.length; i++) {
@@ -2015,7 +2015,7 @@
             if (body.hasClass('modal-open')) {
                 listener = this.tree.el.parents('.modal').last();
             }
-            var handler = function(event_) {
+            const handler = event_ => {
                 if ((event_.currentTarget == body[0]) &&
                     body.hasClass('modal-open')) {
                     return;
@@ -2029,7 +2029,7 @@
                 body.off('click.sao.editabletree');
                 this.tree.edit_row(null);
                 return true;
-            }.bind(this);
+            };
             if (!handler(event_)) {
                 return;
             }
@@ -2042,7 +2042,7 @@
             }
         },
         unset_editable: function() {
-            this.tree.columns.forEach(function(col, idx) {
+            this.tree.columns.forEach((col, idx) => {
                 var td = this._get_column_td(idx);
                 var static_el = this.get_static_el(td);
                 static_el.empty().append(col.render(this.record)).show();
@@ -2051,7 +2051,7 @@
                     .data('widget', null)
                     .hide()
                     .parents('.treeview td').addBack().removeClass('edited');
-            }.bind(this));
+            });
         },
         set_editable: function() {
             var focus_widget = null;
@@ -2144,7 +2144,7 @@
                     event_.which == Sao.common.RETURN_KEYCODE) {
                     next_column = this.edited_column;
                     this.record.validate(this.tree.get_fields())
-                        .then(function(validate) {
+                        .then(validate => {
                             if (!validate) {
                                 var invalid_fields =
                                     this.record.invalid_fields();
@@ -2191,28 +2191,26 @@
                                     var limit = ((this.tree.screen.size_limit !== null) &&
                                         (model.length >= this.tree.screen.size_limit));
                                     if (this.tree.creatable && access.create && !limit) {
-                                        prm.then(function() {
-                                            return this.tree.screen.new_();
-                                        }.bind(this))
-                                            .then(function(record) {
+                                        prm.then(() => this.tree.screen.new_())
+                                            .then(record => {
                                                 var sequence = this.tree.attributes.sequence;
                                                 if (sequence) {
                                                     record.group.set_sequence(
                                                         sequence, this.tree.screen.new_position);
                                                 }
-                                            }.bind(this));
+                                            });
                                     }
                                 } else {
-                                    prm.then(function() {
+                                    prm.then(() => {
                                         this._get_column_td(
                                             next_column, next_row)
                                             .trigger('click')
                                             .find(':input,[tabindex=0]')
                                             .focus();
-                                    }.bind(this));
+                                    });
                                 }
                             }
-                        }.bind(this));
+                        });
                 } else if (event_.which == Sao.common.ESC_KEYCODE) {
                     this.tree.edit_row(null);
                     this.get_static_el().show().find('[tabindex=0]').focus();
@@ -2255,7 +2253,7 @@
             if (!cell) {
                 cell = this.get_cell();
             }
-            var render = function() {
+            const render = () => {
                 var value;
                 var field = record.model.fields[this.attributes.name];
                 field.set_state(record, ['invisible']);
@@ -2310,13 +2308,13 @@
                         }
                     } else {
                         Sao.common.ICONFACTORY.get_icon_url(value)
-                            .done(function(url) {
+                            .done(url => {
                                 if (url) {
                                     img_tag.attr('src', url);
                                 } else {
                                     img_tag.removeAttr('src');
                                 }
-                            }.bind(this));
+                            });
                     }
                 } else {
                     value = this.attributes.string || '';
@@ -2325,7 +2323,7 @@
                     }
                     cell.text(value);
                 }
-            }.bind(this);
+            };
             if (!record.is_loaded(this.attributes.name)) {
                 record.load(this.attributes.name).done(render);
             } else {
@@ -2355,7 +2353,7 @@
             if (!cell) {
                 cell = this.get_cell();
             }
-            var render = function() {
+            const render = () => {
                 var field = record.model.fields[this.attributes.name];
                 field.set_state(record, ['invisible']);
                 var invisible = field.get_state_attrs(record).invisible;
@@ -2374,7 +2372,7 @@
                     cell.text('');
                     cell.hide();
                 }
-            }.bind(this);
+            };
             if (!record.is_loaded(this.attributes.name)) {
                 record.load(this.attributes.name).done(render);
             } else {
@@ -2418,7 +2416,7 @@
             if (!cell) {
                 cell = this.get_cell();
             }
-            var render = function() {
+            const render = () => {
                 this.update_text(cell, record);
                 this.field.set_state(record);
                 var state_attrs = this.field.get_state_attrs(record);
@@ -2427,7 +2425,7 @@
                 } else {
                     cell.show();
                 }
-            }.bind(this);
+            };
             if (!record.is_loaded(this.attributes.name)) {
                 record.load(this.attributes.name).done(render);
             } else {
@@ -2535,7 +2533,7 @@
             cell = cell.children('a');
             cell.unbind('click');
             Sao.View.Tree.Many2OneColumn._super.update_text.call(this, cell, record);
-            cell.click(function(event) {
+            cell.click(event => {
                 event.preventDefault();
                 event.stopPropagation();
                 if (event && event.ctrlKey) {
@@ -2547,7 +2545,7 @@
                     params.context = this.field.get_context(record);
                     Sao.Tab.create(params);
                 }
-            }.bind(this));
+            });
         }
     });
 
@@ -2571,7 +2569,7 @@
                 this.field, callback);
         },
         update_text: function(cell, record) {
-            this.update_selection(record, function() {
+            this.update_selection(record, () => {
                 var value = this.field.get(record);
                 var prm, text, found = false;
                 for (const option of this.selection) {
@@ -2589,10 +2587,10 @@
                 } else {
                     prm = jQuery.when(text);
                 }
-                prm.done(function(text_value) {
+                prm.done(text_value => {
                     cell.text(text_value).attr('title', text_value);
-                }.bind(this));
-            }.bind(this));
+                });
+            });
         }
     });
 
@@ -2612,18 +2610,18 @@
                 this.field, callback);
         },
         update_text: function(cell, record) {
-            this.update_selection(record, function() {
-                var values = this.field.get_eval(record).map(function(value) {
+            this.update_selection(record, () => {
+                var values = this.field.get_eval(record).map(value => {
                     for (const option of this.selection) {
                         if (option[0] === value) {
                             return option[1];
                         }
                     }
                     return '';
-                }.bind(this));
+                });
                 var text_value = values.join(';');
                 cell.text(text_value).attr('title', text_value);
-            }.bind(this));
+            });
         },
     });
 
@@ -2653,7 +2651,7 @@
         update_text: function(cell, record) {
             cell = cell.children('a');
             cell.unbind('click');
-            this.update_selection(record, function() {
+            this.update_selection(record, () => {
                 var value = this.field.get_client(record);
                 var model, name, text;
                 if (!value) {
@@ -2675,7 +2673,7 @@
                     text = name;
                 }
                 cell.text(text).attr('title', text);
-                cell.click(function(event) {
+                cell.click(event => {
                     event.stopPropagation();
                     var value = this.field.get(record);
                     if (value) {
@@ -2690,8 +2688,8 @@
                         };
                         Sao.Tab.create(params);
                     }
-                }.bind(this));
-            }.bind(this));
+                });
+            });
         }
     });
 
@@ -2767,11 +2765,11 @@
                     'title': Sao.i18n.gettext("Save As..."),
                 }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-save')
                 ).appendTo(cell)
-                    .click(record, function(event) {
+                    .click(record, event => {
                         // Prevent editable tree to start edition
                         event.stopPropagation();
                         this.save_as(event.data);
-                    }.bind(this));
+                    });
             }
             if (!size) {
                 button.hide();
@@ -2793,9 +2791,9 @@
             } else {
                 prm = jQuery.when(this.field.get(record));
             }
-            prm.done(function(data) {
+            prm.done(data => {
                 Sao.common.download_file(data, filename);
-            }.bind(this));
+            });
         },
     });
 
@@ -2818,8 +2816,8 @@
             if (!cell) {
                 cell = this.get_cell();
             }
-            var render = function() {
-                var set_src = function(data) {
+            const render = () => {
+                const set_src = data => {
                     var img_url, blob;
                     if (!data) {
                         img_url = null;
@@ -2828,7 +2826,7 @@
                         img_url = window.URL.createObjectURL(blob);
                     }
                     cell.attr('src', img_url);
-                }.bind(this);
+                };
 
                 var value = this.field.get_client(record);
                 if (value) {
@@ -2840,7 +2838,7 @@
                 } else {
                     set_src(null);
                 }
-            }.bind(this);
+            };
             if (!record.is_loaded(this.attributes.name)) {
                 record.load(this.attributes.name).done(render);
             } else {
