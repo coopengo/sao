@@ -997,7 +997,8 @@ function eval_pyson(value){
                                 'model.' + action.res_model + '.search_count'),
                             'params': [
                                 ['AND', domain, 0, tab_domain], 100, context],
-                        }, Sao.Session.current_session).then(function(value) {
+                        }, Sao.Session.current_session, undefined, false
+                        ).then(function(value) {
                             this._set_count(
                                 value, i, current, counter,
                                 action.name, tab_domains);
@@ -1008,7 +1009,8 @@ function eval_pyson(value){
                         'method': (
                             'model.' + action.res_model + '.search_count'),
                         'params': [domain, 0, 100, context],
-                    }, Sao.Session.current_session).then(function(value) {
+                    }, Sao.Session.current_session, undefined, false
+                    ).then(function(value) {
                         this._set_count(
                             value, 0, current, counter,
                             action.name, tab_domains);
