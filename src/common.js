@@ -578,11 +578,21 @@
     });
     Sao.common.VIEW_SEARCH = new Sao.common.ViewSearch();
 
-    Sao.common.humanize = function(size) {
-        var sizes = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    Sao.common.humanize = function(size, suffix) {
+        suffix = suffix || '';
+        var sizes = ['', 'K', 'M', 'G', 'T', 'P'];
         for (var i =0, len = sizes.length; i < len; i++) {
-            if (size < 1000) {
-                return size.toPrecision(4) + ' ' + sizes[i];
+            if (size <= 1000) {
+                if (size % 1 === 0) {
+                    size = '' + size;
+                } else {
+                    size = size.toLocaleString(
+                        Sao.i18n.BC47(Sao.i18n.getlang()), {
+                            'minimumFractionDigits': 0,
+                            'maximumFractionDigits': 2,
+                        });
+                }
+                return size + sizes[i] + suffix;
             }
             size /= 1000;
         }
@@ -2524,12 +2534,19 @@
                 return this.simplify_nested(domain[0]);
             } else {
                 var simplified = [];
-                var domain_op = this._bool_operator(domain);
                 for (var branch of domain) {
                     var simplified_branch = this.simplify_nested(branch);
-                    if ((this._bool_operator(branch) == domain_op) ||
-                        (simplified_branch.length == 1)) {
-                        simplified.push(...simplified_branch);
+                    if ((this._bool_operator(simplified_branch) == \
+                            this._bool_operator(simplified)) ||
+                            (simplified_branch.length == 1)) {
+                        if ((simplified.length > 0) &&
+                            (simplified_branch.length > 0) &&
+                            ((simplified_branch[0] == 'AND') ||
+                                (simplified_branch[0] == 'OR'))) {
+                            simplified.push(...simplified_branch.slice(1));
+                        } else {
+                            simplified.push(...simplified_branch);
+                        }
                     } else {
                         simplified.push(simplified_branch);
                     }
