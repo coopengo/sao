@@ -24,12 +24,12 @@
             }
             return added;
         },
-        execute: function(method, params, context={}, async=true) {
+        execute: function(method, params, context={}, async=true, process_exception=true) {
             var args = {
                 'method': 'model.' + this.name + '.' + method,
                 'params': params.concat(context)
             };
-            return Sao.rpc(args, this.session, async);
+            return Sao.rpc(args, this.session, async, process_exception);
         },
         copy: function(records, context) {
             if (jQuery.isEmptyObject(records)) {
@@ -1190,7 +1190,7 @@
             try {
                 result = this.model.execute(
                     'autocomplete_' + fieldname, [values], this.get_context(),
-                    false);
+                    false, false);
             } catch (e) {
                 result = [];
             }

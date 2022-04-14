@@ -3,7 +3,7 @@
 (function() {
     'use strict';
 
-    Sao.rpc = function(args, session=null, async=true) {
+    Sao.rpc = function(args, session=null, async=true, process_exception=true) {
         var dfd = jQuery.Deferred(),
             result;
         if (!session) {
@@ -33,6 +33,11 @@
                         Sao.i18n.gettext('Unable to reach the server.'))
                     .always(dfd.reject);
             } else if (data.error) {
+                if (!process_exception) {
+                    dfd.reject();
+                    return;
+                }
+
                 var name, msg, description;
                 if (data.error[0] == 'UserWarning') {
                     name = data.error[1][0];
@@ -92,6 +97,13 @@
                         Sao.common.message.run('Concurrency Exception',
                                 'tryton-warning').always(dfd.reject);
                     }
+                } else if (data.error[0] == 'TimeoutException') {
+                    Sao.common.message.run(
+                        Sao.i18n.gettext(
+                            'The server took too much time to answer. '
+                            + 'You may try again later.'),
+                        'tryton-warning'
+                    ).always(dfd.reject);
                 // PKUNK Fix#10127
                 } else if (data.error[0] == "'ir.session'") {
                     return session.do_logout()

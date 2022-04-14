@@ -708,9 +708,11 @@
         if (!(selection instanceof Array) &&
                 !(key in this._values2selection)) {
             if (!jQuery.isEmptyObject(this.attributes.selection_change_with)) {
-                prm = this.model.execute(selection, [value]);
+                prm = this.model.execute(
+                    selection, [value], {}, true, false);
             } else {
-                prm = this.model.execute(selection, []);
+                prm = this.model.execute(
+                    selection, [], {}, true, false);
             }
             prm = prm.then(selection => {
                 this._values2selection[key] = selection;
@@ -3786,7 +3788,8 @@
         var order = field.get_search_order(record);
         var sao_model = new Sao.Model(model);
         return sao_model.execute('search_read',
-                [domain, 0, Sao.config.limit, order, ['rec_name']], context).fail(function() {
+                [domain, 0, Sao.config.limit, order, ['rec_name']], context,
+                undefined, false).fail(function() {
                     Sao.Logger.warning(
                         "Unable to search for completion of %s", model);
                 });
