@@ -993,8 +993,9 @@ function eval_pyson(value){
                             'method': (
                                 'model.' + action.res_model + '.search_count'),
                             'params': [
-                                ['AND', domain, tab_domain], context],
-                        }, Sao.Session.current_session).then(function(value) {
+                                ['AND', domain, 0, tab_domain], 100, context],
+                        }, Sao.Session.current_session, undefined, false
+                        ).then(function(value) {
                             this._set_count(
                                 value, i, current, counter,
                                 action.rec_name, tab_domains);
@@ -1004,8 +1005,9 @@ function eval_pyson(value){
                     Sao.rpc({
                         'method': (
                             'model.' + action.res_model + '.search_count'),
-                        'params': [domain, context],
-                    }, Sao.Session.current_session).then(function(value) {
+                        'params': [domain, 0, 100, context],
+                    }, Sao.Session.current_session, undefined, false
+                    ).then(function(value) {
                         this._set_count(
                             value, 0, current, counter,
                             action.rec_name, tab_domains);
