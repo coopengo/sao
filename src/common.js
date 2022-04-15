@@ -2536,7 +2536,7 @@
                 var simplified = [];
                 for (var branch of domain) {
                     var simplified_branch = this.simplify_nested(branch);
-                    if ((this._bool_operator(simplified_branch) == \
+                    if ((this._bool_operator(simplified_branch) ==
                             this._bool_operator(simplified)) ||
                             (simplified_branch.length == 1)) {
                         if ((simplified.length > 0) &&
