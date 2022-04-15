@@ -100,8 +100,8 @@
                 } else if (data.error[0] == 'TimeoutException') {
                     Sao.common.message.run(
                         Sao.i18n.gettext(
-                            'The server took too much time to answer. '
-                            + 'You may try again later.'),
+                            'The server took too much time to answer. ' +
+                            'You may try again later.'),
                         'tryton-warning'
                     ).always(dfd.reject);
                 // PKUNK Fix#10127
