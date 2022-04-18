@@ -1792,7 +1792,7 @@
             }
 
             // Add common fields
-            const common_fields = new Map([
+            const common_fields = new Set([
                 ['id', Sao.i18n.gettext('ID'), 'integer'],
                 ['create_uid', Sao.i18n.gettext('Created by'), 'many2one'],
                 ['create_date', Sao.i18n.gettext('Created at'), 'datetime'],
