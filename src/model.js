@@ -1640,7 +1640,8 @@
                 }
             }
             if (record.group.readonly ||
-                    this.get_state_attrs(record).domain_readonly) {
+                this.get_state_attrs(record).domain_readonly ||
+                (record.parent_name == this.name)) {
                 this.get_state_attrs(record).readonly = true;
             }
         },
