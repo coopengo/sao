@@ -777,7 +777,7 @@
                             }
                             delete value[key];
                         }
-                        record.set(value);
+                        record.set(value, false);
                     }
                 }
             };
