@@ -198,7 +198,7 @@ var Sao = {};
         }
     };
 
-    Sao.Date = function(year, month, day, utc) {
+    Sao.Date = function(year, month, day) {
         var date;
         if (month === undefined) {
             date = moment(year);
@@ -206,9 +206,6 @@ var Sao = {};
         }
         else {
             date = moment();
-        }
-        if (utc) {
-            date.utc();
         }
         date.year(year);
         date.month(month);
@@ -262,15 +259,20 @@ var Sao = {};
         }
         datetime.isDateTime = true;
         datetime.local();
+        datetime.todate = function() {
+            return Sao.Date(this.year(), this.month(), this.date());
+        };
+        datetime.totime = function() {
+            return Sao.Time(
+                this.hour(), this.minute(), this.second(), this.millisecond());
+        };
         return datetime;
     };
 
     Sao.DateTime.combine = function(date, time) {
-        var datetime = date.clone();
-        datetime.set({hour: time.hour(), minute: time.minute(),
-            second: time.second(), millisecond: time.millisecond()});
-        datetime.isDateTime = true;
-        return datetime;
+        return Sao.DateTime(
+            date.year(), date.month(), date.date(),
+            time.hour(), time.minute(), time.second(), time.millisecond());
     };
 
     Sao.DateTime.min = moment(new Date(-100000000 * 86400000)).local();
@@ -680,30 +682,28 @@ var Sao = {};
     };
 
     Sao.user_menu = function(preferences) {
-        var avatar_url = preferences.avatar_url || '';
-        if (avatar_url) {
-            avatar_url += '?s=30';
-        }
-        var avatar_badge_url = preferences.avatar_badge_url || '';
-        if (avatar_badge_url){
-            avatar_badge_url += '?s=15';
-        }
         jQuery('#user-preferences').empty();
         jQuery('#user-favorites').empty();
-        jQuery('#user-preferences').append(jQuery('<a/>', {
+        var user = jQuery('<a/>', {
             'href': '#',
             'title': preferences.status_bar,
         }).click(function(evt) {
             evt.preventDefault();
             Sao.preferences();
-        }).text(preferences.status_bar)
-            .prepend(jQuery('<img/>', {
-                'src': avatar_badge_url,
+        }).text(preferences.status_bar);
+        jQuery('#user-preferences').append(user);
+        if (preferences.avatar_badge_url) {
+            user.prepend(jQuery('<img/>', {
+                'src': preferences.avatar_badge_url + '?s=15',
                 'class': 'img-circle img-badge',
-            })).prepend(jQuery('<img/>', {
-                'src': avatar_url,
+            }));
+        }
+        if (preferences.avatar_url) {
+            user.prepend(jQuery('<img/>', {
+                'src': preferences.avatar_url + '?s=30',
                 'class': 'img-circle',
-            })));
+            }));
+        }
         var title = Sao.i18n.gettext("Logout");
         jQuery('#user-logout > a')
             .attr('title', title)
@@ -948,6 +948,9 @@ var Sao = {};
         },
         update: function(text) {
             var ir_model = new Sao.Model('ir.model');
+            if (!text) {
+                return jQuery.when([]);
+            }
             return ir_model.execute('global_search',
                     [text, Sao.config.limit, Sao.main_menu_screen.model_name],
                     Sao.main_menu_screen.context, undefined, false)

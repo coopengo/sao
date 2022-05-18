@@ -73,7 +73,7 @@
                 var ctx = {
                     active_model: data.model || null,
                     active_id: data.id || null,
-                    active_ids: data.ids
+                    active_ids: data.ids || [],
                 };
                 ctx = jQuery.extend(ctx, session.context);
                 ctx._user = session.user_id;
@@ -166,7 +166,7 @@
             var keyact = {};
             for (var i in actions) {
                 var action = actions[i];
-                keyact[action.name.replace(/_/g, '')] = action;
+                keyact[action.name.split(' / ').pop()] = action;
             }
             var prm = Sao.common.selection(
                     Sao.i18n.gettext('Select your action'),

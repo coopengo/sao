@@ -1267,7 +1267,7 @@
             }).text(el_field.attr('name')).prepend(
                 Sao.common.ICONFACTORY.get_icon_img('tryton-drag')
             ).click(function(e) {
-                if (e.ctrlKey) {
+                if (e.ctrlKey || e.metaKey) {
                     node.toggleClass('bg-primary');
                 } else {
                     jQuery(e.target).addClass('bg-primary')
@@ -1291,7 +1291,7 @@
                     'field': parent_node[field].field,
                     'name': parent_node[field].name
                 }).text(name).click(function(e) {
-                    if(e.ctrlKey) {
+                    if (e.ctrlKey || e.metaKey) {
                         node.toggleClass('bg-primary');
                     } else {
                         this.fields_all.find('li').removeClass('bg-primary');
@@ -1357,7 +1357,7 @@
             }.bind(this));
         },
         children_expand: function(node) {
-            if (jQuery.isEmptyObject(node.children)) {
+            if (jQuery.isEmptyObject(node.children) && node.relation) {
                 this.model_populate(
                     this._get_fields(node.relation), node.children,
                     node.field + '/', node.name + '/');
@@ -1427,9 +1427,10 @@
                 if (field.name == (prefix + parents[i]) ||
                     field.field == (prefix + parents[i])) {
                     this.children_expand(field);
-                    fields = field.children;
                     prefix += parents[i] + '/';
-                    this._traverse(fields, prefix, parents, ++i);
+                    if (field.children) {
+                        this._traverse(field.children, prefix, parents, ++i);
+                    }
                     break;
                 }
             }
@@ -1646,7 +1647,7 @@
                 var node = jQuery('<li/>', {
                     'path': path
                 }).text(parent_node[name].string).click(function(e) {
-                    if(e.ctrlKey) {
+                    if (e.ctrlKey || e.metaKey) {
                         node.toggleClass('bg-primary');
                     } else {
                         this.fields_all.find('li')
@@ -1732,7 +1733,7 @@
             }.bind(this));
         },
         children_expand: function(node) {
-            if (jQuery.isEmptyObject(node.children)) {
+            if (jQuery.isEmptyObject(node.children) && node.relation) {
                 this.model_populate(
                     this._get_fields(node.relation), node.children,
                     node.path + '/', node.long_string + '/');
@@ -1877,9 +1878,10 @@
                 field = fields[names[item]];
                 if (field.path == (prefix + parents[i])) {
                     this.children_expand(field);
-                    fields = field.children;
                     prefix += parents[i] + '/';
-                    this._traverse(fields, prefix, parents, ++i);
+                    if (field.children) {
+                        this._traverse(field.children, prefix, parents, ++i);
+                    }
                     break;
                 }
             }
@@ -1894,7 +1896,7 @@
                 'path': name,
                 'class': 'draggable-handle',
             }).text(long_string).click(function(e) {
-                if(e.ctrlKey) {
+                if (e.ctrlKey || e.metaKey) {
                     node.toggleClass('bg-primary');
                 } else {
                     jQuery(e.target).addClass('bg-primary')
