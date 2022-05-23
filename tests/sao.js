@@ -102,6 +102,9 @@
             "decode(Eval('test', 0))");
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), 0,
             "decode(Eval('test', 0))");
+        QUnit.strictEqual(
+            new Sao.PYSON.Decoder({test: undefined}).decode(eval_), 0,
+            "decode(Eval('test', 0))");
     });
 
     QUnit.test('PYSON Not', function() {
@@ -468,18 +471,18 @@
             'Date(2020, 0, 2)))');
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
-            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
-            Sao.Date(2020, 0, 1, true)));
-        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-            'decode(Greater(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), ' +
-            'Date(2020, 0, 1, true)))');
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1000),
+            Sao.Date(2020, 0, 1)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            'decode(Greater(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1000), ' +
+            'Date(2020, 0, 1)))');
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
             new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
-            Sao.Date(2020, 0, 1, true), true));
+            Sao.Date(2020, 0, 1), true));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
             'decode(Greater(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), ' +
-            'Date(2020, 0, 1, true), true))');
+            'Date(2020, 0, 1), true))');
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
             new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
@@ -490,7 +493,7 @@
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
             new Sao.PYSON.Date(2020, 1, 1),
-            Sao.Date(2020, 0, 1, true)));
+            Sao.Date(2020, 0, 1)));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
             'decode(Greater(PYSON.Date(2020, 1, 1), Date(2020, 0, 1)))');
 
@@ -587,10 +590,10 @@
                 "Less(0, 1, false)");
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
-            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1000),
             Sao.Date(2020, 0, 1)));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-            'decode(Less(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), ' +
+            'decode(Less(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1000), ' +
             'Date(2020, 0, 1)))');
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
@@ -615,10 +618,10 @@
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
             new Sao.PYSON.Date(2020, 1, 1),
-            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 1, 0)));
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1000)));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
             'decode(Less(PYSON.Date(2020, 1, 1), ' +
-            'PYSON.DateTime(2020, 1, 1, 0, 0, 1, 0)))');
+            'PYSON.DateTime(2020, 1, 1, 0, 0, 1000)))');
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
             new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
@@ -769,6 +772,12 @@
             new Sao.PYSON.In('test', []));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
                 "decode(In('test', []))");
+
+        eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.In('test', new Sao.PYSON.Eval('foo', [])));
+        QUnit.strictEqual(new Sao.PYSON.Decoder({'foo': null}).decode(eval_),
+            false, "decode(In('test', Eval('foo', [])))");
+
         QUnit.strictEqual(new Sao.PYSON.In('foo', ['foo', 'bar']).toString(),
                 'In("foo", ["foo", "bar"])');
     });
@@ -817,27 +826,27 @@
         eval_ = new Sao.PYSON.Encoder().encode(
                 new Sao.PYSON.Date(2010, 1, 12));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_).valueOf(),
-                Sao.Date(2010, 0, 12, true).valueOf());
+                new Date(2010, 0, 12).valueOf());
 
         eval_ = new Sao.PYSON.Encoder().encode(
                 new Sao.PYSON.Date(2010, 1, 12, -1));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_).valueOf(),
-                Sao.Date(2009, 0, 12, true).valueOf());
+                new Date(2009, 0, 12).valueOf());
 
         eval_ = new Sao.PYSON.Encoder().encode(
                 new Sao.PYSON.Date(2010, 1, 12, 0, 12));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_).valueOf(),
-                Sao.Date(2011, 0, 12, true).valueOf());
+                new Date(2011, 0, 12).valueOf());
 
         eval_ = new Sao.PYSON.Encoder().encode(
                 new Sao.PYSON.Date(2010, 1, 12, 0, 0, -7));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_).valueOf(),
-                Sao.Date(2010, 0, 5, true).valueOf());
+                new Date(2010, 0, 5).valueOf());
 
         eval_ = new Sao.PYSON.Encoder().encode(
                 new Sao.PYSON.Date(2010, 2, 22));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_).valueOf(),
-                Sao.Date(2010, 1, 22, true).valueOf());
+                new Date(2010, 1, 22).valueOf());
 
         QUnit.strictEqual(
             new Sao.PYSON.Date(2010, 1, 12, -1, 12, -7).toString(),
@@ -866,7 +875,7 @@
 
         QUnit.strictEqual(new Sao.PYSON.Decoder(
             {'datetime': datetime}).decode(eval_).valueOf(),
-            Sao.Date(2000, 1, 1, true).valueOf());
+            Sao.Date(2000, 1, 1).valueOf());
 
         eval_ = new Sao.PYSON.Encoder().encode(
             new Sao.PYSON.Date(
@@ -876,7 +885,7 @@
 
         QUnit.strictEqual(new Sao.PYSON.Decoder(
             {'foo': 'bar'}).decode(eval_).valueOf(),
-            Sao.Date(undefined, undefined, undefined, true).valueOf());
+            Sao.Date().valueOf());
     });
 
     QUnit.test('PYSON DateTime', function() {
@@ -1229,6 +1238,20 @@
                 new Sao.PYSON.Decoder(ctx).decode(eval_), result,
                 "decode(" + JSON.stringify(ctx) + ")");
         });
+    });
+
+    QUnit.test('PYSON.EVal dot notation in context', function() {
+        var eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.Eval('foo.bar', 0));
+        var ctx = {
+            'foo.bar': 1,
+            'foo': {
+                'bar': 0,
+            },
+        };
+        QUnit.strictEqual(
+            new Sao.PYSON.Decoder(ctx).decode(eval_), 1,
+            "decode(" + JSON.stringify(ctx) + ")");
     });
 
     QUnit.test('PYSON eval', function() {
@@ -2133,7 +2156,7 @@
         [[['name', 'ilike', '%<%']], 'Name: "" "<"'],
         [[['name', 'ilike', 'Doe']], 'Name: =Doe'],
         [[['name', 'ilike', 'Doe%']], 'Name: Doe%'],
-        [[['name', 'ilike', 'Doe%%']], 'Name: =Doe%'],
+        [[['name', 'ilike', 'Doe\\%']], 'Name: =Doe%'],
         [[['name', 'not ilike', '%Doe%']], 'Name: !Doe'],
         [[['name', 'in', ['John', 'Jane']]], 'Name: John;Jane'],
         [[['name', 'not in', ['John', 'Jane']]], 'Name: !John;Jane'],

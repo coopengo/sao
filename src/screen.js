@@ -637,7 +637,7 @@
         init: function(format, id) {
             this.format = format;
             Sao.ScreenContainer.BetweenDates._super.init.call(this, id);
-            this.from.on('dp.change', this._from_changed.bind(this));
+            this.from.change(this._from_changed.bind(this));
         },
         _get_value: function(entry, value) {
             return entry.find('input[type=text]').val();
@@ -698,11 +698,11 @@
                     var value = this._parse(this.format, date.val());
                     value = this._format(this.format, value);
                     date.val(value);
-                });
+                }.bind(this));
                 mousetrap.bind('=', function(e, combo) {
                     e.preventDefault();
                     date.val(this._format(this.format, moment()));
-                });
+                }.bind(this));
 
                 Sao.common.DATE_OPERATORS.forEach(function(operator) {
                     mousetrap.bind(operator[0], function(e, combo) {
@@ -1315,8 +1315,8 @@
             if (set_cursor === undefined) {
                 set_cursor = true;
             }
-            this.tree_states_done = [];
             this.group.load(ids, modified);
+            this.current_view.reset();
             if (ids.length && this.current_view.view_type != 'calendar') {
                 this.current_record = this.group.get(ids[0]);
             } else {
@@ -1451,6 +1451,7 @@
         clear: function() {
             this.current_record = null;
             this.group.clear();
+            this.tree_states_done = [];
             this.views.map(function(view) {
                 view.reset();
             });
@@ -1758,7 +1759,9 @@
                 if (props.selection instanceof Array) {
                     continue;
                 }
+                props = jQuery.extend({}, props);
                 props.selection = this.get_selection(props);
+                fields[name] = props;
             }
 
             if ('arch' in view_tree) {
@@ -2011,12 +2014,11 @@
                         var values = record._get_on_change_args(args);
                         return record.model.execute(attributes.name, [values],
                             this.context).then(function(changes) {
-                                record.set_on_change(changes);
-                                record._set_modified();
-                                record.group.root_group.screens.forEach(
-                                    function(screen) {
-                                        screen.display();
-                                    });
+                            record.set_on_change(changes);
+                            record.group.changed();
+                            record.group.root_group.screens.forEach(
+                                function(screen) {
+                                    screen.display();
                             });
                     } else {
                         return record.save(false).then(function() {

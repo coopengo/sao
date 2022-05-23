@@ -252,21 +252,31 @@
                 this.buttons[item.id].click(item, function(event) {
                     var item = event.data;
                     var button = this.buttons[item.id];
-                    button.prop('disabled', true);
+                    // Use data instead of disabled prop because the action may
+                    // actually disable the button.
+                    if (button.data('disabled')) {
+                        event.preventDefault();
+                        return;
+                    }
+                    button.data('disabled', true);
                     (this[item.id](this) || jQuery.when())
                         .always(function() {
-                            button.prop('disabled', false);
+                            button.data('disabled', false);
                         });
                 }.bind(this));
             };
             this.menu_def().forEach(add_button.bind(this));
-            this.status_label = jQuery('<span/>', {
-                'class': 'badge',
-            }).appendTo(jQuery('<div/>', {
-                'class': 'navbar-text hidden-xs',
-            }).insertAfter(this.buttons.previous));
-            this.buttons.previous.addClass('hidden-xs');
-            this.buttons.next.addClass('hidden-xs');
+            if (this.buttons.previous) {
+                this.status_label = jQuery('<span/>', {
+                    'class': 'badge',
+                }).appendTo(jQuery('<div/>', {
+                    'class': 'navbar-text hidden-xs',
+                }).insertAfter(this.buttons.previous));
+                this.buttons.previous.addClass('hidden-xs');
+            }
+            if (this.buttons.next) {
+                this.buttons.next.addClass('hidden-xs');
+            }
             toolbar.find('.btn-toolbar > .btn-group').last()
                 .addClass( 'hidden-xs')
                 .find('.dropdown')
@@ -418,6 +428,12 @@
             id: tab.id
         }).append(tab.el)
         .appendTo(tabcontent);
+        tab_link.on('hide.bs.tab', function(evt) {
+            jQuery(evt.target).data('scrollTop', tabs.scrollTop());
+        });
+        tab_link.on('shown.bs.tab', function(evt) {
+            tabs.scrollTop(jQuery(evt.target).data('scrollTop') || 0);
+        });
         tab_link.tab('show');
         tabs.trigger('ready');
     };
@@ -503,22 +519,20 @@
         create_toolbar: function() {
             var toolbar = Sao.Tab.Form._super.create_toolbar.call(this);
             var screen = this.screen;
-            var buttons = this.buttons;
-            var prm = screen.model.execute('view_toolbar_get', [],
-                screen.context);
-            prm.done(function(toolbars) {
-                [
+            var toolbars = screen.model.execute(
+                'view_toolbar_get', [], screen.context, false);
+            [
                 ['action', 'tryton-launch',
                     Sao.i18n.gettext('Launch action')],
                 ['relate', 'tryton-link',
-                     Sao.i18n.gettext('Open related records')],
+                    Sao.i18n.gettext('Open related records')],
                 ['print', 'tryton-print',
-                     Sao.i18n.gettext('Print report')]
-                ].forEach(function(menu_action) {
-                    var button = jQuery('<div/>', {
-                        'class': 'btn-group dropdown',
-                        'role': 'group'
-                    })
+                    Sao.i18n.gettext('Print report')]
+            ].forEach(function(menu_action) {
+                var dropdown = jQuery('<div/>', {
+                    'class': 'btn-group dropdown',
+                    'role': 'group'
+                })
                     .append(jQuery('<button/>', {
                         'type': 'button',
                         'class': 'btn btn-default navbar-btn dropdown-toggle',
@@ -541,38 +555,39 @@
                         'aria-labelledby': menu_action[0]
                     }))
                     .insertBefore(toolbar.find('button#email'));
-                    buttons[menu_action[0]] = button;
-                    var dropdown = button
-                        .on('show.bs.dropdown', function() {
-                            jQuery(this).parents('.btn-group').removeClass(
-                                    'hidden-xs');
-                        }).on('hide.bs.dropdown', function() {
-                            jQuery(this).parents('.btn-group').addClass(
-                                    'hidden-xs');
+                var button = dropdown.find('button');
+                this.buttons[menu_action[0]] = button;
+                dropdown
+                    .on('show.bs.dropdown', function() {
+                        jQuery(this).parents('.btn-group').removeClass(
+                            'hidden-xs');
+                    }).on('hide.bs.dropdown', function() {
+                        jQuery(this).parents('.btn-group').addClass(
+                            'hidden-xs');
+                    });
+                var menu = dropdown.find('.dropdown-menu');
+                button.click(function() {
+                    menu.find([
+                        '.' + menu_action[0] + '_button',
+                        '.divider-button',
+                        '.' + menu_action[0] + '_plugin',
+                        '.divider-plugin'].join(',')).remove();
+                    var buttons = screen.get_buttons().filter(
+                        function(button) {
+                            return menu_action[0] == (
+                                button.attributes.keyword || 'action');
                         });
-                    var menu = button.find('.dropdown-menu');
-                    button.click(function() {
-                        menu.find([
-                            '.' + menu_action[0] + '_button',
-                            '.divider-button',
-                            '.' + menu_action[0] + '_plugin',
-                            '.divider-plugin'].join(',')).remove();
-                        var buttons = screen.get_buttons().filter(
-                            function(button) {
-                                return menu_action[0] == (
-                                    button.attributes.keyword || 'action');
-                            });
-                        if (buttons.length) {
-                            menu.append(jQuery('<li/>', {
-                                'role': 'separator',
-                                'class': 'divider divider-button',
-                            }));
-                        }
-                        buttons.forEach(function(button) {
-                            var item = jQuery('<li/>', {
-                                'role': 'presentation',
-                                'class': menu_action[0] + '_button'
-                            })
+                    if (buttons.length) {
+                        menu.append(jQuery('<li/>', {
+                            'role': 'separator',
+                            'class': 'divider divider-button',
+                        }));
+                    }
+                    buttons.forEach(function(button) {
+                        var item = jQuery('<li/>', {
+                            'role': 'presentation',
+                            'class': menu_action[0] + '_button'
+                        })
                             .append(
                                 jQuery('<a/>', {
                                     'role': 'menuitem',
@@ -584,40 +599,40 @@
                                 evt.preventDefault();
                                 screen.button(button.attributes);
                             })
-                        .appendTo(menu);
-                        });
+                            .appendTo(menu);
+                    });
 
-                        var kw_plugins = [];
-                        Sao.Plugins.forEach(function(plugin) {
-                            plugin.get_plugins(screen.model.name).forEach(
-                                function(spec) {
-                                    var name = spec[0],
-                                        func = spec[1],
-                                        keyword = spec[2] || 'action';
-                                    if (keyword != menu_action[0]) {
-                                        return;
-                                    }
-                                    kw_plugins.push([name, func]);
-                                });
-                        });
-                        if (kw_plugins.length) {
-                            menu.append(jQuery('<li/>', {
-                                'role': 'separator',
-                                'class': 'divider divider-plugin',
-                            }));
-                        }
-                        kw_plugins.forEach(function(plugin) {
-                            var name = plugin[0],
-                                func = plugin[1];
-                            jQuery('<li/>', {
-                                'role': 'presentation',
-                                'class': menu_action[0] + '_plugin',
-                            }).append(
-                                jQuery('<a/>', {
-                                    'role': 'menuitem',
-                                    'href': '#',
-                                    'tabindex': -1,
-                                }).text(name))
+                    var kw_plugins = [];
+                    Sao.Plugins.forEach(function(plugin) {
+                        plugin.get_plugins(screen.model.name).forEach(
+                            function(spec) {
+                                var name = spec[0],
+                                    func = spec[1],
+                                    keyword = spec[2] || 'action';
+                                if (keyword != menu_action[0]) {
+                                    return;
+                                }
+                                kw_plugins.push([name, func]);
+                            });
+                    });
+                    if (kw_plugins.length) {
+                        menu.append(jQuery('<li/>', {
+                            'role': 'separator',
+                            'class': 'divider divider-plugin',
+                        }));
+                    }
+                    kw_plugins.forEach(function(plugin) {
+                        var name = plugin[0],
+                            func = plugin[1];
+                        jQuery('<li/>', {
+                            'role': 'presentation',
+                            'class': menu_action[0] + '_plugin',
+                        }).append(
+                            jQuery('<a/>', {
+                                'role': 'menuitem',
+                                'href': '#',
+                                'tabindex': -1,
+                            }).text(name))
                             .click(function(evt) {
                                 evt.preventDefault();
                                 var ids = screen.current_view.selected_records
@@ -637,13 +652,13 @@
                                 });
                             })
                             .appendTo(menu);
-                        });
                     });
+                });
 
-                    toolbars[menu_action[0]].forEach(function(action) {
-                        var item = jQuery('<li/>', {
-                            'role': 'presentation'
-                        })
+                toolbars[menu_action[0]].forEach(function(action) {
+                    var item = jQuery('<li/>', {
+                        'role': 'presentation'
+                    })
                         .append(jQuery('<a/>', {
                             'role': 'menuitem',
                             'href': '#',
@@ -682,19 +697,26 @@
                             });
                         }.bind(this))
                         .appendTo(menu);
-                    }.bind(this));
+                }.bind(this));
 
-                    if (menu_action[0] == 'print') {
-                        if (toolbars.exports.length && toolbars.print.length) {
-                            menu.append(jQuery('<li/>', {
-                                'role': 'separator',
-                                'class': 'divider',
-                            }));
-                        }
-                        toolbars.exports.forEach(function(export_) {
-                            var item = jQuery('<li/>', {
-                                'role': 'presentation',
-                            })
+                if (menu_action[0] != 'action') {
+                    button._can_be_sensitive = Boolean(
+                        menu.children().length);
+                }
+
+                if ((menu_action[0] == 'print') &&
+                    toolbars.exports.length) {
+                    button._can_be_sensitive = true;
+                    if (toolbars.print.length) {
+                        menu.append(jQuery('<li/>', {
+                            'role': 'separator',
+                            'class': 'divider',
+                        }));
+                    }
+                    toolbars.exports.forEach(function(export_) {
+                        var item = jQuery('<li/>', {
+                            'role': 'presentation',
+                        })
                             .append(jQuery('<a/>', {
                                 'role': 'menuitem',
                                 'href': '#',
@@ -705,9 +727,8 @@
                                 this.do_export(export_);
                             }.bind(this))
                             .appendTo(menu);
-                        }.bind(this));
-                    }
-                }.bind(this));
+                    }.bind(this));
+                }
             }.bind(this));
             this.buttons.attach
                 .on('dragover', false)
@@ -740,11 +761,19 @@
                     JSON.stringify(attributes.context)) &&
                 (compare(
                     this.attributes.search_value || [],
-                    attributes.search_value || []))
+                    attributes.search_value || [])) &&
+                (JSON.stringify(this.screen.attributes.tab_domain) ===
+                    JSON.stringify(attributes.tab_domain))
             );
         },
         _close_allowed: function() {
-            return this.modified_save();
+            return this.modified_save().then(null, function(result) {
+                if (result) {
+                    return jQuery.Deferred().resolve();
+                } else {
+                    return jQuery.Deferred().reject();
+                }
+            });
         },
         modified_save: function() {
             this.screen.save_tree_state();
@@ -760,13 +789,14 @@
                             case 'ko':
                                 var record_id = this.screen.current_record.id;
                                 return this.reload(false).then(function() {
-                                    if (this.screen.current_record) {
+                                    if (record_id < 0) {
+                                        return jQuery.Deferred().reject(true);
+                                    }
+                                    else if (this.screen.current_record) {
                                         if (record_id !=
                                             this.screen.current_record.id) {
                                             return jQuery.Deferred().reject();
                                         }
-                                    } else if (record_id < 0) {
-                                        return jQuery.Deferred().resolve();
                                     }
                                 }.bind(this));
                             default:
@@ -1373,7 +1403,8 @@
                 resources = {};
             }
             var record_id = this.screen.get_id();
-            var disabled = record_id < 0 || record_id === null;
+            var disabled = (
+                record_id < 0 || record_id === null || record_id === undefined);
 
             var update = function(name, title, text, color) {
                 var button = this.buttons[name];
@@ -1429,13 +1460,25 @@
                 if (data[0] !== 0) {
                     name = data[0];
                 }
-                var buttons = ['print', 'relate', 'attach'];
+                var buttons = ['print', 'relate', 'email', 'save', 'attach'];
                 buttons.forEach(function(button_id){
                     var button = this.buttons[button_id];
-                    if (button) {
-                        var disabled = button.is(':disabled');
-                        button.prop('disabled', disabled || data[0] === 0);
+                    var can_be_sensitive = button._can_be_sensitive;
+                    if (can_be_sensitive === undefined) {
+                        can_be_sensitive = true;
                     }
+                    if ((button_id == 'print') ||
+                        (button_id == 'relate') ||
+                        (button_id == 'email')) {
+                        can_be_sensitive |= this.screen.get_buttons().some(
+                            function(button) {
+                                var keyword = button.attributes.keyword || 'action';
+                                return keyword == button_id;
+                            });
+                    } else if (button_id == 'save') {
+                        can_be_sensitive &= !this.screen.readonly;
+                    }
+                    button.prop('disabled', !(data[0] && can_be_sensitive));
                 }.bind(this));
                 this.buttons.switch_.prop('disabled',
                     this.attributes.view_ids > 1);
@@ -1446,7 +1489,9 @@
                     'disabled', this.screen.readonly);
 
                 var msg = name + ' / ' + Sao.common.humanize(data[1]);
-                if (data[1] < data[2]) {
+                if ((data[1] < data[2]) &&
+                    this.screen.limit !== null &&
+                    (data[2] > this.screen.limit)) {
                     msg += Sao.i18n.gettext(' of ') + Sao.common.humanize(data[2]);
                 }
                 this.status_label.text(msg).attr('title', msg);
@@ -1457,17 +1502,17 @@
         },
         action: function() {
             window.setTimeout(function() {
-                this.buttons.action.find('button').click();
+                this.buttons.action.click();
             }.bind(this));
         },
         relate: function() {
             window.setTimeout(function() {
-                this.buttons.relate.find('button').click();
+                this.buttons.relate.click();
             }.bind(this));
         },
         print: function() {
             window.setTimeout(function() {
-                this.buttons.print.find('button').click();
+                this.buttons.print.click();
             }.bind(this));
         },
         export: function(){
@@ -1616,7 +1661,7 @@
             this.title.text(this.name_el.text());
             this.content.remove();
             this.content = wizard.form;
-            this.el.append(wizard.form);
+            this.main.css('padding-top', 0).append(wizard.form);
         },
         create_toolbar: function() {
             return jQuery('<span/>');

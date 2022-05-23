@@ -431,7 +431,7 @@
 
             var parent_row = null;
             var dest_position;
-            if (evt.ctrlKey && this.children_field) {
+            if ((evt.ctrlKey || evt.metaKey) && this.children_field) {
                 parent_row = this._find_row(row.el.prev());
                 dest_position = (parent_row || this).rows.length;
             } else {
@@ -709,8 +709,8 @@
                     !column.col.hasClass('selection-state') &&
                     !column.col.hasClass('favorite')) {
                     var width, c_width;
-                    if (column.width) {
-                        width = c_width = column.width;
+                    if (column.attributes.width) {
+                        width = c_width = column.attributes.width;
                         min_width.push(width + 'px');
                     } else {
                         width = {
@@ -1331,6 +1331,18 @@
                 this.select_column(event_.data.index);
             }.bind(this);
 
+            if (this.children_field) {
+                this.expander = jQuery('<span/>', {
+                    'class': 'expander',
+                }).append('<img/>', {
+                    'tabindex': 0,
+                    'class': 'icon',
+                });
+                this.expander.children().html('&nbsp;');
+                this.expander.on('click keypress',
+                        Sao.common.click_press(this.toggle_row.bind(this)));
+            }
+
             for (var i = 0; i < this.tree.columns.length; i++) {
                 var column = this.tree.columns[i];
                 if (column instanceof Sao.View.Tree.ButtonColumn) {
@@ -1357,18 +1369,6 @@
                     'class': 'cell',
                 });
                 td.append(cell);
-                if ((i === 0) && this.children_field) {
-                    this.expander = jQuery('<img/>', {
-                        'tabindex': 0,
-                        'class': 'icon',
-                    });
-                    this.expander.html('&nbsp;');
-                    this.expander.on('click keypress',
-                            Sao.common.click_press(this.toggle_row.bind(this)));
-                    cell.append(jQuery('<span/>', {
-                        'class': 'expander'
-                    }).append(this.expander));
-                }
                 var j;
                 if (column.prefixes) {
                     for (j = 0; j < column.prefixes.length; j++) {
@@ -1506,6 +1506,21 @@
                     }
                 }
             }
+            if (this.children_field) {
+                this.tree.columns.every(function(column, i) {
+                    if (column.col.hasClass('draggable-handle') ||
+                        column.header.hasClass('invisible')) {
+                        return true;
+                    } else {
+                        var td = this._get_column_td(i);
+                        var cell = td.find('.cell');
+                        if (this.expander.parent()[0] !== cell[0]) {
+                            cell.prepend(this.expander);
+                        }
+                        return false;
+                    }
+                }.bind(this));
+            }
             this._drawed_record = this.record.identity;
 
             var row_id_path = this.get_id_path();
@@ -1516,7 +1531,7 @@
                 if (Sao.i18n.rtl) {
                     margin = 'margin-right';
                 }
-                this.expander.css(margin, (depth - 1) + 'em');
+                this.expander.children().css(margin, (depth - 1) + 'em');
 
                 var update_expander = function() {
                     var length = this.record.field_get_client(
@@ -1574,7 +1589,7 @@
             }
             Sao.common.ICONFACTORY.get_icon_url(icon)
                 .then(function(url) {
-                    this.expander.attr('src', url);
+                    this.expander.children().attr('src', url);
                 }.bind(this));
         },
         collapse_children: function() {
@@ -1649,7 +1664,7 @@
                     current_record = this.tree.screen.current_record;
                     this.tree.select_records(current_record, this.record);
                 } else {
-                    if (!event_.ctrlKey ||
+                    if (!(event_.ctrlKey || event_.metaKey) ||
                         this.tree.selection_mode ==
                         Sao.common.SELECTION_SINGLE) {
                         this.tree.select_records(null, null);
@@ -1836,7 +1851,7 @@
 
             Sao.View.Tree.RowEditable._super.select_row.call(this, event_);
 
-            if (!event_.shiftKey && !event_.ctrlKey) {
+            if (!event_.shiftKey && !(event_.ctrlKey || event_.metaKey)) {
                 this.tree.edit_row(this);
             }
         },
@@ -2002,9 +2017,13 @@
                                             }.bind(this));
                                     }
                                 } else {
-                                    this._get_column_td(next_column, next_row)
-                                        .trigger('click')
-                                        .find(':input,[tabindex=0]').focus();
+                                    prm.then(function() {
+                                        this._get_column_td(
+                                            next_column, next_row)
+                                            .trigger('click')
+                                            .find(':input,[tabindex=0]')
+                                            .focus();
+                                    }.bind(this));
                                 }
                             }
                         }.bind(this));
@@ -2319,8 +2338,9 @@
                     var params = {};
                     params.model = this.attributes.relation;
                     params.res_id = this.field.get(record);
-                    params.mode = ['form', 'tree'];
+                    params.mode = ['form'];
                     params.name = this.attributes.string;
+                    params.context = this.field.get_context(record);
                     Sao.Tab.create(params);
                 }
             }.bind(this));
@@ -2679,10 +2699,14 @@
             if (states.invisible || states.readonly) {
                 return;
             }
-            button.el.prop('disabled', true);
-            this.view.screen.button(this.attributes).always(function() {
-                button.el.prop('disabled', false);
+            button.el.prop('disabled', true);  // state will be reset at display
+            var row = this.view.rows.find(function(row) {
+                return row.record == record;
             });
+            if (row) {
+                row._drawed_record = null;  // force redraw the row
+            }
+            this.view.screen.button(this.attributes);
         }
     });
 

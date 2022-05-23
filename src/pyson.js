@@ -173,13 +173,13 @@
 
     Sao.PYSON.Eval.eval_ = function(value, context) {
         var idx = value.v.indexOf('.');
-        if (idx >= 0) {
+        if ((idx >= 0) && !(value.v in context)) {
             return Sao.PYSON.Eval.eval_({
                 'v': value.v.substring(idx + 1),
                 'd': value.d,
             }, context[value.v.substring(0, idx)] || {});
         }
-        if (value.v in context) {
+        if ((value.v in context) && (context[value.v] !== undefined)) {
             return context[value.v];
         } else {
             return value.d;
@@ -453,7 +453,7 @@
         var values = [value.s1, value.s2];
         for (var i=0; i < 2; i++) {
             if (values[i] instanceof moment) {
-                values[i] = values[i].unix();
+                values[i] = values[i].valueOf();
             }
             else {
                 values[i] = Number(values[i]);
@@ -682,10 +682,14 @@
     });
 
     Sao.PYSON.In.eval_ = function(value, context) {
-        if (value.v.indexOf) {
-            return Boolean(~value.v.indexOf(value.k));
+        if (value.v) {
+            if (value.v.indexOf) {
+                return Boolean(~value.v.indexOf(value.k));
+            } else {
+                return !!value.v[value.k];
+            }
         } else {
-            return !!value.v[value.k];
+            return false;
         }
     };
     Sao.PYSON.In.init_from_object = function(obj) {
@@ -760,10 +764,10 @@
     Sao.PYSON.Date.eval_ = function(value, context) {
         var date = value.start;
         if (date && date.isDateTime) {
-            date = Sao.Date(date.year(), date.month(), date.date(), true);
+            date = Sao.Date(date.year(), date.month(), date.date());
         }
         if (!date || !date.isDate) {
-            date = Sao.Date(undefined, undefined, undefined, true);
+            date = Sao.Date();
         }
         if (value.y) date.year(value.y);
         if (value.M) date.month(value.M - 1);

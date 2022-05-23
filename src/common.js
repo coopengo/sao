@@ -245,7 +245,7 @@
     };
 
     Sao.common.parse_time = function(format, value) {
-        if (jQuery.isEmptyObject(value)) {
+        if (!value) {
             return null;
         }
         var getNumber = function(pattern) {
@@ -1198,8 +1198,7 @@
                     name = name.slice(0, -9);
                 }
                 if (!(name in this.fields)) {
-                    escaped = value.replace('%%', '__');
-                    if (escaped.startsWith('%') && escaped.endsWith('%')) {
+                    if (this.is_full_text(value)) {
                         value = value.slice(1, -1);
                     }
                     return this.quote(value);
@@ -1210,16 +1209,15 @@
                     target = clause[3];
                 }
                 if (operator.contains('ilike')) {
-                    escaped = value.replace('%%', '__');
-                    if (escaped.startsWith('%') && escaped.endsWith('%')) {
+                    if (this.is_full_text(value)) {
                         value = value.slice(1, -1);
-                    } else if (!escaped.contains('%')) {
+                    } else if (!this.is_like(value)) {
                         if (operator == 'ilike') {
                             operator = '=';
                         } else {
                             operator = '!';
                         }
-                        value = value.replace('%%', '%');
+                        value = this.unescape(value);
                     }
                 }
                 var def_operator = this.default_operator(field);
@@ -1855,6 +1853,36 @@
                 return '%' + value + '%';
             }
         },
+        is_full_text: function(value, escape) {
+            escape = escape || '\\';
+            var escaped = value;
+            while (escaped.charAt(0) == '%') {
+                escaped = escaped.substring(1);
+            }
+            while (escaped.charAt(escaped.length - 1) == '%') {
+                escaped = escaped.substring(0, escaped.length - 1);
+            }
+            escaped = escaped
+                .replace(escape + '%', '')
+                .replace(escape + '_', '');
+            if (escaped.contains('%') || escaped.contains('_')) {
+                return false;
+            }
+            return value.startsWith('%') && value.endsWith('%');
+        },
+        is_like: function(value, escape) {
+            escape = escape || '\\';
+            var escaped = value
+                .replace(escape + '%', '')
+                .replace(escape + '_', '');
+            return escaped.contains('%') || escaped.contains('_');
+        },
+        unescape: function(value, escape) {
+            escape = escape || '\\';
+            return value
+                .replace(escape + '%', '%')
+                .replace(escape + '_', '_');
+        },
         quote: function(value) {
             if (typeof value != 'string') {
                 return value;
@@ -1876,7 +1904,7 @@
         },
         default_operator: function(field) {
             if (~['char', 'text', 'many2one', 'many2many', 'one2many',
-                    'reference'].indexOf(field.type)) {
+                    'reference', 'one2one'].indexOf(field.type)) {
                 return 'ilike';
             } else if (field.type == 'multiselection') {
                 return 'in';
@@ -3219,8 +3247,8 @@
             // dialog.body.append(jQuery('<div/>', {
             //     'class': 'checkbox',
             // }).append(jQuery('<label/>')
-            //     .append(always)
-            //     .text(Sao.i18n.gettext('Always ignore this warning.')))
+            //     .text(Sao.i18n.gettext("Always ignore this warning."))
+            //     .prepend(always))
             // );
             dialog.body.append(jQuery('<p/>')
                     .text(Sao.i18n.gettext('Do you want to proceed?')));
@@ -3545,7 +3573,6 @@
             } else {
                 el.wrap('<div class="dropdown"/>');
                 this.dropdown = el.parent();
-                this.dropdown.css('display', 'table');
             }
             this.input = el.find('input').add(el.filter('input')).first();
             this.input.attr('autocomplete', 'off');
