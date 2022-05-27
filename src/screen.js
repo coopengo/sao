@@ -2020,6 +2020,7 @@
                                 function(screen) {
                                     screen.display();
                             });
+                        });
                     } else {
                         return record.save(false).then(function() {
                             var context = this.context;
