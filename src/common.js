@@ -3980,8 +3980,7 @@
     };
 
     Sao.common.debounce = function(func, wait) {
-        return () => {
-            var args = [].slice(arguments);
+        return (...args) => {
             clearTimeout(func._debounceTimeout);
             func._debounceTimeout = setTimeout(() => {
                 func.apply(this, args);
