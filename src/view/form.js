@@ -242,6 +242,7 @@ function eval_pyson(value){
             this.notebooks = [];
             this.expandables = [];
             this.containers = [];
+            this.widget_groups = {};
             this.widget_id = 0;
             Sao.View.Form._super.init.call(this, view_id, screen, xml);
         },
@@ -3501,15 +3502,27 @@ function eval_pyson(value){
                 pre_validate: attributes.pre_validate,
                 breadcrumb: breadcrumb,
             });
-            // [Coog specific]
-            // > multi_mixed_view see tryton/8fa02ed59d03aa52600fb8332973f6a88d46d8c0
-            if (attributes.group)
-                this.screen.parent = this;
             this.screen.pre_validate = attributes.pre_validate == 1;
 
             this.screen.message_callback = this.record_label.bind(this);
             this.prm = this.screen.switch_view().done(function() {
                 this.content.append(this.screen.screen_container.el);
+
+                // [Coog specific]
+                var wgroup;
+                if (attributes.group) {
+                    this.screen._multiview_form = view;
+                    this.screen._multiview_group = attributes.group;
+                    if (!(attributes.group in view.widget_groups)) {
+                        view.widget_groups[attributes.group] = [];
+                    }
+                    wgroup = view.widget_groups[attributes.group];
+                    if (this.screen.current_view.view_type == 'tree') {
+                        wgroup.unshift(this);
+                    } else {
+                        wgroup.push(this);
+                    }
+                }
             }.bind(this));
 
             if (attributes.add_remove) {
@@ -3518,108 +3531,6 @@ function eval_pyson(value){
             }
 
             this.but_switch.prop('disabled', this.screen.number_of_views <= 0);
-        },
-        // [Coog specific]
-        // > multi_mixed_view see tryton/8fa02ed59d03aa52600fb8332973f6a88d46d8c0
-        group_sync: function(screen, current_record){
-            if (this.attributes.mode == 'form')
-                return;
-            if (!this.view || !this.view.widgets)
-                return;
-
-            function is_compatible(screen, record){
-                if (!screen.current_view)
-                    return false;
-
-                return (!(screen.current_view.view_type == 'form' &&
-                    record &&
-                    screen.model_name != record.model.name));
-            }
-
-            var key;
-            var record;
-            var widget;
-            var widgets = this.view.widgets[this.field_name];
-            var to_sync = [];
-
-            for (var j = 0; j < widgets.length; j++){
-                widget = widgets[j];
-                if (!widget.hasOwnProperty('attributes')){
-                    return;
-                }
-
-                if (widget == this ||
-                    widget.attributes.group != this.attributes.group ||
-                    !widget.hasOwnProperty('screen')){
-                    continue;
-                }
-
-                if (widget.screen.current_record == current_record){
-                    continue;
-                }
-
-                record = current_record;
-                if (!is_compatible(widget.screen, record))
-                    record = null;
-                if (!widget.validate())
-                    return;
-
-                to_sync.push({'widget': widget, 'record': record});
-            }
-            widget = null;
-            var to_display = null;
-            var to_display_prm = jQuery.when();
-            var record_load_promises, display_prm;
-
-            function display_form(widget, record) {
-                return function () {
-                    widget.display(widget.record, widget.field);
-                };
-            }
-
-            for (var i = 0; i < to_sync.length; i++){
-                widget = to_sync[i].widget;
-                record = to_sync[i].record;
-                record_load_promises = [];
-
-                if (!widget.screen.current_view)
-                    continue;
-
-                if (widget.screen.current_view.view_type == 'form' &&
-                    record &&
-                    widget.screen.group.model.name == record.group.model.name){
-                    var fields = widget.screen.group.model.fields;
-                    var ret = [];
-                    for(var name in fields){
-                        ret[name] = fields[name].description;
-                    }
-                    record.group.model.add_fields(ret);
-
-                    for (var field_name in fields) {
-                        if (!fields.hasOwnProperty(field_name)) {
-                            continue;
-                        }
-                        record_load_promises.push(record.load(field_name));
-                    }
-                }
-
-                widget.screen.current_record = record;
-                display_prm = jQuery.when.apply(jQuery, record_load_promises);
-                display_prm.done(display_form(widget, record).bind(this));
-                if (record){
-                    to_display = widget;
-                    to_display_prm = display_prm;
-                }
-            }
-            if (to_display) {
-                to_display_prm.done(function() {
-                    for (var j in to_display.view.containers) {
-                        var container = widget.view.containers[j];
-                        container.resize();
-                    }
-                    to_display.display(to_display.record, to_display.field);
-                });
-            }
         },
         get modified() {
             return this.screen.current_view.modified;
@@ -3713,9 +3624,8 @@ function eval_pyson(value){
                 // [Coog specific]
                 // > multi_mixed_view see tryton/8fa02ed59d03aa52600fb8332973f6a88d46d8c0
                 if (this.attributes.group && this.attributes.mode == 'form'){
-                    if (!this.screen.current_record)
-                        this.set_invisible(true);
-                }else if (new_group && new_group != this.screen.group) {
+                    this.set_invisible(!this.visible);
+                } else if (new_group && new_group != this.screen.group) {
                     this.screen.set_group(new_group);
                     if ((this.screen.current_view.view_type == 'tree') &&
                             this.screen.current_view.editable) {

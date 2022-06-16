@@ -826,6 +826,8 @@
             this.search_count = 0;
             this.screen_container = new Sao.ScreenContainer(
                 attributes.tab_domain);
+            this._multiview_form = null;
+            this._multiview_group = null;
             this.breadcrumb = attributes.breadcrumb || [];
 
             this.context_screen = null;
@@ -862,9 +864,6 @@
             this._domain_parser = {};
             this.pre_validate = false;
             this.tab = null;
-            // [Coog specific] used for group_sync
-            this.parent = null;
-            // end
             this.message_callback = null;
             this.switch_callback = null;
             this.group_changed_callback = null;
@@ -1248,12 +1247,12 @@
             if (this.group.parent) {
                 this.order = null;
             }
+            this.group.add_fields(fields);
             if (group && group.length) {
                 this.current_record = group[0];
             } else {
                 this.current_record = null;
             }
-            this.group.add_fields(fields);
             var views_add = function(view) {
                 this.group.model.fields[name].views.add(view);
             }.bind(this);
@@ -1276,6 +1275,7 @@
         },
         set current_record(record) {
             // [Coog specific] multi_mixed_view
+            var validate = this.current_record === null;
             var changed = this.current_record !== record;
             this.__current_record = record;
             if (this.message_callback){
@@ -1307,8 +1307,44 @@
                 this.tab.record_message();
             }
             // [Coog specific] multi_mixed_view
-            if (this.parent && changed){
-                this.parent.group_sync(this, this.current_record);
+            if (changed && this._multiview_form &&
+                (this.current_view.view_type == 'tree')) {
+                var view = this._multiview_form;
+                var wgroup = view.widget_groups[this._multiview_group];
+                this._sync_group(view, wgroup, this.current_record, validate);
+            }
+        },
+        // [Coog specific]
+        // > multi_mixed_view see tryton/8fa02ed59d03aa52600fb8332973f6a88d46d8c0
+        _sync_group: function(view, widgets_group, record, validate) {
+            if (!record) {
+                return ;
+            }
+
+            var widget;
+            var to_sync = [];
+            var forms = widgets_group.slice(1);
+
+            for (widget of forms) {
+                if (validate && !widget.validate()) {
+                    return;
+                }
+                to_sync.push(widget);
+            }
+
+            var new_record_fields = {};
+            for (widget of to_sync) {
+                new_record_fields = {};
+                for (var fname in widget.screen.model.fields) {
+                    if (!(fname in record.model.fields)) {
+                        new_record_fields[fname] = widget.screen.model.fields[fname].description;
+                    }
+                }
+                if (new_record_fields) {
+                    record.group.add_fields(new_record_fields);
+                }
+                widget.screen.current_record = record;
+                widget.display();
             }
         },
         load: function(ids, set_cursor, modified) {

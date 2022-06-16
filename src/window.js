@@ -157,6 +157,7 @@
                     this.screen.group.readonly);
 
             this._initial_value = null;
+            this.view_type = view_type;
             if (view_type == 'form') {
                 var button_text;
                 if (kwargs.new_) {
