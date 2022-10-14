@@ -5,9 +5,9 @@
 
     Sao.View.CalendarXMLViewParser = Sao.class_(Sao.View.XMLViewParser, {
         _parse_calendar: function(node, attributes) {
-            [].forEach.call(node.childNodes, function(child) {
+            for (const child of node.childNodes) {
                 this.parse(child);
-            }.bind(this));
+            }
 
             var view_week;
             if (this.view.screen.model.fields[attributes.dtstart]
@@ -83,6 +83,7 @@
     /* Fullcalendar works with utc date, the default week start day depends on
        the user language, the events dates are handled by moment object. */
         editable: false,
+        creatable: false,
         view_type: 'calendar',
         xml_parser: Sao.View.CalendarXMLViewParser,
         init: function(view_id, screen, xml) {
@@ -117,7 +118,9 @@
             }
         },
         insert_event: function(record) {
-            var title = this.screen.model.fields[this.fields[0]].get_client(
+            var description_fields = jQuery.extend([], this.fields);
+            var title_field = description_fields.shift();
+            var title = this.screen.model.fields[title_field].get_client(
                 record);
             var field_start = record.model.fields[this.attributes.dtstart];
             var date_start = field_start.get_client(record);
@@ -137,10 +140,9 @@
                 model_access.write);
 
             var description = [];
-            for (var i = 1; i < this.fields.length; i++) {
+            for (const field of description_fields) {
                 description.push(
-                    this.screen.model.fields[this.fields[i]].get_client(
-                        record));
+                    this.screen.model.fields[field].get_client( record));
             }
             description = description.join('\n');
             if (date_start) {
@@ -187,24 +189,24 @@
             }
             this.events =  [];
             var promisses = [];
-            prm.then(function()  {
-                this.group.forEach(function(record) {
+            prm.then(() => {
+                this.group.forEach(record => {
                     var record_promisses = [];
-                    this.fields.forEach(function(name) {
+                    for (const name of this.fields) {
                         record_promisses.push(record.load(name));
-                    });
+                    }
                     var prm = jQuery.when.apply(jQuery, record_promisses).then(
-                        function(){
+                        () => {
                             this.insert_event(record);
-                        }.bind(this));
+                        });
                     promisses.push(prm);
-                }.bind(this));
-                return jQuery.when.apply(jQuery, promisses).then(function() {
+                });
+                return jQuery.when.apply(jQuery, promisses).then(() => {
                     callback(this.events);
-                }.bind(this)).always(function() {
+                }).always(() => {
                     this.processing = false;
-                }.bind(this));
-            }.bind(this));
+                });
+            });
         },
         event_click: function(calEvent, jsEvent, view) {
             // Prevent opening the wrong event while the calendar event clicked
@@ -212,9 +214,9 @@
             if (!this.clicked_event) {
                 this.clicked_event = true;
                 this.screen.current_record = calEvent.record;
-                this.screen.switch_view().always(function(){
+                this.screen.switch_view().always(() => {
                     this.clicked_event = false;
-                }.bind(this));
+                });
             }
         },
         event_drop: function(event, delta, revertFunc, jsEvent, ui, view) {

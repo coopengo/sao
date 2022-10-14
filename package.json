@@ -2,7 +2,7 @@
   "name": "tryton-sao",
   "title": "sao",
   "description": "Tryton webclient",
-  "version": "6.0.5",
+  "version": "6.4.6",
   "homepage": "http://www.tryton.org/",
   "author": {
     "name": "Tryton"
@@ -40,7 +40,6 @@
     "grunt-contrib-qunit": "^3.1",
     "grunt-contrib-watch": "^1.1",
     "grunt-shell": "^3.0",
-    "grunt-xgettext": "^0.3",
     "grunt-po2json": "^0.3"
   },
   "keywords": [
@@ -53,6 +52,6 @@
     "grunt-contrib-concat": "^1.0",
     "grunt-contrib-jshint": "^2.1",
     "grunt-contrib-less": "^2.0",
-    "grunt-contrib-uglify": "^4.0"
+    "grunt-contrib-uglify": "^5.0"
   }
 }

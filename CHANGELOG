@@ -1,18 +1,39 @@
+Version 6.4.5 - 2022-09-06
+* Bug fixes (see mercurial logs for details)
+
+Version 6.4.4 - 2022-08-17
+* Bug fixes (see mercurial logs for details)
+
+Version 6.4.3 - 2022-07-01
+* Bug fixes (see mercurial logs for details)
+
+Version 6.4.2 - 2022-06-15
+* Bug fixes (see mercurial logs for details)
+
+Version 6.4.1 - 2022-06-03
+* Bug fixes (see mercurial logs for details)
+
+Version 6.4.0 - 2022-05-02
+* Bug fixes (see mercurial logs for details)
+* Support notification message
+* Allow Reference to be edited from tree view
+* Set ECMAScript version to 6
+* Manage optional column
 * Display the number of selected records
 * Humanize the count result
 * Add limit to search_count
+* Call view_get for board view
+* Limit board action domain to active id and ids
+* Manage creatable attribute of view
 
-Version 6.0.4 - 2021-08-05
+Version 6.2.0 - 2021-11-01
 * Bug fixes (see mercurial logs for details)
-
-Version 6.0.3 - 2021-07-21
-* Bug fixes (see mercurial logs for details)
-
-Version 6.0.2 - 2021-07-01
-* Bug fixes (see mercurial logs for details)
-
-Version 6.0.1 - 2021-06-17
-* Bug fixes (see mercurial logs for details)
+* Support grouping attribute
+* Add expander on tree to fold or unfold selected rows
+* Support monetary and symbol field attributes
+* Support digits from relation field
+* Add accesskey to widgets and buttons
+* Support Binary field in CSV import/export
 
 Version 6.0.0 - 2021-05-03
 * Bug fixes (see mercurial logs for details)

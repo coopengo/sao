@@ -95,9 +95,9 @@ var Sao = {};
             // Implementation is not strictly equivalent but works for most
             // cases
             var result = [];
-            value.forEach(function(e) {
+            for (const e of value) {
                 result.push(e);
-            });
+            }
             return result;
         };
     }
@@ -175,6 +175,47 @@ var Sao = {};
         return ClassConstructor;
     };
 
+    Sao.Logging = Sao.class_(Object, {
+        init: function() {
+            this.level = Sao.Logging.ERROR;
+        },
+        set_level: function(level) {
+            this.level = level;
+        },
+        _log: function(level, logger, args) {
+            if (this.level <= level) {
+                logger.apply(console, args);
+            }
+        },
+        debug: function() {
+            this._log(Sao.Logging.DEBUG, console.log, arguments);
+        },
+        info: function() {
+            this._log(Sao.Logging.INFO, console.info, arguments);
+        },
+        warn: function() {
+            this._log(Sao.Logging.WARNING, console.warn, arguments);
+        },
+        error: function() {
+            this._log(Sao.Logging.ERROR, console.error, arguments);
+        },
+        critical: function() {
+            this._log(Sao.Logging.CRITICAL, console.error, arguments);
+        },
+        assert: function() {
+            if (this.level <= Sao.Logging.DEBUG) {
+                console.assert.apply(console, arguments);
+            }
+        },
+    });
+    Sao.Logging.CRITICAL = 50;
+    Sao.Logging.ERROR = 40;
+    Sao.Logging.WARNING = 30;
+    Sao.Logging.INFO = 20;
+    Sao.Logging.DEBUG = 10;
+    Sao.Logging.NOTSET = 0;
+    Sao.Logger = new Sao.Logging();
+
     Sao.Decimal = Number;
 
     var _moment_to_string = moment.prototype.toString;
@@ -198,7 +239,7 @@ var Sao = {};
         }
     };
 
-    Sao.Date = function(year, month, day, utc) {
+    Sao.Date = function(year, month, day) {
         var date;
         if (month === undefined) {
             date = moment(year);
@@ -206,9 +247,6 @@ var Sao = {};
         }
         else {
             date = moment();
-        }
-        if (utc) {
-            date.utc();
         }
         date.year(year);
         date.month(month);
@@ -226,26 +264,15 @@ var Sao = {};
     Sao.Date.max.set({hour: 0, minute: 0, second: 0, millisecond: 0});
     Sao.Date.max.isDate = true;
 
-    Sao.DateTime = function(year, month, day, hour, minute, second,
-            millisecond, utc) {
+    Sao.DateTime = function(
+        year, month, day,
+        hour=0, minute=0, second=0, millisecond=0, utc=false) {
         var datetime;
         if (month === undefined) {
             datetime = moment(year);
             year = undefined;
         }
         else {
-            if (hour === undefined) {
-                hour = 0;
-            }
-            if (minute === undefined) {
-                minute = 0;
-            }
-            if (second === undefined) {
-                second = 0;
-            }
-            if (millisecond === undefined) {
-                millisecond = 0;
-            }
             datetime = moment();
         }
         if (utc) {
@@ -262,15 +289,20 @@ var Sao = {};
         }
         datetime.isDateTime = true;
         datetime.local();
+        datetime.todate = function() {
+            return Sao.Date(this.year(), this.month(), this.date());
+        };
+        datetime.totime = function() {
+            return Sao.Time(
+                this.hour(), this.minute(), this.second(), this.millisecond());
+        };
         return datetime;
     };
 
     Sao.DateTime.combine = function(date, time) {
-        var datetime = date.clone();
-        datetime.set({hour: time.hour(), minute: time.minute(),
-            second: time.second(), millisecond: time.millisecond()});
-        datetime.isDateTime = true;
-        return datetime;
+        return Sao.DateTime(
+            date.year(), date.month(), date.date(),
+            time.hour(), time.minute(), time.second(), time.millisecond());
     };
 
     Sao.DateTime.min = moment(new Date(-100000000 * 86400000)).local();
@@ -308,6 +340,7 @@ var Sao = {};
     Sao.config.calendar_colors = '#fff,#267f82'.split(',');
     Sao.config.graph_color = '#267f82';
     Sao.config.bus_timeout = 10 * 60 * 1000;
+    Sao.config.image_max_size = Math.pow(10, 6);
 
     Sao.i18n = i18n();
     Sao.i18n.setlang = function(lang) {
@@ -369,11 +402,12 @@ var Sao = {};
                 deferreds.push(Sao.common.MODELACCESS.load_models());
                 deferreds.push(Sao.common.ICONFACTORY.load_icons());
                 deferreds.push(Sao.common.MODELHISTORY.load_history());
+                deferreds.push(Sao.common.MODELNOTIFICATION.load_names());
                 deferreds.push(Sao.common.VIEW_SEARCH.load_searches());
                 return jQuery.when.apply(jQuery, deferreds).then(function() {
-                    (preferences.actions || []).forEach(function(action_id) {
+                    for (const action_id of (preferences.actions || [])) {
                         Sao.Action.execute(action_id, {}, null, {});
-                    });
+                    }
                     Sao.set_title();
                     // JMO merge_60, here we had: Coog: avoid icon filled with standard color
                     var new_lang = preferences.language != Sao.i18n.getLocale();
@@ -433,8 +467,7 @@ var Sao = {};
             }
         } else {
             url = decodeURIComponent(url);
-            for (var i = 0; i < Sao.Tab.tabs.length; i++) {
-                tab = Sao.Tab.tabs[i];
+            for (const tab of Sao.Tab.tabs) {
                 if (decodeURIComponent(tab.get_url()) == url) {
                     tab.show();
                     return;
@@ -455,12 +488,12 @@ var Sao = {};
         var path, params = {};
         if (i >= 0) {
             path = url.substring(0, i);
-            url.substring(i + 1).split('&').forEach(function(part) {
+            for (const part of url.substring(i + 1).split('&')) {
                 if (part) {
                     var item = part.split('=').map(decodeURIComponent);
                     params[item[0]] = item[1];
                 }
-            });
+            }
         } else {
             path = url;
         }
@@ -503,8 +536,8 @@ var Sao = {};
         }
         function open_wizard(path) {
             var attributes = {};
-            attributes.name = path[0];
-            if (!attributes.name) {
+            attributes.action = path[0];
+            if (!attributes.action) {
                 return;
             }
             try {
@@ -680,30 +713,28 @@ var Sao = {};
     };
 
     Sao.user_menu = function(preferences) {
-        var avatar_url = preferences.avatar_url || '';
-        if (avatar_url) {
-            avatar_url += '?s=30';
-        }
-        var avatar_badge_url = preferences.avatar_badge_url || '';
-        if (avatar_badge_url){
-            avatar_badge_url += '?s=15';
-        }
         jQuery('#user-preferences').empty();
         jQuery('#user-favorites').empty();
-        jQuery('#user-preferences').append(jQuery('<a/>', {
+        var user = jQuery('<a/>', {
             'href': '#',
             'title': preferences.status_bar,
         }).click(function(evt) {
             evt.preventDefault();
             Sao.preferences();
-        }).text(preferences.status_bar)
-            .prepend(jQuery('<img/>', {
-                'src': avatar_badge_url,
+        }).text(preferences.status_bar);
+        jQuery('#user-preferences').append(user);
+        if (preferences.avatar_badge_url) {
+            user.prepend(jQuery('<img/>', {
+                'src': preferences.avatar_badge_url + '?s=15',
                 'class': 'img-circle img-badge',
-            })).prepend(jQuery('<img/>', {
-                'src': avatar_url,
+            }));
+        }
+        if (preferences.avatar_url) {
+            user.prepend(jQuery('<img/>', {
+                'src': preferences.avatar_url + '?s=30',
                 'class': 'img-circle',
-            })));
+            }));
+        }
         var title = Sao.i18n.gettext("Logout");
         jQuery('#user-logout > a')
             .attr('title', title)
@@ -799,7 +830,7 @@ var Sao = {};
             if (!cell) {
                 cell = this.get_cell();
             }
-            record.load(this.field.name).done(function() {
+            record.load(this.field.name).done(() => {
                 if (record._values.favorite !== null) {
                     var icon = 'tryton-star';
                     if (!record._values.favorite) {
@@ -807,14 +838,19 @@ var Sao = {};
                     }
                     cell.data('star', Boolean(record._values.favorite));
                     Sao.common.ICONFACTORY.get_icon_url(icon)
-                        .then(function(url) {
+                        .then(url => {
                             cell.attr('src', url);
                         });
                     cell.click({'record': record, 'button': cell},
                         this.favorite_click);
                     }
-                }.bind(this));
+                });
             return cell;
+        },
+        set_visible: function() {
+        },
+        get_visible: function() {
+            return true;
         },
         favorite_click: function(e) {
             // Prevent activate the action of the row
@@ -846,11 +882,7 @@ var Sao = {};
     });
 
     Sao.Dialog = Sao.class_(Object, {
-        init: function(title, class_, size, keyboard) {
-            size = size || 'sm';
-            if (keyboard === undefined) {
-                keyboard = true;
-            }
+        init: function(title, class_, size='sm', keyboard=true) {
             this.modal = jQuery('<div/>', {
                 'class': class_ + ' modal fade',
                 'role': 'dialog',
@@ -948,22 +980,25 @@ var Sao = {};
         },
         update: function(text) {
             var ir_model = new Sao.Model('ir.model');
+            if (!text) {
+                return jQuery.when([]);
+            }
             return ir_model.execute('global_search',
                     [text, Sao.config.limit, Sao.main_menu_screen.model_name],
                     Sao.main_menu_screen.context, undefined, false)
-                .then(function(s_results) {
-                var results = [];
-                for (var i=0, len=s_results.length; i < len; i++) {
-                    results.push({
-                        'model': s_results[i][1],
-                        'model_name': s_results[i][2],
-                        'record_id': s_results[i][3],
-                        'record_name': s_results[i][4],
-                        'icon': s_results[i][5],
-                    });
-                }
-                return results;
-            }.bind(this));
+                .then(s_results => {
+                    var results = [];
+                    for (const result of s_results) {
+                        results.push({
+                            'model': result[1],
+                            'model_name': result[2],
+                            'record_id': result[3],
+                            'record_name': result[4],
+                            'icon': result[5],
+                        });
+                    }
+                    return results;
+                });
         },
         match_selected: function(item) {
             if (item.model == Sao.main_menu_screen.model_name) {
@@ -1078,6 +1113,12 @@ var Sao = {};
                 callback: function() {
                     shortcuts_dialog();
                 },
+            }, {
+                shortcut: 'ctrl+f1',
+                label: Sao.i18n.gettext('Show/Hide access keys'),
+                callback: function() {
+                    jQuery('html').toggleClass('accesskey');
+                },
             },
         ];
     }
@@ -1087,7 +1128,7 @@ var Sao = {};
         try {
             Notification.requestPermission();
         } catch (e) {
-            (console.error || console.log).call(console, e, e.stack);
+            Sao.Logger.error(e.message, e.stack);
         }
         Sao.login();
     });
@@ -1137,7 +1178,7 @@ var Sao = {};
             .text(Sao.i18n.gettext('Tab shortcuts')))
             .appendTo(row);
 
-        shortcuts_defs().forEach(function(definition) {
+        for (const definition of shortcuts_defs()) {
             var dt = jQuery('<dt/>').text(definition.label);
             var dd = jQuery('<dd/>').append(jQuery('<kbd>')
                 .text(definition.shortcut));
@@ -1149,7 +1190,7 @@ var Sao = {};
             }
             dt.appendTo(dest_dl);
             dd.appendTo(dest_dl);
-        });
+        }
         dialog.modal.on('hidden.bs.modal', function() {
             jQuery(this).remove();
         });

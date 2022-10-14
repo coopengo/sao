@@ -75,6 +75,9 @@ msgstr ""
 msgid "Show this help"
 msgstr ""
 
+msgid "Show/Hide access keys"
+msgstr ""
+
 msgid "Keyboard shortcuts"
 msgstr "Gyorsbillentyűk"
 
@@ -226,11 +229,32 @@ msgstr "Letöltés"
 msgid "..."
 msgstr "..."
 
+msgid "Bold"
+msgstr ""
+
+msgid "Italic"
+msgstr ""
+
+msgid "Underline"
+msgstr ""
+
 msgid "Font"
 msgstr "Betűtípus"
 
 msgid "Size"
 msgstr "Méret"
+
+msgid "Justify Right"
+msgstr ""
+
+msgid "Justify Left"
+msgstr ""
+
+msgid "Justify Center"
+msgstr ""
+
+msgid "Justify Full"
+msgstr ""
 
 msgid "Switch view"
 msgstr "Nézet váltása"
@@ -351,9 +375,6 @@ msgstr "Melléklet (%1)"
 msgid "Note (%1/%2)"
 msgstr "Jegyzet (%1/%2)"
 
-msgid " of "
-msgstr " , összesen "
-
 msgid "Filters"
 msgstr "Szűrők"
 
@@ -400,16 +421,16 @@ msgid "Created at"
 msgstr "Létrehozás dátuma"
 
 msgid "Modified by"
-msgstr ""
+msgstr "Módosította"
 
 msgid "Modified at"
-msgstr ""
+msgstr "Módosítás dátuma"
 
 msgid "\"%1\" is required."
-msgstr ""
+msgstr "A(z) „%1” mezőt meg kell adni."
 
 msgid "\"%1\" is not valid according to its domain."
-msgstr ""
+msgstr "A(z) „%1” mezőben helytelen értéket adott meg."
 
 msgid "The values of \"%1\" are not valid."
 msgstr ""
@@ -477,14 +498,22 @@ msgstr ""
 msgid "Clear"
 msgstr "Törlés"
 
+#, fuzzy
+msgid "Open..."
+msgstr "Megnyitás"
+
 msgid "Choose a language"
 msgstr ""
 
+#, javascript-format
 msgid "%1%"
 msgstr ""
 
 msgid ": "
 msgstr ": "
+
+msgid "Customize"
+msgstr ""
 
 msgid "More"
 msgstr ""
@@ -558,7 +587,7 @@ msgstr "Átugrandó sorok:"
 msgid "You must select an import file first."
 msgstr "Először adja meg a betöltendő fájlt."
 
-msgid "An error occured in loading the file."
+msgid "Detection failed"
 msgstr ""
 
 msgid "Error processing the file at field %1."
@@ -567,8 +596,14 @@ msgstr ""
 msgid "Error"
 msgstr "Hiba"
 
-msgid "Error occured in loading the file"
-msgstr ""
+#, fuzzy
+msgid "Import failed"
+msgstr "Importálás"
+
+msgid "%1 record imported"
+msgid_plural "%1 records imported"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "CSV Export: %1"
 msgstr "Exportálás CSV-be: %1"
@@ -618,6 +653,12 @@ msgstr "Mi legyen az oszloplista neve?"
 msgid "Override %1 definition?"
 msgstr ""
 
+#, fuzzy
+msgid "%1 record saved"
+msgid_plural "%1 records saved"
+msgstr[0] "Rekord elmentve."
+msgstr[1] "Rekord elmentve."
+
 msgid "E-mail %1"
 msgstr ""
 
@@ -635,21 +676,6 @@ msgstr "Tárgy:"
 
 msgid "Reports"
 msgstr "Nyomtatványok"
-
-msgid ""
-msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-04-10 10:06+0000\n"
-"PO-Revision-Date: 2021-04-10 10:06+0000\n"
-"Last-Translator: Dukai Gábor <gdukai@hey.com>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: hu\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.5.2\n"
 
 msgid "Attachments"
 msgstr "Mellékletek"

@@ -46,7 +46,11 @@
                 if (data.ids.length > ids.length) {
                     name_suffix += Sao.i18n.gettext(',...');
                 }
-                return Sao.i18n.gettext('%1 (%2)', name, name_suffix);
+                if (name_suffix) {
+                    return Sao.i18n.gettext('%1 (%2)', name, name_suffix);
+                } else {
+                    return name;
+                }
             });
         }
         data.action_id = action.id;
@@ -59,10 +63,10 @@
                 if (!jQuery.isEmptyObject(action.views)) {
                     params.view_ids = [];
                     params.mode = [];
-                    action.views.forEach(function(x) {
-                        params.view_ids.push(x[0]);
-                        params.mode.push(x[1]);
-                    });
+                    for (const view of action.views) {
+                        params.view_ids.push(view[0]);
+                        params.mode.push(view[1]);
+                    }
                 } else if (!jQuery.isEmptyObject(action.view_id)) {
                     params.view_ids = [action.view_id[0]];
                 }
@@ -73,7 +77,7 @@
                 var ctx = {
                     active_model: data.model || null,
                     active_id: data.id || null,
-                    active_ids: data.ids
+                    active_ids: data.ids || [],
                 };
                 ctx = jQuery.extend(ctx, session.context);
                 ctx._user = session.user_id;
@@ -92,10 +96,10 @@
                 params.search_value = decoder.decode(
                     action.pyson_search_value || '[]');
                 params.tab_domain = [];
-                action.domains.forEach(function(element, index) {
+                for (const element of action.domains) {
                     params.tab_domain.push(
                         [element[0], decoder.decode(element[1]), element[2]]);
-                });
+                }
                 name_prm = jQuery.when(action.name);
                 params.model = action.res_model || data.res_model;
                 params.res_id = action.res_id || data.res_id;
@@ -146,15 +150,8 @@
         }
     };
 
-    Sao.Action.exec_keyword = function(keyword, data, context, warning,
-            alwaysask)
-    {
-        if (warning === undefined) {
-            warning = true;
-        }
-        if (alwaysask === undefined) {
-            alwaysask = false;
-        }
+    Sao.Action.exec_keyword = function(
+        keyword, data, context, warning=true, alwaysask=false) {
         var actions = [];
         var model_id = data.id;
         var args = {
@@ -166,7 +163,7 @@
             var keyact = {};
             for (var i in actions) {
                 var action = actions[i];
-                keyact[action.name.replace(/_/g, '')] = action;
+                keyact[action.name.split(' / ').pop()] = action;
             }
             var prm = Sao.common.selection(
                     Sao.i18n.gettext('Select your action'),

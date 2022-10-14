@@ -43,6 +43,13 @@ html[theme="default"] {
     }
 }
 
+.btn-horizontal {
+    .text-overflow()
+}
+
+.input-group > .form-control-feedback {
+    z-index: 3;
+}
 
 .navbar-inverse {
     .close {
@@ -95,24 +102,43 @@ html[theme="default"] {
     color: #fff;
 }
 
-#tablist > li > a {
-    > span {
-        max-width: 9em;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        /* For IE */
-        display: block;
-        margin-right: 15px;
+#tablist {
+    display: flex;
+    overflow-x: auto;
+
+    > li {
+        flex: auto;
+        min-width: 9em;
+        > a {
+            > span {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                /* For IE */
+                display: block;
+                margin-right: 15px;
+            }
+            [dir="rtl"] & > span {
+                margin-right: 0;
+                margin-left: 15px;
+            }
+        }
     }
-    [dir="rtl"] & > span {
-        margin-right: 0;
-        margin-left: 15px;
+}
+
+@media screen and (max-width: @screen-xs-max) {
+    #tablist {
+        display: block;
+
+        > li {
+            float: none;
+        }
     }
 }
 
 #menu, #tabs {
     margin-top: 5px;
+    padding-bottom: 5px;
 }
 
 #menu {
@@ -188,6 +214,46 @@ html[theme="default"] {
 .table-row-variant(success; @state-success-bg);
 .table-row-variant(warning; @state-warning-bg);
 .table-row-variant(danger; @state-danger-bg);
+
+html.accesskey {
+
+    *[accesskey] ~ span[data-accesskey]:after,
+    *[accesskey]:after {
+        background-color: @brand-info;
+        color: #fff;
+        font-size: x-small;
+        padding: 0 2px;
+        position: absolute;
+        text-transform: uppercase;
+        margin: 0 -1em;
+        z-index: 5;
+    }
+
+    input[accesskey][type="checkbox"]:after {
+        background-color: initial;
+    }
+
+    *[accesskey] ~ span[data-accesskey] {
+        float: right;
+        position: relative;
+
+        &:after {
+            content: attr(data-accesskey);
+        }
+    }
+
+    *[accesskey]:after {
+        content: attr(accesskey);
+    }
+
+    input[accesskey][type="checkbox"],
+    input[accesskey][type="checkbox"],
+    select[accesskey] {
+        & ~ span[data-accesskey] {
+            bottom: 1em;
+        }
+    }
+}
 
 .tab-form, .tab-board {
     nav.toolbar {
@@ -364,11 +430,11 @@ img.icon {
         width: 100%;
         table-layout: fixed;
 
-        col.selection-state, col.favorite, col.draggable-handle {
+        col.selection-state, col.favorite, col.draggable-handle, col.optional {
             width: 30px;
         }
 
-        td.draggable-handle {
+        td.draggable-handle, td.optional {
             cursor: grab;
             > img {
                 .center-block();
@@ -382,6 +448,16 @@ img.icon {
         > thead > tr > th {
             > label.sortable {
                 cursor: pointer;
+            }
+            &.optional {
+                cursor: pointer;
+                overflow: visible;
+
+                .dropdown {
+                    input[type="checkbox"] {
+                        margin-left: 5px;
+                    }
+                }
             }
             overflow: hidden;
             text-overflow: ellipsis;
@@ -550,6 +626,11 @@ img.icon {
     table.form-hcontainer > tbody > tr > td {
         padding-top: 0px;
         padding-bottom: 0px;
+
+        > .btn {
+            margin-top: 2px;
+            margin-bottom: 2px;
+        }
     }
     table.form-vcontainer > tbody > tr > td {
         padding-left: 0px;
@@ -599,9 +680,6 @@ img.icon {
     .form-many2one > .input-group {
         width: 100%;
         min-width: 12em;
-    }
-    td.form-one2many, td.form-many2many {
-        vertical-align: top;
     }
     .form-one2many-menu::after, .form-many2many-menu::after {
         content: "";
@@ -661,10 +739,9 @@ img.icon {
             margin-bottom: 5px;
         }
     }
-    .form-image_ {
-        img {
-            width: 4em;
-            height: 4em;
+    .form-image {
+        .caption {
+            min-width: 120px;
         }
     }
     .form-document {
@@ -981,7 +1058,7 @@ input.column-boolean {
 .infobar {
     line-height: @line-height-computed;
     position: fixed;
-    top: 65px;
+    top: 30px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;

@@ -19,17 +19,18 @@
             });
             this.filter_box = jQuery('<form/>', {
                 'class': 'filter-box'
-            }).submit(function(e) {
+            }).submit(e => {
                 this.do_search();
                 e.preventDefault();
-            }.bind(this));
+            });
             var search_row = jQuery('<div/>', {
                 'class': 'row'
             }).appendTo(this.filter_box);
             this.el.append(this.filter_box);
             this.filter_button = jQuery('<button/>', {
                 type: 'button',
-                'class': 'btn btn-link'
+                'class': 'btn btn-link',
+                'title': Sao.i18n.gettext("Filters"),
             }).text(Sao.i18n.gettext('Filters'));
             this.filter_button.click(this.search_box.bind(this));
             this.search_entry = jQuery('<input/>', {
@@ -51,19 +52,19 @@
                 'title': Sao.i18n.gettext("Clear Search"),
             }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-clear'));
             but_clear.hide();
-            but_clear.click(function() {
+            but_clear.click(() => {
                 this.search_entry.val('').change();
                 this.do_search();
-            }.bind(this));
+            });
 
-            this.search_entry.on('keyup change', function() {
+            this.search_entry.on('keyup change', () => {
                 if (this.search_entry.val()) {
                     but_clear.show();
                 } else {
                     but_clear.hide();
                 }
                 this.bookmark_match();
-            }.bind(this));
+            });
 
             var but_submit = jQuery('<button/>', {
                 'type': 'submit',
@@ -97,12 +98,12 @@
                 'role': 'menu',
                 'aria-labelledby': this.but_bookmark.attr('id'),
             });
-            this.but_bookmark.click(function() {
+            this.but_bookmark.click(() => {
                 dropdown_bookmark.empty();
                 var bookmarks = this.bookmarks();
-                for (var i=0; i < bookmarks.length; i++) {
-                    var name = bookmarks[i][1];
-                    var domain = bookmarks[i][2];
+                for (const bookmark of bookmarks) {
+                    const name = bookmark[1];
+                    const domain = bookmark[2];
                     jQuery('<li/>', {
                         'role': 'presentation'
                     })
@@ -114,7 +115,7 @@
                         .click(domain, this.bookmark_activate.bind(this)))
                     .appendTo(dropdown_bookmark);
                 }
-            }.bind(this));
+            });
             this.but_star = jQuery('<button/>', {
                 'class': 'btn btn-default hidden-xs',
                 'type': 'button'
@@ -189,11 +190,12 @@
                 var content = jQuery('<div/>', {
                     'class': 'tab-content'
                 }).appendTo(this.tab);
-                this.tab_domain.forEach(function(tab_domain, i) {
+                this.tab_domain.forEach((tab_domain, i) => {
                     var name = tab_domain[0];
                     var counter = jQuery('<span/>', {
-                        'class': 'badge'
-                    });
+                        'class': 'badge badge-empty'
+                    }).html('&nbsp;');
+                    counter.css('visibility', 'hidden');
                     var page = jQuery('<li/>', {
                         role: 'presentation',
                         id: 'nav-' + i
@@ -204,7 +206,7 @@
                         'href': '#' + i
                     }).text(name + ' ').append(counter)).appendTo(nav);
                     this.tab_counter.push(counter);
-                }.bind(this));
+                });
                 nav.find('a:first').tab('show');
                 var self = this;
                 nav.find('a').click(function(e) {
@@ -226,11 +228,11 @@
             var completions = this.screen.domain_parser.completion(
                     this.get_text());
             this.search_list.empty();
-            completions.forEach(function(e) {
+            for (const e of completions) {
                 jQuery('<option/>', {
                     'value': e.trim()
                 }).appendTo(this.search_list);
-            }, this);
+            }
         },
         set_star: function(star) {
             var img = this.but_star.children('img');
@@ -255,18 +257,18 @@
         star_click: function() {
             var star = this.get_star();
             var model_name = this.screen.model_name;
-            var refresh = function() {
+            const refresh = () => {
                 this.bookmark_match();
                 this.but_bookmark.prop('disabled',
                         jQuery.isEmptyObject(this.bookmarks()));
-            }.bind(this);
+            };
             if (!star) {
                 var text = this.get_text();
                 if (!text) {
                     return;
                 }
                 Sao.common.ask.run(Sao.i18n.gettext('Bookmark Name:'))
-                    .then(function(name) {
+                    .then(name => {
                         if (!name) {
                             return;
                         }
@@ -277,7 +279,7 @@
                         });
                         this.set_text(
                             this.screen.domain_parser.string(domain));
-                    }.bind(this));
+                    });
             } else {
                 var id = this.bookmark_match();
                 Sao.common.VIEW_SEARCH.remove(model_name, id).then(function() {
@@ -287,9 +289,8 @@
         },
         bookmarks: function() {
             var searches = Sao.common.VIEW_SEARCH.get(this.screen.model_name);
-            return searches.filter(function(search) {
-                return this.screen.domain_parser.stringable(search[2]);
-            }.bind(this));
+            return searches.filter(
+                search => this.screen.domain_parser.stringable(search[2]));
         },
         bookmark_activate: function(e) {
             e.preventDefault();
@@ -304,12 +305,12 @@
                         current_text);
                 var star = this.get_star();
                 var bookmarks = this.bookmarks();
-                for (var i=0; i < bookmarks.length; i++) {
-                    var id = bookmarks[i][0];
-                    var name = bookmarks[i][1];
-                    var domain = bookmarks[i][2];
-                    var access = bookmarks[i][3];
-                    var text = this.screen.domain_parser.string(domain);
+                for (const bookmark of bookmarks) {
+                    const id = bookmark[0];
+                    const name = bookmark[1];
+                    const domain = bookmark[2];
+                    const access = bookmark[3];
+                    const text = this.screen.domain_parser.string(domain);
                     if ((text === current_text) ||
                             (Sao.common.compare(domain, current_domain))) {
                         this.set_star(true);
@@ -358,11 +359,11 @@
             }
             return this.tab_domain[idx][1];
         },
-        set_tab_counter: function(count, idx) {
+        set_tab_counter: function(count, idx=null) {
             if (jQuery.isEmptyObject(this.tab_counter) || !this.tab) {
                 return;
             }
-            if ((idx === undefined) || (idx === null)) {
+            if (idx === null) {
                 idx = this.tab.find('li').index(this.tab.find('li.active'));
             }
             if (idx < 0) {
@@ -371,7 +372,8 @@
             var counter = this.tab_counter[idx];
             if (count === null) {
                 counter.attr('title', '');
-                counter.text('');
+                counter.html('&nbsp;');
+                counter.css('visibility', 'hidden');
             } else {
                 var title = Sao.common.humanize(count);
                 if (count >= 1000) {
@@ -383,6 +385,7 @@
                     text = '99+';
                 }
                 counter.text(text);
+                counter.css('visibility', 'visible');
             }
         },
         do_search: function() {
@@ -420,14 +423,14 @@
         },
         search_box: function() {
             var domain_parser = this.screen.domain_parser;
-            var search = function() {
+            const search = () => {
                 this.search_modal.modal('hide');
                 var text = '';
                 var quote = domain_parser.quote.bind(domain_parser);
-                for (var i = 0; i < this.search_form.fields.length; i++) {
-                    var label = this.search_form.fields[i][0];
-                    var entry = this.search_form.fields[i][1];
-                    var value;
+                for (const field of this.search_form.fields) {
+                    const label = field[0];
+                    const entry = field[1];
+                    let value;
                     if ((entry instanceof Sao.ScreenContainer.Between) ||
                         (entry instanceof Sao.ScreenContainer.Selection)) {
                         value = entry.get_value(quote);
@@ -439,10 +442,10 @@
                     }
                 }
                 this.set_text(text);
-                this.do_search().then(function() {
+                this.do_search().then(() => {
                     this.last_search_text = this.get_text();
-                }.bind(this));
-            }.bind(this);
+                });
+            };
             if (!this.search_modal) {
                 var dialog = new Sao.Dialog(
                         Sao.i18n.gettext('Filters'), '', 'lg');
@@ -455,36 +458,17 @@
                 });
 
                 var fields = [];
-                var field;
                 for (var f in domain_parser.fields) {
-                    field = domain_parser.fields[f];
+                    const field = domain_parser.fields[f];
                     if ((field.searchable || field.searchable === undefined) &&
                         !field.name.contains('.')) {
                         fields.push(field);
                     }
                 }
 
-                var boolean_option = function(input) {
-                    return function(e) {
-                        jQuery('<option/>', {
-                            value: e,
-                            text: e
-                        }).appendTo(input);
-                    };
-                };
-                var selection_option = function(input) {
-                    return function(s) {
-                        jQuery('<option/>', {
-                            value: s[1],
-                            text: s[1]
-                        }).appendTo(input);
-                    };
-                };
-
                 var prefix = 'filter-' + this.screen.model_name + '-';
                 this.search_form.fields = [];
-                for (var i = 0; i < fields.length; i++) {
-                    field = fields[i];
+                for (const field of fields) {
                     var form_group = jQuery('<div/>', {
                         'class': 'form-group form-group-sm'
                     }).append(jQuery('<label/>', {
@@ -502,10 +486,15 @@
                                 'class': 'form-control input-sm',
                                 id: prefix + field.name
                             });
-                            ['',
-                            Sao.i18n.gettext('True'),
-                            Sao.i18n.gettext('False')].forEach(
-                                    boolean_option(input));
+                            for (const e of [
+                                '',
+                                Sao.i18n.gettext('True'),
+                                Sao.i18n.gettext('False')]) {
+                                jQuery('<option/>', {
+                                    value: e,
+                                    text: e
+                                }).appendTo(input);
+                            }
                             break;
                         case 'selection':
                         case 'multiselection':
@@ -562,7 +551,8 @@
 
                 jQuery('<button/>', {
                     'class': 'btn btn-primary',
-                    type: 'submit'
+                    type: 'submit',
+                    'title': Sao.i18n.gettext("Find"),
                 }).text(Sao.i18n.gettext('Find'))
                 .click(search).appendTo(dialog.footer);
             }
@@ -637,7 +627,7 @@
         init: function(format, id) {
             this.format = format;
             Sao.ScreenContainer.BetweenDates._super.init.call(this, id);
-            this.from.on('dp.change', this._from_changed.bind(this));
+            this.from.change(this._from_changed.bind(this));
         },
         _get_value: function(entry, value) {
             return entry.find('input[type=text]').val();
@@ -668,12 +658,12 @@
                     'role': 'button',
                     'tabindex': -1,
                 });
-                input.click(function() {
+                input.click(() => {
                     var value = this._parse(this.format, date.val());
                     value = this._format(this._input_format, value);
                     input.val(value);
-                }.bind(this));
-                input.change(function() {
+                });
+                input.change(() => {
                     var value = input.val();
                     if (value) {
                         value = this._parse(this._input_format, value);
@@ -681,7 +671,7 @@
                         date.val(value);
                         date.focus();
                     }
-                }.bind(this));
+                });
                 if (input[0].type == this._input) {
                     var icon = jQuery('<div/>', {
                         'class': 'icon-input icon-secondary',
@@ -694,25 +684,25 @@
                 }
                 var mousetrap = new Mousetrap(date[0]);
 
-                mousetrap.bind('enter', function(e, combo) {
+                mousetrap.bind('enter', (e, combo) => {
                     var value = this._parse(this.format, date.val());
                     value = this._format(this.format, value);
                     date.val(value);
                 });
-                mousetrap.bind('=', function(e, combo) {
+                mousetrap.bind('=', (e, combo) => {
                     e.preventDefault();
                     date.val(this._format(this.format, moment()));
                 });
 
-                Sao.common.DATE_OPERATORS.forEach(function(operator) {
-                    mousetrap.bind(operator[0], function(e, combo) {
+                Sao.common.DATE_OPERATORS.forEach(operator => {
+                    mousetrap.bind(operator[0], (e, combo) => {
                         e.preventDefault();
                         var value = (this._parse(this.format, date.val()) ||
                             Sao.DateTime());
                         value.add(operator[1]);
                         date.val(this._format(this.format, value));
-                    }.bind(this));
-                }.bind(this));
+                    });
+                });
                 return entry;
         },
     });
@@ -770,12 +760,12 @@
                 multiple: true,
                 id: id
             });
-            selections.forEach(function(s) {
+            for (const s of selections) {
                 jQuery('<option/>', {
                     value: s[1],
                     text: s[1]
                 }).appendTo(this.el);
-            }.bind(this));
+            }
         },
         get_value: function(quote) {
             var value = this.el.val();
@@ -797,6 +787,7 @@
     Sao.Screen = Sao.class_(Object, {
         init: function(model_name, attributes) {
             this.model_name = model_name;
+            this.windows = [];
             this.model = new Sao.Model(model_name, attributes);
             this.attributes = jQuery.extend({}, attributes);
             this.view_ids = jQuery.extend([], attributes.view_ids);
@@ -836,19 +827,18 @@
                             'context': attributes.context });
 
                 this.context_screen_prm = this.context_screen.switch_view()
-                    .then(function() {
+                    .then(() => {
                         jQuery('<div/>', {
                             'class': 'row'
                         }).append(jQuery('<div/>', {
                             'class': 'col-md-12'
                         }).append(this.context_screen.screen_container.el))
                         .prependTo(this.screen_container.filter_box);
-                        return this.context_screen.new_(false).then(function(record) {
+                        return this.context_screen.new_(false).then(
                             // Set manually default to get context_screen_prm
                             // resolved when default is set.
-                            return record.default_get();
-                        });
-                    }.bind(this));
+                            record => record.default_get());
+                    });
             }
 
             if (!attributes.row_activate) {
@@ -861,16 +851,10 @@
             this.fields_view_tree = {};
             this._domain_parser = {};
             this.pre_validate = false;
-            this.tab = null;
             // [Coog specific] used for group_sync
             this.parent = null;
             // end
-            this.message_callback = null;
             this.switch_callback = null;
-            this.group_changed_callback = null;
-            // count_tab_domain is called in Sao.Tab.Form.init after
-            // switch_view to avoid unnecessary call to fields_view_get by
-            // domain_parser.
         },
         get readonly() {
             var readonly_records = this.selected_records.some(function(r) {
@@ -952,12 +936,10 @@
         get number_of_views() {
             return this.views.length + this.view_to_load.length;
         },
-        switch_view: function(view_type, view_id, display) {
-            display = display === undefined ? true : display;
-            if ((view_id !== undefined) && (view_id !== null)) {
+        switch_view: function(
+            view_type=null, view_id=null, creatable=null, display=true) {
+            if (view_id !== null) {
                 view_id = Number(view_id);
-            } else {
-                view_id = null;
             }
             if (this.current_view) {
                 this.current_view.set_value();
@@ -971,66 +953,58 @@
                         !this.current_record.validate(
                             fields, false, false, true)) {
                     this.screen_container.set(this.current_view.el);
-                    return this.current_view.display().done(function() {
+                    return this.current_view.display().done(() => {
                         this.set_cursor();
-                    }.bind(this));
+                    });
                 }
             }
-            var found = function() {
+            const found = () => {
                 if (!this.current_view) {
                     return false;
                 }
-                else if (!view_type && (view_id === null)) {
-                    return false;
+                var result = true;
+                if (view_type !== null) {
+                    result &= this.current_view.view_type == view_type;
                 }
-                else if (view_id !== null) {
-                    return this.current_view.view_id == view_id;
-                } else {
-                    return this.current_view.view_type == view_type;
+                if (view_id !== null) {
+                    result &= this.current_view.view_id == view_id;
                 }
-            }.bind(this);
-            var _switch = function() {
-                var set_container = function() {
+                if (creatable !== null) {
+                    result &= this.current_view.creatable == creatable;
+                }
+                return result;
+            };
+            const _switch = () => {
+                const set_container = () => {
                     this.screen_container.set(this.current_view.el);
                     var prm;
                     if (display) {
-                        prm = this.display().done(function() {
+                        prm = this.display().done(() => {
                             this.set_cursor();
-                        }.bind(this));
+                        });
                     } else {
                         prm = jQuery.when();
                     }
-                    return prm.done(function() {
-                            if (this.switch_callback) {
-                                this.switch_callback();
-                            }
-                        }.bind(this));
-                }.bind(this);
-                var continue_loop = function() {
-                    if (!view_type && (view_id === null)) {
-                        return false;
-                    }
-                    if (view_type && !view_id && !this.view_to_load.length) {
-                        return false;
-                    }
-                    return true;
-                }.bind(this);
-                var set_current_view = function() {
+                    return prm.done(() => {
+                        if (this.switch_callback) {
+                            this.switch_callback();
+                        }
+                    });
+                };
+                const set_current_view = () => {
                     this.current_view = this.views[this.views.length - 1];
-                }.bind(this);
-                var switch_current_view = (function() {
+                };
+                const switch_current_view = () => {
                     set_current_view();
-                    if (continue_loop()) {
+                    if (!found()) {
                         return _switch();
                     } else {
                         return set_container();
                     }
-                }.bind(this));
-                var is_view_id = function(view) {
-                    return view.view_id == view_id;
                 };
+                const is_view_id = view => view.view_id == view_id;
 
-                while (!found()) {
+                for (var n = 0; n < this.views.length + this.view_to_load.length; n++) {
                     if (this.view_to_load.length) {
                         return this.load_next_view().then(switch_current_view);
                     } else if ((view_id !== null) &&
@@ -1043,21 +1017,20 @@
                         this.current_view = this.views[
                             (i + 1) % this.views.length];
                     }
-                    if (!continue_loop()) {
+                    if (found()) {
                         break;
                     }
                 }
                 return set_container();
-            }.bind(this);
+            };
             return _switch();
         },
         search_filter: function(search_string, only_ids) {
             only_ids = only_ids || false;
             if (this.context_screen && !only_ids) {
                 if (this.context_screen_prm.state() == 'pending') {
-                    return this.context_screen_prm.then(function() {
-                        return this.search_filter(search_string);
-                    }.bind(this));
+                    return this.context_screen_prm.then(
+                        () => this.search_filter(search_string));
                 }
                 var context_record = this.context_screen.current_record;
                 if (context_record &&
@@ -1078,39 +1051,40 @@
             if (this.screen_container.but_active.hasClass('active')) {
                 context.active_test = false;
             }
-            var search = function() {
+            const search = () => {
                 return this.model.execute(
                     'search', [domain, this.offset, this.limit, this.order],
                     context)
-                    .then(function(ids) {
+                    .then(ids => {
                         if (ids.length || this.offset <= 0) {
                             return ids;
                         } else {
                             this.offset = Math.max(this.offset - this.limit, 0);
                             return search();
                         }
-                    }.bind(this));
-            }.bind(this);
-            return search().then(function(ids) {
+                    });
+            };
+            return search().then(ids => {
                     var count_prm = jQuery.when(this.search_count);
                     if (!only_ids) {
                         if ((this.limit !== null) &&
                             (ids.length == this.limit)) {
                             count_prm = this.model.execute(
-                                'search_count', [domain, 0, this.count_limit],
-                                context, undefined, false)
-                                .then(function(count) {
+                                'search_count',
+                                [domain, 0, this.count_limit], context,
+                                undefined, false)
+                                .then(count => {
                                     this.search_count = count;
                                     return this.search_count;
-                                }.bind(this), function() {
+                                }, () => {
                                     this.search_count = 0;
                                     return this.search_count;
-                                }.bind(this));
+                                });
                         } else {
                             this.search_count = ids.length;
                         }
                     }
-                    return count_prm.then(function(count) {
+                    return count_prm.then(count => {
                         this.screen_container.but_next.prop('disabled',
                             !(this.limit !== undefined &&
                                 ids.length == this.limit &&
@@ -1120,21 +1094,20 @@
                             return ids;
                         }
                         this.clear();
-                        return this.load(ids).then(function() {
+                        return this.load(ids).then(() => {
                             this.count_tab_domain();
-                        }.bind(this));
-                    }.bind(this));
-                }.bind(this));
+                        });
+                    });
+                });
         },
-        search_domain: function(search_string, set_text, with_tab) {
+        search_domain: function(search_string=null, set_text=false, with_tab=true) {
             set_text = set_text || false;
-            with_tab = with_tab === undefined ? true : with_tab;
             var domain = [];
 
             // Test first parent to avoid calling unnecessary domain_parser
             if (!this.group.parent && this.domain_parser) {
                 var domain_parser = this.domain_parser;
-                if (search_string || search_string === '') {
+                if (search_string !== null) {
                     domain = domain_parser.parse(search_string);
                 } else {
                     domain = this.attributes.search_value;
@@ -1185,24 +1158,21 @@
             }
             return domain;
         },
-        count_tab_domain: function(current) {
-            if (current === undefined) {
-                current = false;
-            }
+        count_tab_domain: function(current=false) {
             var screen_domain = this.search_domain(
                 this.screen_container.get_text(), false, false);
             var index = this.screen_container.get_tab_index();
-            this.screen_container.tab_domain.forEach(function(tab_domain, i) {
+            this.screen_container.tab_domain.forEach((tab_domain, i) => {
                 if (tab_domain[2] && (!current || (i == index))) {
                     var domain = ['AND', tab_domain[1], screen_domain];
                     this.screen_container.set_tab_counter(null, i);
                     this.group.model.execute(
                         'search_count', [domain, 0, 1000], this.context)
-                        .then(function(count) {
+                        .then(count => {
                             this.screen_container.set_tab_counter(count, i);
-                        }.bind(this));
+                        });
                 }
-            }.bind(this));
+            });
         },
         get context() {
             var context = this.group.context;
@@ -1254,12 +1224,11 @@
                 this.current_record = null;
             }
             this.group.add_fields(fields);
-            var views_add = function(view) {
-                this.group.model.fields[name].views.add(view);
-            }.bind(this);
             for (name in fields_views) {
                 var views = fields_views[name];
-                views.forEach(views_add);
+                for (const view of views) {
+                    this.group.model.fields[name].views.add(view);
+                }
             }
             this.group.exclude_field = this.exclude_field;
         },
@@ -1271,6 +1240,54 @@
             group.readonly = this.attributes.readonly;
             this.set_group(group);
         },
+        record_modified: function(display=true) {
+            for (const window_ of this.windows) {
+                if (window_.record_modified) {
+                    window_.record_modified();
+                }
+            }
+            if (display) {
+                return this.display();
+            }
+        },
+        record_notify: function(notifications) {
+            for (const window_ of this.windows) {
+                if (window_.info_bar) {
+                    window_.info_bar.refresh();
+                    for (const notification of notifications) {
+                        const type = notification[0];
+                        const message = notification[1];
+                        window_.info_bar.add(message, type);
+                    }
+                }
+            }
+        },
+        record_message: function(position, size, max_size, record_id) {
+            for (const window_ of this.windows) {
+                if (window_.record_message) {
+                    window_.record_message(position, size, max_size, record_id);
+                }
+            }
+        },
+        record_saved: function() {
+            for (const window_ of this.windows) {
+                if (window_.record_saved) {
+                    window_.record_saved();
+                }
+            }
+        },
+        update_resources: function(resources) {
+            for (const window_ of this.windows) {
+                if (window_.update_resources) {
+                    window_.update_resources(resources);
+                }
+            }
+        },
+        has_update_resources: function() {
+            return this.windows.some(function(window_) {
+                return window_.update_resources;
+            });
+        },
         get current_record() {
             return this.__current_record;
         },
@@ -1278,55 +1295,49 @@
             // [Coog specific] multi_mixed_view
             var changed = this.current_record !== record;
             this.__current_record = record;
-            if (this.message_callback){
-                var pos = null;
-                var record_id = null;
-                if (record) {
-                    var i = this.group.indexOf(record);
-                    if (i >= 0) {
-                        pos = i + this.offset + 1;
-                    } else {
-                        pos = record.get_index_path();
-                    }
-                    record_id = record.id;
+            var pos = null;
+            var record_id = null;
+            if (record) {
+                var i = this.group.indexOf(record);
+                if (i >= 0) {
+                    pos = i + this.offset + 1;
+                } else {
+                    pos = record.get_index_path();
                 }
-                var data = [pos || 0, this.group.length + this.offset,
-                    this.search_count, record_id];
-                this.message_callback(data);
+                record_id = record.id;
             }
+            this.record_message(
+                pos || 0, this.group.length + this.offset, this.search_count,
+                record_id);
             if (this.switch_callback) {
                 this.switch_callback();
             }
-            if (this.tab) {
+            if (this.has_update_resources()) {
                 if (record) {
                     record.get_resources().always(
-                        this.tab.update_resources.bind(this.tab));
+                        this.update_resources.bind(this));
                 } else {
-                    this.tab.update_resources();
+                    this.update_resources();
                 }
-                this.tab.record_message();
             }
             // [Coog specific] multi_mixed_view
             if (this.parent && changed){
                 this.parent.group_sync(this, this.current_record);
             }
         },
-        load: function(ids, set_cursor, modified) {
-            if (set_cursor === undefined) {
-                set_cursor = true;
-            }
-            this.tree_states_done = [];
-            this.group.load(ids, modified);
+        load: function(ids, set_cursor=true, modified=false, position=-1) {
+            this.group.load(ids, modified, position);
+            this.current_view.reset();
             if (ids.length && this.current_view.view_type != 'calendar') {
                 this.current_record = this.group.get(ids[0]);
             } else {
                 this.current_record = null;
             }
-            return this.display().then(function() {
+            return this.display().then(() => {
                 if (set_cursor) {
                     this.set_cursor();
                 }
-            }.bind(this));
+            });
         },
         display: function(set_cursor) {
             var deferreds = [];
@@ -1345,30 +1356,27 @@
                 deferreds.push(search_prm);
                 // [Coog specific]
                 // JMO: report https://github.com/coopengo/tryton/pull/13
-                // for (var i = 0; i < this.views.length; i++) {
-                //      if (this.views[i] &&
-                //         ((this.views[i] == this.current_view) ||
-                //             this.views[i].el.parent().length)) {
-                //         deferreds.push(this.views[i].display());
+                // for (const view of this.views) {
+                //     if (view &&
+                //         ((view == this.current_view) ||
+                //             view.el.parent().length)) {
+                //         deferreds.push(view.display());
                 //     }
                 // }
                 deferreds.push(this.current_view.display());
             }
-            return jQuery.when.apply(jQuery, deferreds).then(function() {
-                return this.set_tree_state().then(function() {
+            return jQuery.when.apply(jQuery, deferreds).then(
+                () => this.set_tree_state().then(() => {
                     this.current_record = this.current_record;
                     // set_cursor must be called after set_tree_state because
                     // set_tree_state redraws the tree
                     if (set_cursor) {
                         this.set_cursor(false, false);
                     }
-                }.bind(this));
-            }.bind(this));
+                }));
         },
-        display_next: function() {
+        _get_next_record: function() {
             var view = this.current_view;
-            view.set_value();
-            this.set_cursor(false, false);
             if (~['tree', 'form', 'list-form'].indexOf(view.view_type) &&
                     this.current_record && this.current_record.group) {
                 var group = this.current_record.group;
@@ -1387,17 +1395,26 @@
                         break;
                     }
                 }
-                this.current_record = record;
+                return record;
             } else {
-                this.current_record = this.group[0];
+                return this.group[0];
             }
-            this.set_cursor(false, false);
-            return view.display();
         },
-        display_previous: function() {
+        has_next: function() {
+            var next_record = this._get_next_record();
+            return next_record &&
+                (next_record !== this.current_record);
+        },
+        display_next: function() {
             var view = this.current_view;
             view.set_value();
             this.set_cursor(false, false);
+            this.current_record = this._get_next_record();
+            this.set_cursor(false, false);
+            return view.display();
+        },
+        _get_previous_record: function() {
+            var view = this.current_view;
             if (~['tree', 'form', 'list-form'].indexOf(view.view_type) &&
                     this.current_record && this.current_record.group) {
                 var group = this.current_record.group;
@@ -1416,10 +1433,21 @@
                         break;
                     }
                 }
-                this.current_record = record;
+                return record;
             } else {
-                this.current_record = this.group[0];
+                return this.group[0];
             }
+        },
+        has_previous: function() {
+            var previous_record = this._get_previous_record();
+            return previous_record &&
+                (previous_record !== this.current_record);
+        },
+        display_previous: function() {
+            var view = this.current_view;
+            view.set_value();
+            this.set_cursor(false, false);
+            this.current_record = this._get_previous_record();
             this.set_cursor(false, false);
             return view.display();
         },
@@ -1451,6 +1479,7 @@
         clear: function() {
             this.current_record = null;
             this.group.clear();
+            this.tree_states_done = [];
             this.views.map(function(view) {
                 view.reset();
             });
@@ -1474,23 +1503,16 @@
                 return this.current_record.id;
             }
         },
-        new_: function(default_, rec_name) {
+        new_: function(default_=true, rec_name=null) {
             var previous_view = this.current_view;
-            if (default_ === undefined) {
-                default_ = true;
-            }
             var prm = jQuery.when();
             if (this.current_view.view_type == 'calendar') {
                 var selected_date = this.current_view.get_selected_date();
-                prm = this.switch_view('form', undefined, false);
             }
-            if (this.current_view &&
-                    ((this.current_view.view_type == 'tree' &&
-                      !this.current_view.editable) ||
-                     this.current_view.view_type == 'graph')) {
-                prm = this.switch_view('form', undefined, false);
+            if (this.current_view && !this.current_view.creatable) {
+                prm = this.switch_view('form', undefined, true, false);
             }
-            return prm.then(function() {
+            return prm.then(() => {
                 if (!this.current_view.editable) {
                     return;
                 }
@@ -1507,18 +1529,18 @@
                 } else {
                     prm = jQuery.when();
                 }
-                return prm.then(function() {
+                return prm.then(() => {
                     group.add(record, this.new_position);
                     this.current_record = record;
                     if (previous_view.view_type == 'calendar') {
                         previous_view.set_default_date(record, selected_date);
                     }
-                    this.display().done(function() {
+                    this.display().done(() => {
                         this.set_cursor(true, true);
-                    }.bind(this));
+                    });
                     return record;
-                }.bind(this));
-            }.bind(this));
+                });
+            });
         },
         get new_position() {
             var order;
@@ -1585,36 +1607,28 @@
             var path = current_record.get_path(this.group);
             var prm = jQuery.Deferred();
             if (this.current_view.view_type == 'tree') {
-                prm = this.group.save().then(function() {
-                    return this.current_record;
-                }.bind(this));
+                prm = this.group.save().then(() => this.current_record);
             } else if (current_record.validate(fields, null, null, true)) {
-                prm = current_record.save().then(function() {
-                    return current_record;
-                });
+                prm = current_record.save().then(() => current_record);
             } else {
-                return this.current_view.display().then(function() {
+                return this.current_view.display().then(() => {
                     this.set_cursor();
                     return jQuery.Deferred().reject();
-                }.bind(this));
-            }
-            var display = function() {
-                // Return the original promise to keep succeed/rejected state
-                return this.display().then(function() {
-                    return prm;
-                }, function() {
-                    return prm;
                 });
-            }.bind(this);
-            return prm.then(function(current_record) {
+            }
+            const display = () => {
+                // Return the original promise to keep succeed/rejected state
+                return this.display().then(() => prm, () => prm);
+            };
+            return prm.then(current_record => {
                 if (path && current_record && current_record.id) {
                     path.splice(-1, 1,
                             [path[path.length - 1][0], current_record.id]);
                 }
-                return this.group.get_by_path(path).then(function(record) {
+                return this.group.get_by_path(path).then(record => {
                     this.current_record = record;
-                }.bind(this));
-            }.bind(this)).then(display, display);
+                });
+            }).then(display, display);
         },
         set_cursor: function(new_, reset_view) {
             if (!this.current_view) {
@@ -1626,7 +1640,7 @@
         },
         modified: function() {
             var test = function(record) {
-                return (record.has_changed() || record.id < 0);
+                return (record.modified || record.id < 0);
             };
             if (this.current_view.view_type != 'tree') {
                 if (this.current_record) {
@@ -1646,9 +1660,9 @@
         },
         unremove: function() {
             var records = this.current_view.selected_records;
-            records.forEach(function(record) {
+            for (const record of records) {
                 record.group.unremove(record);
-            });
+            }
         },
         remove: function(delete_, remove, force_remove, records) {
             var prm = jQuery.when();
@@ -1664,15 +1678,15 @@
             var top_group = top_record.group;
             var idx = top_group.indexOf(top_record);
             var path = top_record.get_path(this.group);
-            return prm.then(function() {
-                records.forEach(function(record) {
-                    record.group.remove(record, remove, true, force_remove, false);
-                });
+            return prm.then(() => {
+                for (const record of records) {
+                    record.group.remove(record, remove, force_remove, false);
+                }
                 // trigger changed only once
-                records[0].group.changed();
+                records[0].group.record_modified();
                 var prms = [];
                 if (delete_) {
-                    records.forEach(function(record) {
+                    for (const record of records) {
                         if (record.group.parent) {
                             prms.push(record.group.parent.save(false));
                         }
@@ -1685,7 +1699,7 @@
                                 record.group.record_removed.indexOf(record), 1);
                         }
                         // TODO destroy
-                    });
+                    }
                 }
                 if (idx > 0) {
                     var record = top_group[idx - 1];
@@ -1694,31 +1708,31 @@
                     path.splice(-1, 1);
                 }
                 if (!jQuery.isEmptyObject(path)) {
-                    prms.push(this.group.get_by_path(path).then(function(record) {
+                    prms.push(this.group.get_by_path(path).then(record => {
                         this.current_record = record;
-                    }.bind(this)));
+                    }));
                 } else if (this.group.length) {
                     this.current_record = this.group[0];
                 }
 
-                return jQuery.when.apply(jQuery, prms).then(function() {
-                    return this.display().done(function() {
+                return jQuery.when.apply(jQuery, prms).then(() => {
+                    return this.display().done(() => {
                         this.set_cursor();
-                    }.bind(this));
-                }.bind(this));
-            }.bind(this));
+                    });
+                });
+            });
         },
         copy: function() {
             var dfd = jQuery.Deferred();
             var records = this.current_view.selected_records;
             this.model.copy(records, this.context)
-                .then(function(new_ids) {
-                this.group.load(new_ids, false, this.new_position);
-                if (!jQuery.isEmptyObject(new_ids)) {
-                    this.current_record = this.group.get(new_ids[0]);
-                }
-                this.display().always(dfd.resolve);
-            }.bind(this), dfd.reject);
+                .then(new_ids => {
+                    this.group.load(new_ids, false, this.new_position);
+                    if (!jQuery.isEmptyObject(new_ids)) {
+                        this.current_record = this.group.get(new_ids[0]);
+                    }
+                    this.display().always(dfd.resolve);
+                }, dfd.reject);
             return dfd.promise();
         },
         search_active: function(active) {
@@ -1758,7 +1772,9 @@
                 if (props.selection instanceof Array) {
                     continue;
                 }
+                props = jQuery.extend({}, props);
                 props.selection = this.get_selection(props);
+                fields[name] = props;
             }
 
             if ('arch' in view_tree) {
@@ -1772,11 +1788,11 @@
                         // take only the first definition
                         if (!(name in dom_fields)) {
                             dom_fields[name] = fields[name];
-                            ['string', 'factor'].forEach(function(attr) {
+                            for (const attr of ['string', 'factor']) {
                                 if (node.getAttribute(attr)) {
                                     dom_fields[name][attr] = node.getAttribute(attr);
                                 }
-                            });
+                            }
                         }
                         var symbol = node.getAttribute('symbol');
                         if (symbol && !(symbol in dom_fields)) {
@@ -1794,27 +1810,25 @@
             }
 
             // Add common fields
-            [
+            const common_fields = new Set([
                 ['id', Sao.i18n.gettext('ID'), 'integer'],
                 ['create_uid', Sao.i18n.gettext('Created by'), 'many2one'],
                 ['create_date', Sao.i18n.gettext('Created at'), 'datetime'],
                 ['write_uid', Sao.i18n.gettext('Modified by'), 'many2one'],
                 ['write_date', Sao.i18n.gettext('Modified at'), 'datetime']
-                    ] .forEach(function(e) {
-                        var name = e[0];
-                        var string = e[1];
-                        var type = e[2];
-                        if (!(name in fields)) {
-                            fields[name] = {
-                                'string': string,
-                                'name': name,
-                                'type': type
-                            };
-                            if (type == 'datetime') {
-                                fields[name].format = '"%H:%M:%S"';
-                            }
-                        }
-                    });
+            ]);
+            for (const [name, string, type] of common_fields) {
+                if (!(name in fields)) {
+                    fields[name] = {
+                        'string': string,
+                        'name': name,
+                        'type': type
+                    };
+                    if (type == 'datetime') {
+                        fields[name].format = '"%H:%M:%S"';
+                    }
+                }
+            }
 
             domain_parser = new Sao.common.DomainParser(fields, this.context);
             this._domain_parser[view_id] = domain_parser;
@@ -1825,9 +1839,9 @@
             var change_with = props.selection_change_with;
             if (!jQuery.isEmptyObject(change_with)) {
                 var values = {};
-                change_with.forEach(function(p) {
+                for (const p of change_with) {
                     values[p] = null;
-                });
+                }
                 selection = this.model.execute(props.selection,
                         [values], undefined, false, false);
             } else {
@@ -1862,32 +1876,30 @@
             var domain_parser = new Sao.common.DomainParser(fields_desc);
             var fields = [];
             var invalid_fields = record.invalid_fields();
-            Object.keys(invalid_fields).sort().forEach(
-                function(field) {
-                    var invalid = invalid_fields[field];
-                    var string = record.model.fields[field].description.string;
-                    if ((invalid == 'required') ||
-                            (Sao.common.compare(invalid,
-                                                [[field, '!=', null]]))) {
-                        fields.push(Sao.i18n.gettext(
-                                '"%1" is required.', string));
-                    } else if (invalid == 'domain') {
-                        fields.push(Sao.i18n.gettext(
-                                '"%1" is not valid according to its domain.',
-                            string));
-                    } else if (invalid == 'children') {
-                        fields.push(Sao.i18n.gettext(
-                                'The values of "%1" are not valid.', string));
+            for (const field of Object.keys(invalid_fields).sort()) {
+                var invalid = invalid_fields[field];
+                var string = record.model.fields[field].description.string;
+                if ((invalid == 'required') ||
+                    (Sao.common.compare(invalid, [[field, '!=', null]]))) {
+                    fields.push(Sao.i18n.gettext(
+                        '"%1" is required.', string));
+                } else if (invalid == 'domain') {
+                    fields.push(Sao.i18n.gettext(
+                        '"%1" is not valid according to its domain.',
+                        string));
+                } else if (invalid == 'children') {
+                    fields.push(Sao.i18n.gettext(
+                        'The values of "%1" are not valid.', string));
+                } else {
+                    if (domain_parser.stringable(invalid)) {
+                        fields.push(domain_parser.string(invalid));
                     } else {
-                        if (domain_parser.stringable(invalid)) {
-                            fields.push(domain_parser.string(invalid));
-                        } else {
-                            fields.push(Sao.i18n.gettext(
-                                    '"%1" is not valid according to its domain.'),
-                                string);
-                        }
+                        fields.push(Sao.i18n.gettext(
+                            '"%1" is not valid according to its domain.'),
+                            string);
                     }
-                });
+                }
+            }
             if (fields.length > 5) {
                 fields.splice(5, fields.length);
                 fields.push('...');
@@ -1917,9 +1929,9 @@
             if (this.group.parent) {
                 promises.push(this.group.parent.root_parent.reload());
             }
-            return jQuery.when.apply(jQuery, promises).then(function() {
+            return jQuery.when.apply(jQuery, promises).then(() => {
                 this.display();
-            }.bind(this));
+            });
         },
         get_buttons: function() {
             var selected_records = this.current_view.selected_records;
@@ -1927,7 +1939,7 @@
                 return [];
             }
             var buttons = this.current_view.get_buttons();
-            selected_records.forEach(function(record) {
+            for (const record of selected_records) {
                 buttons = buttons.filter(function(button) {
                     if (button.attributes.type === 'instance') {
                         return false;
@@ -1936,13 +1948,13 @@
                         button.attributes.states || {});
                     return !(states.invisible || states.readonly);
                 });
-            });
+            }
             return buttons;
         },
         button: function(attributes) {
             var ids;
-            var process_action = function(action) {
-                return this.reload(ids, true).then(function() {
+            const process_action = action => {
+                return this.reload(ids, true).then(() => {
                     // [Coog specific]
                     // JMO: report https://github.com/coopengo/tryton/pull/13
                     var action_id;
@@ -1965,7 +1977,7 @@
                             ids: ids
                         }, null, this.context, true);
                     }
-                }.bind(this));
+                });
             };
 
             var selected_records = this.current_view.selected_records;
@@ -1973,24 +1985,23 @@
             var fields = this.current_view.get_fields();
 
             var prms = [];
-            var reset_state = function(record) {
-                return function() {
+            const reset_state = record => {
+                return () => {
                     this.display(true);
                     // Reset valid state with normal domain
                     record.validate(fields);
-                }.bind(this);
-            }.bind(this);
-            for (var i = 0; i < selected_records.length; i++) {
-                var record = selected_records[i];
-                var domain = record.expr_eval(
+                };
+            };
+            for (const record of selected_records) {
+                const domain = record.expr_eval(
                     (attributes.states || {})).pre_validate || [];
                 prms.push(record.validate(fields, false, domain));
             }
-            return jQuery.when.apply(jQuery, prms).then(function() {
+            return jQuery.when.apply(jQuery, prms).then((...args) => {
                 var record;
                 for (var i = 0; i < selected_records.length; i++) {
                     record = selected_records[i];
-                    var result = arguments[i];
+                    var result = args[i];
                     if (result) {
                         continue;
                     }
@@ -2004,7 +2015,7 @@
                 if (attributes.confirm) {
                     prm = Sao.common.sur.run(attributes.confirm);
                 }
-                return prm.then(function() {
+                return prm.then(() => {
                     var record = this.current_record;
                     if (attributes.type === 'instance') {
                         var args = record.expr_eval(attributes.change || []);
@@ -2012,14 +2023,14 @@
                         return record.model.execute(attributes.name, [values],
                             this.context).then(function(changes) {
                                 record.set_on_change(changes);
-                                record._set_modified();
-                                record.group.root_group.screens.forEach(
-                                    function(screen) {
-                                        screen.display();
-                                    });
+                                record.set_modified();
+                                for (const screen of
+                                    record.group.root_group.screens) {
+                                    screen.display();
+                                }
                             });
                     } else {
-                        return record.save(false).then(function() {
+                        return record.save(false).then(() => {
                             var context = this.context;
                             context._timestamp = {};
                             ids = [];
@@ -2031,14 +2042,12 @@
                             }
                             return record.model.execute(attributes.name,
                                 [ids], context)
-                                .then(process_action.bind(this))
-                                .fail(function() {
-                                    return this.reload(ids, true);
-                                }.bind(this));
-                        }.bind(this));
+                                .then(process_action)
+                                .fail(() => this.reload(ids, true));
+                        });
                     }
-                }.bind(this));
-            }.bind(this));
+                });
+            });
         },
         client_action: function(action) {
             var access = Sao.common.MODELACCESS.get(this.model_name);
@@ -2146,15 +2155,19 @@
             }
             return path;
         },
-        save_tree_state: function(store) {
+        save_tree_state: function(store=true) {
             var prms = [];
             var prm;
-            store = (store === undefined) ? true : store;
             var i, len, view, widgets, wi, wlen;
             var parent_ = this.group.parent ? this.group.parent.id : null;
             var clear_cache = function() {
                 Sao.Session.current_session.cache.clear(
                     'model.ir.ui.view_tree_state.get');
+            };
+            const set_session_fail = () => {
+                Sao.Logger.warn(
+                    "Unable to set view tree state for %s",
+                    this.model_name);
             };
             for (i = 0, len = this.views.length; i < len; i++) {
                 view = this.views[i];
@@ -2196,7 +2209,8 @@
                                 view.children_field,
                                 JSON.stringify(paths),
                                 JSON.stringify(selected_paths)], {})
-                            .then(clear_cache);
+                            .then(clear_cache)
+                            .fail(set_session_fail);
                         prms.push(prm);
                     }
                 }
@@ -2245,19 +2259,24 @@
                         this.model_name,
                         this.get_tree_domain(parent_),
                         view.children_field], {})
-                    .then(function(state) {
+                    .then(state => {
                         state = [JSON.parse(state[0]), JSON.parse(state[1])];
                         if (!(parent_ in this.tree_states)) {
                             this.tree_states[parent_] = {};
                         }
                         this.tree_states[parent_][view.children_field || null] = state;
                         return state;
-                    }.bind(this));
+                    })
+                    .fail(() => {
+                        Sao.Logger.warn(
+                            "Unable to get view tree state for %s",
+                            this.model_name);
+                    });
             } else {
                 state_prm = jQuery.when(state);
             }
             this.tree_states_done.push(view);
-            return state_prm.done(function(state) {
+            return state_prm.done(state => {
                 var expanded_nodes, selected_nodes, record;
                 expanded_nodes = state[0];
                 selected_nodes = state[1];
@@ -2265,8 +2284,8 @@
                     return view.display(selected_nodes, expanded_nodes);
                 } else {
                     if (!jQuery.isEmptyObject(selected_nodes)) {
-                        for (var i = 0; i < selected_nodes[0].length; i++) {
-                            var new_record = this.group.get(selected_nodes[0][i]);
+                        for (const id of selected_nodes[0]) {
+                            const new_record = this.group.get(id);
                             if (!new_record) {
                                 break;
                             } else {
@@ -2281,7 +2300,8 @@
                         }
                     }
                 }
-            }.bind(this));
+            });
         }
     });
+    Sao.Screen.tree_column_optional = {};
 }());

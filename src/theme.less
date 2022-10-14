@@ -136,6 +136,10 @@ input[type=number],
     }
 }
 
+.input-group {
+    margin-bottom: 2px;
+}
+
 .input-group-lg > .form-control,
 .input-group-lg > .input-group-addon {
     padding: 0 5px;
@@ -143,6 +147,12 @@ input[type=number],
 .input-group-sm > .form-control,
 .input-group-sm > .input-group-addon {
     padding: 0 5px;
+}
+
+.has-feedback {
+  .form-control {
+    padding-right: (@input-height-base * 1.25);
+  }
 }
 
 .input-group-addon {
@@ -287,6 +297,7 @@ input[type="checkbox"],
     -webkit-appearance: none;
     appearance: none;
     cursor: pointer;
+    width: 18px;
 
     &:focus {
         outline: none;

@@ -10,6 +10,7 @@
         view_id: null,
         modified: null,
         editable: null,
+        creatable: null,
         children_field: null,
         xml_parser: null,
         init: function(view_id, screen, xml) {
@@ -19,8 +20,7 @@
             this.state_widgets = [];
             var attributes = xml.children()[0].attributes;
             this.attributes = {};
-            for (var i = 0, len = attributes.length; i < len; i++) {
-                var attribute = attributes[i];
+            for (const attribute of attributes) {
                 this.attributes[attribute.name] = attribute.value;
             }
             screen.set_on_write(this.attributes.on_write);
@@ -105,8 +105,7 @@
         },
         _node_attributes: function(node) {
             var node_attrs = {};
-            for (var i = 0; i < node.attributes.length; i++) {
-                var attribute = node.attributes[i];
+            for (var attribute of node.attributes) {
                 node_attrs[attribute.name] = attribute.value;
             }
 
@@ -115,22 +114,24 @@
                 field = this.field_attrs[node_attrs.name] || {};
             }
 
-            ['readonly', 'homogeneous'].forEach(function(name) {
+            for (const name of ['readonly', 'homogeneous']) {
                 if (node_attrs[name]) {
                     node_attrs[name] = node_attrs[name] == 1;
                 }
-            });
-            ['yexpand', 'yfill', 'xexpand', 'xfill', 'colspan',
-                'position', 'height', 'width'].forEach(function(name) {
-                    if (node_attrs[name]) {
-                        node_attrs[name] = Number(node_attrs[name]);
-                    }
-            });
-            ['xalign', 'yalign'].forEach(function(name) {
+            }
+            for (const name of [
+                'yexpand', 'yfill',
+                'xexpand', 'xfill',
+                'colspan', 'position', 'height', 'width']) {
                 if (node_attrs[name]) {
                     node_attrs[name] = Number(node_attrs[name]);
                 }
-            });
+            }
+            for (const name of ['xalign', 'yalign']) {
+                if (node_attrs[name]) {
+                    node_attrs[name] = Number(node_attrs[name]);
+                }
+            }
 
             if (!jQuery.isEmptyObject(field)) {
                 if (!node_attrs.widget) {
@@ -144,17 +145,17 @@
                     node_attrs.help = field.help;
                 }
 
-                ['relation', 'domain', 'selection', 'string', 'states',
+                for (const name of [
+                    'relation', 'domain', 'selection', 'string', 'states',
                     'relation_field', 'views', 'invisible', 'add_remove',
                     'sort', 'context', 'size', 'filename', 'autocomplete',
                     'translate', 'create', 'delete', 'selection_change_with',
                     'schema_model', 'required', 'help_selection', 'help_field',
-                    'order',
-                ].forEach(function(name) {
-                        if ((name in field) && (!(name in node_attrs))) {
-                            node_attrs[name] = field[name];
-                        }
-                    });
+                    'order', 'symbol', 'monetary']) {
+                    if ((name in field) && (!(name in node_attrs))) {
+                        node_attrs[name] = field[name];
+                    }
+                }
             }
             return node_attrs;
         },

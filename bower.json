@@ -25,7 +25,6 @@
     "mousetrap": "^1.6",
     "bootstrap-rtl-ondemand": "^3.3.4-ondemand",
     "Sortable": "sortablejs#^1.8.4",
-    "popper.js": "https://unpkg.com/popper.js",
     "codemirror": "^5.38"
   },
   "devDependencies": {

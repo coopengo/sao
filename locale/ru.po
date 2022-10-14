@@ -75,6 +75,9 @@ msgstr ""
 msgid "Show this help"
 msgstr ""
 
+msgid "Show/Hide access keys"
+msgstr ""
+
 msgid "Keyboard shortcuts"
 msgstr ""
 
@@ -224,10 +227,31 @@ msgstr ""
 msgid "..."
 msgstr "..."
 
+msgid "Bold"
+msgstr ""
+
+msgid "Italic"
+msgstr ""
+
+msgid "Underline"
+msgstr ""
+
 msgid "Font"
 msgstr ""
 
 msgid "Size"
+msgstr ""
+
+msgid "Justify Right"
+msgstr ""
+
+msgid "Justify Left"
+msgstr ""
+
+msgid "Justify Center"
+msgstr ""
+
+msgid "Justify Full"
 msgstr ""
 
 msgid "Switch view"
@@ -344,9 +368,6 @@ msgstr ""
 
 msgid "Note (%1/%2)"
 msgstr ""
-
-msgid " of "
-msgstr " из "
 
 msgid "Filters"
 msgstr ""
@@ -471,15 +492,22 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
+msgid "Open..."
+msgstr ""
+
 msgid "Choose a language"
 msgstr ""
 
+#, javascript-format
 msgid "%1%"
 msgstr ""
 
 #, fuzzy
 msgid ": "
 msgstr ": "
+
+msgid "Customize"
+msgstr ""
 
 msgid "More"
 msgstr ""
@@ -553,7 +581,7 @@ msgstr ""
 msgid "You must select an import file first."
 msgstr ""
 
-msgid "An error occured in loading the file."
+msgid "Detection failed"
 msgstr ""
 
 msgid "Error processing the file at field %1."
@@ -562,8 +590,14 @@ msgstr ""
 msgid "Error"
 msgstr ""
 
-msgid "Error occured in loading the file"
+msgid "Import failed"
 msgstr ""
+
+msgid "%1 record imported"
+msgid_plural "%1 records imported"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 msgid "CSV Export: %1"
 msgstr ""
@@ -613,6 +647,12 @@ msgstr ""
 msgid "Override %1 definition?"
 msgstr ""
 
+msgid "%1 record saved"
+msgid_plural "%1 records saved"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
 msgid "E-mail %1"
 msgstr ""
 
@@ -630,12 +670,6 @@ msgstr ""
 
 msgid "Reports"
 msgstr ""
-
-msgid ""
-msgstr ""
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-05-01 15:33+0000\n"
-"Content-Type: text/plain; charset=UTF-8\n"
 
 msgid "Attachments"
 msgstr ""

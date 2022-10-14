@@ -76,6 +76,9 @@ msgstr ""
 msgid "Show this help"
 msgstr ""
 
+msgid "Show/Hide access keys"
+msgstr ""
+
 msgid "Keyboard shortcuts"
 msgstr ""
 
@@ -225,11 +228,33 @@ msgstr "ດາວໂຫຼດ"
 msgid "..."
 msgstr "..."
 
+msgid "Bold"
+msgstr ""
+
+msgid "Italic"
+msgstr ""
+
+#, fuzzy
+msgid "Underline"
+msgstr "ເອົາກັບຄືນ"
+
 msgid "Font"
 msgstr "ໂຕໜັງສື"
 
 msgid "Size"
 msgstr "ຂະໜາດ"
+
+msgid "Justify Right"
+msgstr ""
+
+msgid "Justify Left"
+msgstr ""
+
+msgid "Justify Center"
+msgstr ""
+
+msgid "Justify Full"
+msgstr ""
 
 msgid "Switch view"
 msgstr "ສະຫຼັບໜ້າເບິ່ງ"
@@ -357,9 +382,6 @@ msgstr "ຄັດຕິດ(%1)"
 
 msgid "Note (%1/%2)"
 msgstr ""
-
-msgid " of "
-msgstr " ຂອງ "
 
 msgid "Filters"
 msgstr "ກັ່ນຕອງ"
@@ -490,14 +512,22 @@ msgstr ""
 msgid "Clear"
 msgstr "ລຶບອອກ"
 
+#, fuzzy
+msgid "Open..."
+msgstr "ໄຂ"
+
 msgid "Choose a language"
 msgstr ""
 
+#, javascript-format
 msgid "%1%"
 msgstr "%1%"
 
 msgid ": "
 msgstr ": "
+
+msgid "Customize"
+msgstr ""
 
 msgid "More"
 msgstr "ເພີ່ມຕື່ມ"
@@ -572,9 +602,8 @@ msgstr "ແຖວທີ່ຈະຂວ້າມ:"
 msgid "You must select an import file first."
 msgstr "ທ່ານຕ້ອງໄດ້ເລືອກຟາຍລ໌ທີ່ຈະນຳເຂົ້ານັ້ນກ່ອນ"
 
-#, fuzzy
-msgid "An error occured in loading the file."
-msgstr "ມີຂໍ້ຜິດພາດເກີດຂຶ້ນໃນການດຶງເອົາຟາຍລ໌"
+msgid "Detection failed"
+msgstr ""
 
 msgid "Error processing the file at field %1."
 msgstr "ມີຂໍ້ຜິດພາດໃນການປະມວນຜົນຟາຍລ໌ ໃນຊ່ອງຂໍ້ມູນ %1."
@@ -582,8 +611,13 @@ msgstr "ມີຂໍ້ຜິດພາດໃນການປະມວນຜົນ
 msgid "Error"
 msgstr "ຜິດພາດ"
 
-msgid "Error occured in loading the file"
-msgstr "ມີຂໍ້ຜິດພາດເກີດຂຶ້ນໃນການດຶງເອົາຟາຍລ໌"
+#, fuzzy
+msgid "Import failed"
+msgstr "ນຳເຂົ້າ"
+
+msgid "%1 record imported"
+msgid_plural "%1 records imported"
+msgstr[0] ""
 
 msgid "CSV Export: %1"
 msgstr ""
@@ -637,6 +671,11 @@ msgstr "ຊື່ຂອງການສົ່ງອອກນີ້ແມ່ນຫ
 msgid "Override %1 definition?"
 msgstr "ຂຽນທັບຄຳອະທິບາຍ %1 ນີ້ບໍ?"
 
+#, fuzzy
+msgid "%1 record saved"
+msgid_plural "%1 records saved"
+msgstr[0] "ແຖວຂໍ້ມູນຖືກບັນທຶກໄວ້ແລ້ວ"
+
 msgid "E-mail %1"
 msgstr ""
 
@@ -655,18 +694,6 @@ msgstr ""
 #, fuzzy
 msgid "Reports"
 msgstr "ລາຍງານຂໍ້ຜິດພາດ"
-
-msgid ""
-msgstr ""
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-05-01 15:33+0000\n"
-"PO-Revision-Date: 2019-10-31 09:05+0000\n"
-"Last-Translator: Cedric Krier <cedric.krier@b2ck.com>\n"
-"Language: lo\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 3.8\n"
 
 #, fuzzy
 msgid "Attachments"
