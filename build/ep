@@ -35,7 +35,6 @@ pack() {
         && move_res bower_components/moment/min/moment.min.js \
         && move_res bower_components/mousetrap/mousetrap.min.js \
         && move_res bower_components/papaparse/papaparse.min.js \
-        && move_res bower_components/popper.js \
         && rm -f dist/tryton-sao.js dist/tryton-sao.css dist/coog-sao.css \
         && sed -i "s;\.\./bower_components/bootstrap/fonts;fonts;g" dist/tryton-sao.min.css \
         && sed -i "s;dist/tryton-sao.js;tryton-sao.js;g" dist/index.html \
