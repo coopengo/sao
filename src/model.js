@@ -549,7 +549,7 @@
             this.destroyed = false;
         },
         get modified() {
-            var result = !jQuery.isEmptyObject(this._changed);
+            var result = !jQuery.isEmptyObject(this.modified_fields);
             // JCA : #15014 Add a way to make sure some fields are always
             // ignored when detecting whether the record needs saving or not
             if (result === false) {
@@ -557,8 +557,8 @@
             }
             Sao.Logger.info(
                 "Modified fields of %s@%s", this.id, this.model.name,
-                Object.keys(this._changed));
-            return Object.keys(this._changed).some(
+                Object.keys(this.modified_fields));
+            return Object.keys(this.modified_fields).some(
                 this.check_field_never_modified.bind(this));
         },
         check_field_never_modified: function(field) {
