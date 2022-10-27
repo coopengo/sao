@@ -9,6 +9,13 @@
         },
         set record(value) {
             this._record = value;
+        },
+        button_clicked: function(event) {
+            if ((this.record !== this.screen.current_record) ||
+                (this.listform.selected_records.length != 1)) {
+                return;
+            }
+            Sao.View.ListGroupViewForm._super.button_clicked.call(this, event);
         }
     });
 
@@ -69,6 +76,7 @@
             var view_form = new Sao.View.ListGroupViewForm(
                 this.view_id, this.screen, this.form_xml);
             view_form.record = record;
+            view_form.listform = this;
             this._view_forms.push(view_form);
             var frame = jQuery('<li/>', {
                 'class': 'list-group-item list-form-item'
