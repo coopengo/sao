@@ -273,6 +273,7 @@
                 }).appendTo(jQuery('<div/>', {
                     'class': 'navbar-text hidden-xs',
                 }).insertAfter(this.buttons.previous));
+                this.status_label.click(this._force_count.bind(this));
                 this.buttons.previous.addClass('hidden-xs');
             }
             if (this.buttons.next) {
@@ -333,6 +334,8 @@
         compare: function(attributes) {
             return false;
         },
+        _force_count: function(evt) {
+        }
     });
 
     Sao.Tab.counter = 0;
@@ -1594,6 +1597,10 @@
         },
         get_url: function() {
             return this.screen.get_url(this.name);
+        },
+        _force_count: function(evt) {
+            var domain = this.screen.screen_container.get_text();
+            this.screen._force_count(domain);
         },
     });
 
