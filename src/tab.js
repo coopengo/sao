@@ -13,6 +13,7 @@
             this.name = '';
             this.name_el = jQuery('<span/>');
             this.view_prm = jQuery.when();
+            this.forced_count = false;
         },
         menu_def: function() {
             return [
@@ -335,6 +336,7 @@
             return false;
         },
         _force_count: function(evt) {
+            this.forced_count = true;
         }
     });
 
@@ -1494,16 +1496,21 @@
             set_sensitive('next', this.screen.has_next());
 
             var msg;
+            if (this.forced_count) {
+                size_display_func = (x) => x;
+            } else {
+                size_display_func = Sao.common.humanize;
+            }
             if (size < max_size) {
                 msg = (
                     name + '@' +
-                    Sao.common.humanize(size) + '/' +
-                    Sao.common.humanize(max_size));
+                    size_display_func(size) + '/' +
+                    size_display_func(max_size));
                 if (max_size >= this.screen.count_limit) {
                     msg += '+';
                 }
             } else {
-                msg = name + '/' + Sao.common.humanize(size);
+                msg = name + '/' + size_display_func(size);
             }
             this.status_label.text(msg).attr('title', msg);
             this.info_bar.clear();
@@ -1599,6 +1606,7 @@
             return this.screen.get_url(this.name);
         },
         _force_count: function(evt) {
+            Sao.Tab.Form._super._force_count.call(this, evt);
             var domain = this.screen.screen_container.get_text();
             this.screen._force_count(domain);
         },
