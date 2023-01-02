@@ -1506,7 +1506,8 @@
                     name + '@' +
                     size_display_func(size) + '/' +
                     size_display_func(max_size));
-                if (max_size >= this.screen.count_limit) {
+                if (!this.forced_count &&
+                        (max_size >= this.screen.count_limit)) {
                     msg += '+';
                 }
             } else {
@@ -1516,6 +1517,7 @@
             this.info_bar.clear();
             this.activate_save();
             this.refresh_attachment_preview();
+            this.forced_count = false;
         },
         record_modified: function() {
             this.activate_save();
