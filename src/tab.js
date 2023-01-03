@@ -1496,6 +1496,7 @@
             set_sensitive('next', this.screen.has_next());
 
             var msg;
+            var size_display_func;
             if (this.forced_count) {
                 size_display_func = (x) => x;
             } else {
