@@ -284,6 +284,7 @@ function eval_pyson(value){
             });
             this.notebooks = [];
             this.expandables = [];
+            this.widget_groups = {};
             this.containers = [];
             this.widget_id = 0;
             Sao.View.Form._super.init.call(this, view_id, screen, xml);
@@ -3590,8 +3591,22 @@ function eval_pyson(value){
             });
             // [Coog specific]
             // > multi_mixed_view see tryton/8fa02ed59d03aa52600fb8332973f6a88d46d8c0
-            if (attributes.group)
-                this.screen.parent = this;
+            if (attributes.group) {
+                this.screen._multiview_form = view;
+                this.screen._multiview_group = attributes.group;
+                var wgroup = view.widget_groups[attributes.group];
+                if (wgroup === undefined) {
+                    view.widget_groups[attributes.group] = [];
+                    wgroup = view.widget_groups[attributes.group];
+                }
+                this.screen.switch_view().then(() => {
+                    if (this.screen.current_view.view_type == 'tree') {
+                        wgroup.unshift(this);
+                    } else {
+                        wgroup.push(this);
+                    }
+                });
+            }
             this.screen.pre_validate = attributes.pre_validate == 1;
 
             this.screen.windows.push(this);
