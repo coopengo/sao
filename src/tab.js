@@ -261,28 +261,14 @@
                 }.bind(this));
             };
             this.menu_def().forEach(add_button.bind(this));
-<<<<<<< HEAD
             this.status_label = jQuery('<span/>', {
                 'class': 'badge',
             }).appendTo(jQuery('<div/>', {
                 'class': 'navbar-text hidden-xs',
             }).insertAfter(this.buttons.previous));
+            this.status_label.click(this._force_count.bind(this));
             this.buttons.previous.addClass('hidden-xs');
             this.buttons.next.addClass('hidden-xs');
-=======
-            if (this.buttons.previous) {
-                this.status_label = jQuery('<span/>', {
-                    'class': 'badge',
-                }).appendTo(jQuery('<div/>', {
-                    'class': 'navbar-text hidden-xs',
-                }).insertAfter(this.buttons.previous));
-                this.status_label.click(this._force_count.bind(this));
-                this.buttons.previous.addClass('hidden-xs');
-            }
-            if (this.buttons.next) {
-                this.buttons.next.addClass('hidden-xs');
-            }
->>>>>>> 1aa5df62 ([coog-22.14] Fetch real count of records on click [PREVIEW] (#149))
             toolbar.find('.btn-toolbar > .btn-group').last()
                 .addClass( 'hidden-xs')
                 .find('.dropdown')
