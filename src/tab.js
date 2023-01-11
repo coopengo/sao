@@ -13,6 +13,7 @@
             this.name = '';
             this.name_el = jQuery('<span/>');
             this.view_prm = jQuery.when();
+            this.forced_count = false;
         },
         menu_def: function() {
             return [
@@ -272,6 +273,7 @@
                 }).appendTo(jQuery('<div/>', {
                     'class': 'navbar-text hidden-xs',
                 }).insertAfter(this.buttons.previous));
+                this.status_label.click(this._force_count.bind(this));
                 this.buttons.previous.addClass('hidden-xs');
             }
             if (this.buttons.next) {
@@ -331,6 +333,9 @@
         compare: function(attributes) {
             return false;
         },
+        _force_count: function(evt) {
+            this.forced_count = true;
+        }
     });
 
     Sao.Tab.counter = 0;
@@ -1488,17 +1493,34 @@
                 this.menu_buttons.save.toggleClass(
                     'disabled', this.screen.readonly);
 
-                var msg = name + ' / ' + Sao.common.humanize(data[1]);
-                if ((data[1] < data[2]) &&
-                    this.screen.limit !== null &&
-                    (data[2] > this.screen.limit)) {
-                    msg += Sao.i18n.gettext(' of ') + Sao.common.humanize(data[2]);
+                var msg;
+                var size_display_func;
+                var size = data[1];
+                var max_size = data[2];
+
+                if (this.forced_count) {
+                    size_display_func = (x) => x;
+                } else {
+                    size_display_func = Sao.common.humanize;
+                }
+                if (size < max_size) {
+                    msg = (
+                        name + '@' +
+                        size_display_func(size) + '/' +
+                        size_display_func(max_size));
+                    if (!this.forced_count &&
+                            (max_size >= this.screen.count_limit)) {
+                        msg += '+';
+                    }
+                } else {
+                    msg = name + '/' + size_display_func(size);
                 }
                 this.status_label.text(msg).attr('title', msg);
             }
             this.info_bar.message();
             // TODO activate_save
             this.refresh_attachment_preview();
+            this.forced_count = false;
         },
         action: function() {
             window.setTimeout(function() {
@@ -1580,6 +1602,11 @@
         },
         get_url: function() {
             return this.screen.get_url(this.name);
+        },
+        _force_count: function(evt) {
+            Sao.Tab.Form._super._force_count.call(this, evt);
+            var domain = this.screen.screen_container.get_text();
+            this.screen._force_count(domain);
         },
     });
 
