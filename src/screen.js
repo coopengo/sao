@@ -808,6 +808,7 @@
             } else {
                 this.limit = attributes.limit;
             }
+            this.position = 0;
             this.offset = 0;
             this.order = this.default_order = attributes.order;
             var access = Sao.common.MODELACCESS.get(model_name);
@@ -2298,6 +2299,27 @@
                         }
                     }
                 }
+            });
+        },
+        _force_count: function(search_string) {
+            var domain = this.search_domain(search_string, true);
+            var context = this.context;
+            if (this.screen_container.but_active.hasClass('active')) {
+                context.active_test = false;
+            }
+            var count_prm = this.model.execute(
+                'search_count', [domain, 0, null], context).then(
+                    count => {
+                        this.search_count = count;
+                    },
+                    () => {
+                        this.search_count = 0;
+                    });
+            count_prm.then(() => {
+                var record_id = this.current_record ? this.current_record.id : null;
+                this.record_message(
+                    this.position || 0, this.group.length + this.offset,
+                    this.search_count, record_id);
             });
         }
     });
