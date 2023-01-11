@@ -808,6 +808,7 @@
             } else {
                 this.limit = attributes.limit;
             }
+            this.position = 0;
             this.offset = 0;
             this.order = this.default_order = attributes.order;
             var access = Sao.common.MODELACCESS.get(model_name);
@@ -1295,19 +1296,19 @@
             // [Coog specific] multi_mixed_view
             var changed = this.current_record !== record;
             this.__current_record = record;
-            var pos = null;
+            this.position = null;
             var record_id = null;
             if (record) {
                 var i = this.group.indexOf(record);
                 if (i >= 0) {
-                    pos = i + this.offset + 1;
+                    this.position = i + this.offset + 1;
                 } else {
-                    pos = record.get_index_path();
+                    this.position = record.get_index_path();
                 }
                 record_id = record.id;
             }
             this.record_message(
-                pos || 0, this.group.length + this.offset, this.search_count,
+                this.position || 0, this.group.length + this.offset, this.search_count,
                 record_id);
             if (this.switch_callback) {
                 this.switch_callback();
@@ -2300,6 +2301,27 @@
                         }
                     }
                 }
+            });
+        },
+        _force_count: function(search_string) {
+            var domain = this.search_domain(search_string, true);
+            var context = this.context;
+            if (this.screen_container.but_active.hasClass('active')) {
+                context.active_test = false;
+            }
+            var count_prm = this.model.execute(
+                'search_count', [domain, 0, null], context).then(
+                    count => {
+                        this.search_count = count;
+                    },
+                    () => {
+                        this.search_count = 0;
+                    });
+            count_prm.then(() => {
+                var record_id = this.current_record ? this.current_record.id : null;
+                this.record_message(
+                    this.position || 0, this.group.length + this.offset,
+                    this.search_count, record_id);
             });
         }
     });
