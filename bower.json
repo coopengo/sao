@@ -18,15 +18,14 @@
     "jquery": "^3",
     "bootstrap": "^3.3.7",
     "moment": "^2.10",
-    "eonasdan-bootstrap-datetimepicker": "^4.17",
-    "gettext.js": "^0.5",
-    "c3": "^0.6",
+    "gettext.js": "^0.7",
+    "c3": "^0.7",
     "papaparse": "^5.0",
-    "fullcalendar": "^3.1",
+    "fullcalendar": "3.10.2",
     "mousetrap": "^1.6",
     "bootstrap-rtl-ondemand": "^3.3.4-ondemand",
-    "codemirror": "^5.38",
-    "Sortable": "sortablejs#^1.8.4"
+    "Sortable": "sortablejs#^1.8.4",
+    "codemirror": "^5.38"
   },
   "devDependencies": {
     "qunit": "^1.18"

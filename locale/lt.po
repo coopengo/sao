@@ -60,6 +60,9 @@ msgstr "Susijęs"
 msgid "Print"
 msgstr "Spausdinimas"
 
+msgid "E-Mail"
+msgstr ""
+
 #, fuzzy
 msgid "Previous tab"
 msgstr "_Buvusi kortelė"
@@ -72,6 +75,9 @@ msgid "Global search"
 msgstr ""
 
 msgid "Show this help"
+msgstr ""
+
+msgid "Show/Hide access keys"
 msgstr ""
 
 msgid "Keyboard shortcuts"
@@ -99,6 +105,154 @@ msgid "User name"
 msgstr "Naudotojo vardas"
 
 msgid "Database"
+msgstr ""
+
+msgid "Your selection:"
+msgstr "Jūsų pasirinkimas:"
+
+msgid "Cancel"
+msgstr "Atsisakyti"
+
+msgid "OK"
+msgstr "Gerai"
+
+msgid "Y"
+msgstr "m."
+
+msgid "M"
+msgstr "mėn."
+
+msgid "w"
+msgstr "sav."
+
+msgid "d"
+msgstr "d."
+
+msgid "h"
+msgstr "val."
+
+msgid "m"
+msgstr "min."
+
+msgid "s"
+msgstr "s"
+
+msgid "By: "
+msgstr ""
+
+msgid ", "
+msgstr ", "
+
+msgid "y"
+msgstr "t"
+
+msgid "Yes"
+msgstr "Taip"
+
+msgid "True"
+msgstr "Tiesa"
+
+msgid "t"
+msgstr "t"
+
+msgid "False"
+msgstr "Netiesa"
+
+msgid "Message: "
+msgstr ""
+
+msgid "Warning: "
+msgstr ""
+
+msgid "Always ignore this warning."
+msgstr "Daugiau nepaisyti šio pranešimo."
+
+msgid "Do you want to proceed?"
+msgstr "Ar tikrai norite vykdyti?"
+
+msgid "No"
+msgstr "Ne"
+
+msgid "Confirmation: "
+msgstr ""
+
+msgid "Concurrency Exception"
+msgstr "Lygiagretaus duomenų rašymo klaida"
+
+msgid "Write Concurrency Warning: "
+msgstr "Lygiagretaus duomenų rašymo perspėjimas: "
+
+msgid "This record has been modified while you were editing it."
+msgstr "Kol jūs taisėte šį įrašą, jis buvo pakeistas."
+
+msgid "Choose:"
+msgstr ""
+
+msgid "\"Cancel\" to cancel saving;"
+msgstr ""
+
+msgid "\"Compare\" to see the modified version;"
+msgstr ""
+
+msgid "\"Write Anyway\" to save your current version."
+msgstr ""
+
+msgid "Compare"
+msgstr "Palyginti"
+
+#, fuzzy
+msgid "Compare: %1"
+msgstr "Palyginti"
+
+msgid "Write Anyway"
+msgstr "Rašyti visvien"
+
+msgid "Application Error"
+msgstr "Programos klaida"
+
+msgid "Report Bug"
+msgstr "Pranešti apie klaidą"
+
+msgid "Processing"
+msgstr ""
+
+msgid "Search..."
+msgstr ""
+
+msgid "Create..."
+msgstr ""
+
+msgid "Download"
+msgstr "Atsisiųsti"
+
+msgid "..."
+msgstr "..."
+
+msgid "Bold"
+msgstr ""
+
+msgid "Italic"
+msgstr ""
+
+msgid "Underline"
+msgstr ""
+
+msgid "Font"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid "Justify Right"
+msgstr ""
+
+msgid "Justify Left"
+msgstr ""
+
+msgid "Justify Center"
+msgstr ""
+
+msgid "Justify Full"
 msgstr ""
 
 msgid "Switch view"
@@ -129,6 +283,13 @@ msgid "Add an attachment to the record"
 msgstr "Prisegti failą prie įrašo"
 
 msgid "Add a note to the record"
+msgstr "Prisegti pastabą prie įrašo"
+
+msgid "E-Mail..."
+msgstr ""
+
+#, fuzzy
+msgid "Send an e-mail using the record"
 msgstr "Prisegti pastabą prie įrašo"
 
 msgid "Export"
@@ -204,14 +365,19 @@ msgstr ""
 msgid "Add..."
 msgstr "Sukurti naują..."
 
+#, fuzzy
+msgid "Preview"
+msgstr "Buvęs"
+
+#, fuzzy
+msgid "Template"
+msgstr "Susijęs"
+
 msgid "Attachment (%1)"
 msgstr ""
 
 msgid "Note (%1/%2)"
 msgstr ""
-
-msgid " of "
-msgstr " iš "
 
 msgid "Filters"
 msgstr ""
@@ -236,12 +402,6 @@ msgstr "Rodyti aktyvius įrašus"
 
 msgid "Show inactive records"
 msgstr "Rodyti neaktyvius įrašus"
-
-msgid "True"
-msgstr "Tiesa"
-
-msgid "False"
-msgstr "Netiesa"
 
 msgid "Find"
 msgstr "Rasti"
@@ -289,12 +449,6 @@ msgstr ":"
 msgid "Translate"
 msgstr ""
 
-msgid "Cancel"
-msgstr "Atsisakyti"
-
-msgid "OK"
-msgstr "Gerai"
-
 msgid "Edit"
 msgstr "Keisti"
 
@@ -311,12 +465,6 @@ msgid "Show"
 msgstr ""
 
 msgid "Hide"
-msgstr ""
-
-msgid "Font"
-msgstr ""
-
-msgid "Size"
 msgstr ""
 
 msgid "Open the record"
@@ -355,15 +503,23 @@ msgstr "Pasirinkti..."
 msgid "Clear"
 msgstr "Valyti"
 
+#, fuzzy
+msgid "Open..."
+msgstr "Atvėrimas"
+
 msgid "Choose a language"
 msgstr "Pasirinkti kalbą"
 
+#, javascript-format
 msgid "%1%"
 msgstr ""
 
 #, fuzzy
 msgid ": "
 msgstr ": "
+
+msgid "Customize"
+msgstr ""
 
 msgid "More"
 msgstr ""
@@ -380,11 +536,8 @@ msgstr "Savaitė"
 msgid "Day"
 msgstr ""
 
-msgid ", "
-msgstr ", "
-
-msgid ",…"
-msgstr ",…"
+msgid ",..."
+msgstr ""
 
 msgid "%1 (%2)"
 msgstr ""
@@ -394,112 +547,6 @@ msgstr "Pasirinkite veiksmą"
 
 msgid "No action defined."
 msgstr "Nėra apibrėžtų veiksmų."
-
-msgid "Your selection:"
-msgstr "Jūsų pasirinkimas:"
-
-msgid "Y"
-msgstr "m."
-
-msgid "M"
-msgstr "mėn."
-
-msgid "w"
-msgstr "sav."
-
-msgid "d"
-msgstr "d."
-
-msgid "h"
-msgstr "val."
-
-msgid "m"
-msgstr "min."
-
-msgid "s"
-msgstr "s"
-
-msgid "By: "
-msgstr ""
-
-msgid "y"
-msgstr "t"
-
-msgid "Yes"
-msgstr "Taip"
-
-msgid "t"
-msgstr "t"
-
-msgid "Message: "
-msgstr ""
-
-msgid "Warning: "
-msgstr ""
-
-msgid "Always ignore this warning."
-msgstr "Daugiau nepaisyti šio pranešimo."
-
-msgid "Do you want to proceed?"
-msgstr "Ar tikrai norite vykdyti?"
-
-msgid "No"
-msgstr "Ne"
-
-msgid "Confirmation: "
-msgstr ""
-
-msgid "Concurrency Exception"
-msgstr "Lygiagretaus duomenų rašymo klaida"
-
-msgid "Write Concurrency Warning: "
-msgstr "Lygiagretaus duomenų rašymo perspėjimas: "
-
-msgid "This record has been modified while you were editing it."
-msgstr "Kol jūs taisėte šį įrašą, jis buvo pakeistas."
-
-msgid "Choose:"
-msgstr ""
-
-msgid "\"Cancel\" to cancel saving;"
-msgstr ""
-
-msgid "\"Compare\" to see the modified version;"
-msgstr ""
-
-msgid "\"Write Anyway\" to save your current version."
-msgstr ""
-
-msgid "Compare"
-msgstr "Palyginti"
-
-#, fuzzy
-msgid "Compare: %1"
-msgstr "Palyginti"
-
-msgid "Write Anyway"
-msgstr "Rašyti visvien"
-
-msgid "Application Error"
-msgstr "Programos klaida"
-
-msgid "Report Bug"
-msgstr "Pranešti apie klaidą"
-
-msgid "Processing..."
-msgstr ""
-
-msgid "Search..."
-msgstr ""
-
-msgid "Create..."
-msgstr ""
-
-msgid "Download"
-msgstr "Atsisiųsti"
-
-msgid "..."
-msgstr "..."
 
 msgid "Attachments (%1)"
 msgstr ""
@@ -528,9 +575,6 @@ msgstr "Skirtukas:"
 msgid "Quote Char:"
 msgstr ""
 
-msgid "Encoding:"
-msgstr "Koduotė:"
-
 msgid "CSV Import: %1"
 msgstr ""
 
@@ -540,13 +584,16 @@ msgstr ""
 msgid "File to Import"
 msgstr ""
 
+msgid "Encoding:"
+msgstr "Koduotė:"
+
 msgid "Lines to Skip:"
 msgstr "Praleisti eilutes:"
 
 msgid "You must select an import file first."
 msgstr "Jūs pirmiausiai turite pasirinkti importo failą."
 
-msgid "An error occured in loading the file."
+msgid "Detection failed"
 msgstr ""
 
 msgid "Error processing the file at field %1."
@@ -555,8 +602,14 @@ msgstr ""
 msgid "Error"
 msgstr "Klaida"
 
-msgid "Error occured in loading the file"
+msgid "Import failed"
 msgstr ""
+
+msgid "%1 record imported"
+msgid_plural "%1 records imported"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 msgid "CSV Export: %1"
 msgstr ""
@@ -604,6 +657,44 @@ msgid "What is the name of this export?"
 msgstr "Kokiu pavadinimu išsaugoti šį eksportavimo šabloną?"
 
 msgid "Override %1 definition?"
+msgstr ""
+
+#, fuzzy
+msgid "%1 record saved"
+msgid_plural "%1 records saved"
+msgstr[0] "Įrašas išsaugotas."
+msgstr[1] "Įrašas išsaugotas."
+msgstr[2] "Įrašas išsaugotas."
+
+msgid "E-mail %1"
+msgstr ""
+
+msgid "To:"
+msgstr ""
+
+msgid "Cc:"
+msgstr ""
+
+msgid "Bcc:"
+msgstr ""
+
+msgid "Subject:"
+msgstr ""
+
+#, fuzzy
+msgid "Reports"
+msgstr "Pranešti apie klaidą"
+
+msgid "Attachments"
+msgstr ""
+
+msgid "Files"
+msgstr ""
+
+msgid "Send"
+msgstr ""
+
+msgid "Remove File"
 msgstr ""
 
 msgid "Wizard"

@@ -19,18 +19,27 @@
     Sao.common.SELECTION_SINGLE = 2;
     Sao.common.SELECTION_MULTIPLE = 3;
 
-    Sao.common.BIG_IMAGE_SIZE = Math.pow(10, 6);
-
     Sao.common.compare = function(arr1, arr2) {
         if (arr1.length != arr2.length) {
             return false;
         }
         for (var i = 0; i < arr1.length; i++) {
-            if (arr1[i] instanceof Array && arr2[i] instanceof Array) {
-                if (!Sao.common.compare(arr1[i], arr2[i])) {
+            var a = arr1[i], b = arr2[i];
+            if ((a instanceof Array) && (b instanceof Array)) {
+                if (!Sao.common.compare(a, b)) {
                     return false;
                 }
-            } else if (arr1[i] != arr2[i]) {
+            } else if (moment.isMoment(a) && moment.isMoment(b)) {
+                if ((a.isDate != b.isDate) &&
+                    (a.isDateTime != b.isDateTime) &&
+                    (a.valueOf() != b.valueOf())) {
+                    return false;
+                }
+            } else if ((a instanceof Number) || (b instanceof Number)) {
+                if (Number(a) !== Number(b)) {
+                    return false;
+                }
+            } else if (a != b) {
                 return false;
             }
         }
@@ -100,25 +109,22 @@
             i++;
         }
         var result = [[]];
-        pools.forEach(function(pool) {
+        for (const pool of pools) {
             var tmp = [];
-            result.forEach(function(x) {
-                pool.forEach(function(y) {
+            for (const x of result) {
+                for (const y of pool) {
                     tmp.push(x.concat([y]));
-                });
-            });
+                }
+            }
             result = tmp;
-        });
+        }
         return result;
     };
 
-    Sao.common.selection = function(title, values, alwaysask) {
-        if (alwaysask === undefined) {
-            alwaysask = false;
-        }
+    Sao.common.selection = function(title, values, alwaysask=false) {
         var prm = jQuery.Deferred();
         if (jQuery.isEmptyObject(values)) {
-            prm.fail();
+            prm.reject();
             return prm;
         }
         var keys = Object.keys(values).sort();
@@ -133,7 +139,7 @@
 
         keys.forEach(function(k, i) {
             jQuery('<div/>', {
-                'class': 'checkbox'
+                'class': 'radio'
             }).append(jQuery('<label/>')
                 .text(' ' + k)
                 .prepend(jQuery('<input/>', {
@@ -147,14 +153,16 @@
 
         jQuery('<button/>', {
             'class': 'btn btn-link',
-            'type': 'button'
+            'type': 'button',
+            'title': Sao.i18n.gettext("Cancel"),
         }).text(Sao.i18n.gettext('Cancel')).click(function() {
             dialog.modal.modal('hide');
-            prm.fail();
+            prm.reject();
         }).appendTo(dialog.footer);
         jQuery('<button/>', {
             'class': 'btn btn-primary',
-            'type': 'button'
+            'type': 'button',
+            'title': Sao.i18n.gettext("OK"),
         }).text(Sao.i18n.gettext('OK')).click(function() {
             var i = dialog.body.find('input:checked').attr('value');
             dialog.modal.modal('hide');
@@ -215,7 +223,7 @@
 
     Sao.common.date_format = function(format) {
         if (jQuery.isEmptyObject(format)) {
-            format = '%Y-%m-%d';
+            format = '%x';
             if (Sao.Session.current_session) {
                 var context = Sao.Session.current_session.context;
                 if (context.locale && context.locale.date) {
@@ -234,7 +242,7 @@
     };
 
     Sao.common.parse_time = function(format, value) {
-        if (jQuery.isEmptyObject(value)) {
+        if (!value) {
             return null;
         }
         var getNumber = function(pattern) {
@@ -269,17 +277,15 @@
         return date;
     };
 
-    Sao.common.format_datetime = function(date_format, time_format, date) {
+    Sao.common.format_datetime = function(datetime_format, date) {
         if (!date) {
             return '';
         }
-        return date.format(
-                Sao.common.moment_format(date_format + ' ' + time_format));
+        return date.format(Sao.common.moment_format(datetime_format));
     };
 
-    Sao.common.parse_datetime = function(date_format, time_format, value) {
-        var date = moment(value,
-                Sao.common.moment_format(date_format + ' ' + time_format));
+    Sao.common.parse_datetime = function(datetime_format, value) {
+        var date = moment(value, Sao.common.moment_format(datetime_format));
         if (date.isValid()) {
             date = Sao.DateTime(date.year(), date.month(), date.date(),
                     date.hour(), date.minute(), date.second(),
@@ -331,20 +337,22 @@
             sign = '-';
         }
         value = Math.abs(value);
-        converter = Object.keys(converter).map(function(key) {
-            return [key, converter[key]];
-        });
-        converter.sort(function(first, second) {
-            return second[1] - first[1];
-        });
+        converter = Object.keys(
+            Sao.common.timedelta._get_separator()).map(function(key) {
+                return [key, converter[key]];
+            });
         var values = [];
         var k, v;
         for (var i = 0; i < converter.length; i++) {
             k = converter[i][0];
             v = converter[i][1];
-            var part = Math.floor(value / v);
-            value -= part * v;
-            values.push(part);
+            if (v) {
+                var part = Math.floor(value / v);
+                value -= part * v;
+                values.push(part);
+            } else {
+                values.push(0);
+            }
         }
         for (i = 0; i < converter.length - 3; i++) {
             k = converter[i][0];
@@ -440,6 +448,33 @@
         return Sao.TimeDelta(null, seconds);
     };
 
+    Sao.common.btoa = function(value) {
+        var strings = [], chunksize = 0xffff;
+        // JavaScript Core has hard-coded argument limit of 65536
+        // String.fromCharCode can not be called with too many
+        // arguments
+        for (var j = 0; j * chunksize < value.length; j++) {
+            strings.push(String.fromCharCode.apply(
+                null, value.subarray(
+                    j * chunksize, (j + 1) * chunksize)));
+        }
+        return btoa(strings.join(''));
+    };
+
+    Sao.common.atob = function(value) {
+       // javascript's atob does not understand linefeed
+       // characters
+       var byte_string = atob(value.base64.replace(/\s/g, ''));
+       // javascript decodes base64 string as a "DOMString", we
+       // need to convert it to an array of bytes
+       var array_buffer = new ArrayBuffer(byte_string.length);
+       var uint_array = new Uint8Array(array_buffer);
+       for (var j=0; j < byte_string.length; j++) {
+           uint_array[j] = byte_string.charCodeAt(j);
+       }
+       return uint_array;
+    };
+
     Sao.common.ModelAccess = Sao.class_(Object, {
         init: function() {
             this.batchnum = 100;
@@ -486,15 +521,56 @@
             return Sao.rpc({
                 'method': 'model.ir.model.list_history',
                 'params': [{}]
-            }, Sao.Session.current_session).then(function(models) {
+            }, Sao.Session.current_session).then(models => {
                 this._models = models;
-            }.bind(this));
+            });
         },
         contains: function(model) {
             return ~this._models.indexOf(model);
         }
     });
     Sao.common.MODELHISTORY = new Sao.common.ModelHistory();
+
+    Sao.common.ModelName = Sao.class_(Object, {
+        init: function() {
+            this._names = {};
+        },
+        load_names: function() {
+            this._names = Sao.rpc({
+                'method':'model.ir.model.get_names',
+                'params': [{}],
+            }, Sao.Session.current_session, false);
+        },
+        get: function(model) {
+            if (jQuery.isEmptyObject(this._names)) {
+                this.load_names();
+            }
+            return this._names[model] || '';
+        },
+        clear: function() {
+            this._names = {};
+        },
+    });
+    Sao.common.MODELNAME = new Sao.common.ModelName();
+
+    Sao.common.ModelNotification = Sao.class_(Object, {
+        init: function() {
+            this._depends = null;
+        },
+        load_names: function() {
+            this._depends = Sao.rpc({
+                'method': 'model.ir.model.get_notification',
+                'params': [{}],
+            }, Sao.Session.current_session, false);
+        },
+        get: function(model) {
+            if (!this._depends) {
+                this.load_names();
+            }
+            return this._depends[model] || [];
+        },
+    });
+    Sao.common.MODELNOTIFICATION = new Sao.common.ModelNotification();
 
     Sao.common.ViewSearch = Sao.class_(Object, {
         init: function() {
@@ -505,9 +581,9 @@
             return Sao.rpc({
                 'method': 'model.ir.ui.view_search.get_search',
                 'params': [{}]
-            }, Sao.Session.current_session).then(function(searches) {
+            }, Sao.Session.current_session).then(searches => {
                 this.searches = searches;
-            }.bind(this));
+            });
         },
         get: function(model) {
             return this.searches[model] || [];
@@ -520,19 +596,19 @@
                     'name': name,
                     'domain': this.encoder.encode(domain)
                 }], {}]
-            }, Sao.Session.current_session).then(function(ids) {
+            }, Sao.Session.current_session).then(ids => {
                 var id = ids[0];
                 if (this.searches[model] === undefined) {
                     this.searches[model] = [];
                 }
-                this.searches[model].push([id, name, domain]);
-            }.bind(this));
+                this.searches[model].push([id, name, domain, true]);
+            });
         },
         remove: function(model, id) {
             return Sao.rpc({
                 'method': 'model.ir.ui.view_search.delete',
                 'params': [[id], {}]
-            }, Sao.Session.current_session).then(function() {
+            }, Sao.Session.current_session).then(() => {
                 for (var i = 0; i < this.searches[model].length; i++) {
                     var domain = this.searches[model][i];
                     if (domain[0] === id) {
@@ -540,24 +616,32 @@
                         break;
                     }
                 }
-            }.bind(this));
+            });
         }
     });
     Sao.common.VIEW_SEARCH = new Sao.common.ViewSearch();
 
-    Sao.common.humanize = function(size) {
-        var sizes = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    Sao.common.humanize = function(size, suffix) {
+        suffix = suffix || '';
+        var sizes = ['', 'K', 'M', 'G', 'T', 'P'];
         for (var i =0, len = sizes.length; i < len; i++) {
-            if (size < 1000) {
-                return size.toPrecision(4) + ' ' + sizes[i];
+            if (size <= 1000) {
+                if (size % 1 === 0) {
+                    size = '' + size;
+                } else {
+                    size = size.toLocaleString(
+                        Sao.i18n.BC47(Sao.i18n.getlang()), {
+                            'minimumFractionDigits': 0,
+                            'maximumFractionDigits': 2,
+                        });
+                }
+                return size + sizes[i] + suffix;
             }
             size /= 1000;
         }
     };
 
-    Sao.common.EvalEnvironment = function(parent_, eval_type) {
-        if (eval_type === undefined)
-            eval_type = 'eval';
+    Sao.common.EvalEnvironment = function(parent_, eval_type='eval') {
         var environment;
         if (eval_type == 'eval') {
             environment = parent_.get_eval();
@@ -590,6 +674,7 @@
     Sao.common.selection_mixin = {};
     Sao.common.selection_mixin.init = function() {
         this.selection = null;
+        this.help = null;
         this.inactive_selection = [];
         this._last_domain = null;
         this._values2selection = {};
@@ -601,14 +686,15 @@
     Sao.common.selection_mixin.init_selection = function(value, callback) {
         if (!value) {
             value = {};
-            (this.attributes.selection_change_with || []).forEach(function(e) {
+            for (const e of (this.attributes.selection_change_with || [])) {
                 value[e] = null;
-            });
+            }
         }
         var key = JSON.stringify(value);
         var selection = this.attributes.selection || [];
+        var help = this.attributes.help_selection || {};
         var prm;
-        var prepare_selection = function(selection) {
+        let prepare_selection = selection => {
             selection = jQuery.extend([], selection);
             if (this.attributes.sort === undefined || this.attributes.sort) {
                 selection.sort(function(a, b) {
@@ -616,25 +702,28 @@
                 });
             }
             this.selection = jQuery.extend([], selection);
-            if (callback) callback(this.selection);
+            this.help = this.attributes.help_selection || {};
+            if (callback) callback(this.selection, this.help);
         };
         if (!(selection instanceof Array) &&
                 !(key in this._values2selection)) {
             if (!jQuery.isEmptyObject(this.attributes.selection_change_with)) {
-                prm = this.model.execute(selection, [value]);
+                prm = this.model.execute(
+                    selection, [value], {}, true, false);
             } else {
-                prm = this.model.execute(selection, []);
+                prm = this.model.execute(
+                    selection, [], {}, true, false);
             }
-            prm = prm.then(function(selection) {
+            prm = prm.then(selection => {
                 this._values2selection[key] = selection;
                 return selection;
-            }.bind(this));
-            prm = prm.then(prepare_selection.bind(this));
+            });
+            prm = prm.then(prepare_selection);
         } else {
             if (key in this._values2selection) {
                 selection = this._values2selection[key];
             }
-            prepare_selection.call(this, selection);
+            prepare_selection(selection);
             prm = jQuery.when();
         }
         this.inactive_selection = [];
@@ -642,10 +731,10 @@
     };
     Sao.common.selection_mixin.update_selection = function(record, field,
             callback) {
-        var _update_selection = function() {
+        const _update_selection = () => {
             if (!field) {
                 if (callback) {
-                    callback(this.selection);
+                    callback(this.selection, this.help);
                 }
                 return;
             }
@@ -654,14 +743,14 @@
                 var change_with = this.attributes.selection_change_with || [];
                 var value = record._get_on_change_args(change_with);
                 delete value.id;
-                Sao.common.selection_mixin.init_selection.call(this, value,
-                        function() {
-                            Sao.common.selection_mixin.filter_selection.call(
-                                    this, domain, record, field);
-                            if (callback) {
-                                callback(this.selection);
-                            }
-                        }.bind(this));
+                Sao.common.selection_mixin.init_selection.call(
+                    this, value, () => {
+                        Sao.common.selection_mixin.filter_selection.call(
+                            this, domain, record, field);
+                        if (callback) {
+                            callback(this.selection, this.help);
+                        }
+                    });
             } else {
                 var context = field.get_context(record);
                 var jdomain = JSON.stringify([domain, context]);
@@ -674,40 +763,52 @@
                         (JSON.stringify(context) ==
                          JSON.stringify(this._last_domain[1]))) {
                     if (callback) {
-                        callback(this.selection);
+                        callback(this.selection, this.help);
                     }
                     return;
+                }
+                var fields = ['rec_name'];
+                var help_field = this.attributes.help_field;
+                if (help_field) {
+                    fields.push(help_field);
                 }
                 var prm = Sao.rpc({
                     'method': 'model.' + this.attributes.relation +
                         '.search_read',
-                    'params': [domain, 0, null, null, ['rec_name'], context]
+                    'params': [domain, 0, null, null, fields, context]
                 }, record.model.session);
-                prm.done(function(result) {
+                prm.done(result => {
                     var selection = [];
-                    result.forEach(function(x) {
+                    for (const x of result) {
                         selection.push([x.id, x.rec_name]);
-                    });
+                    }
                     if (this.nullable_widget) {
                         selection.push([null, '']);
+                    }
+                    var help = {};
+                    if (help_field){
+                        for (const x of result) {
+                            help[x.id] = x[help_field];
+                        }
                     }
                     this._last_domain = [domain, context];
                     this._domain_cache[jdomain] = selection;
                     this.selection = jQuery.extend([], selection);
+                    this.help = help;
                     if (callback) {
-                        callback(this.selection);
+                        callback(this.selection, this.help);
                     }
-                }.bind(this));
-                prm.fail(function() {
+                });
+                prm.fail(() => {
                     this._last_domain = null;
                     this.selection = [];
                     if (callback) {
-                        callback(this.selection);
+                        callback(this.selection, this.help);
                     }
-                }.bind(this));
+                });
             }
         };
-        this._selection_prm.done(_update_selection.bind(this));
+        this._selection_prm.done(_update_selection);
     };
     Sao.common.selection_mixin.filter_selection = function(
             domain, record, field) {
@@ -716,11 +817,11 @@
         }
 
         var inversion = new Sao.common.DomainInversion();
-        var _value_evaluator = function(value) {
+        const _value_evaluator = value => {
             var context = {};
             context[this.field_name] = value[0];
             return inversion.eval_domain(domain, context);
-        }.bind(this);
+        };
 
         var _model_evaluator = function(allowed_models) {
             return function(value) {
@@ -730,9 +831,12 @@
         };
 
         var evaluator;
-        if (field.description.type == 'reference') {
+        var type_ = field.description.type;
+        if (type_ == 'reference') {
             var allowed_models = field.get_models(record);
             evaluator = _model_evaluator(allowed_models);
+        } else if (type_ == 'multiselection') {
+            return;
         } else {
             evaluator = _value_evaluator;
         }
@@ -752,20 +856,21 @@
             'method': 'model.' + this.attributes.relation + '.read',
             'params': [[value], ['rec_name'], {}]
         }, Sao.Session.current_session);
-        return prm.then(function(result) {
+        return prm.then(result => {
             this.inactive_selection.push([result[0].id, result[0].rec_name]);
             return [result[0].id, result[0].rec_name];
-        }.bind(this));
+        });
     };
 
     Sao.common.Button = Sao.class_(Object, {
-        init: function(attributes, el, size) {
+        init: function(attributes, el, size, style) {
             this.attributes = attributes;
             if (el) {
                 this.el = el;
             } else {
                 this.el = jQuery('<button/>', {
                     title: attributes.string || '',
+                    name: attributes.name || '',
                 });
                 this.el.text(attributes.string || '');
                 if (this.attributes.rule) {
@@ -773,6 +878,9 @@
                         'class': 'badge'
                     }));
                 }
+                this.el.attr(
+                    'accesskey',
+                    Sao.common.accesskey(attributes.string || ''));
             }
             this.icon = this.el.children('img');
             if (!this.icon.length) {
@@ -781,7 +889,9 @@
                 }).prependTo(this.el);
                 this.icon.hide();
             }
-            this.el.addClass('btn btn-default ' + (size || ''));
+            this.el.addClass([
+                'btn', 'btn-horizontal',
+                (style || 'btn-default'), (size || '')].join(' '));
             this.el.attr('type', 'button');
             this.icon.attr('aria-hidden', true);
             this.set_icon(attributes.icon);
@@ -792,10 +902,10 @@
                 this.icon.hide();
                 return;
             }
-            Sao.common.ICONFACTORY.get_icon_url(icon_name).done(function(url) {
+            Sao.common.ICONFACTORY.get_icon_url(icon_name).done(url => {
                 this.icon.attr('src', url);
                 this.icon.show();
-            }.bind(this));
+            });
         },
         set_state: function(record) {
             var states;
@@ -819,7 +929,7 @@
                 } else {
                     prm = jQuery.when();
                 }
-                prm.then(function(clicks) {
+                prm.then(clicks => {
                     var counter = this.el.children('.badge');
                     var users = [];
                     var tip = '';
@@ -832,14 +942,14 @@
                     }
                     counter.text(users.length || '');
                     counter.attr('title', tip);
-                }.bind(this));
+                });
             }
 
             if (((this.attributes.type === undefined) ||
                         (this.attributes.type === 'class')) && (record)) {
                 var parent = record.group.parent;
                 while (parent) {
-                    if (parent.has_changed()) {
+                    if (parent.modified) {
                         this.el.prop('disabled', true);
                         break;
                     }
@@ -857,10 +967,7 @@
                     this.stream = stream.split('');
                     this.i = 0;
                 },
-                read: function(length) {
-                    if (length === undefined) {
-                        length = 1;
-                    }
+                read: function(length=1) {
                     if (this.i >= this.stream.length) {
                         return null;
                     }
@@ -1059,7 +1166,7 @@
             }
         },
         stringable: function(domain) {
-            var stringable_ = function(clause) {
+            const stringable_ = clause => {
                 if (!clause) {
                     return true;
                 }
@@ -1109,7 +1216,7 @@
                     return true;
                 }
                 return false;
-            }.bind(this);
+            };
             if (!domain) {
                 return true;
             }
@@ -1120,7 +1227,7 @@
         },
         string: function(domain) {
 
-            var string = function(clause) {
+            const string = clause => {
                 if (jQuery.isEmptyObject(clause)) {
                     return '';
                 }
@@ -1136,8 +1243,7 @@
                     name = name.slice(0, -9);
                 }
                 if (!(name in this.fields)) {
-                    escaped = value.replace('%%', '__');
-                    if (escaped.startsWith('%') && escaped.endsWith('%')) {
+                    if (this.is_full_text(value)) {
                         value = value.slice(1, -1);
                     }
                     return this.quote(value);
@@ -1148,16 +1254,15 @@
                     target = clause[3];
                 }
                 if (operator.contains('ilike')) {
-                    escaped = value.replace('%%', '__');
-                    if (escaped.startsWith('%') && escaped.endsWith('%')) {
+                    if (this.is_full_text(value)) {
                         value = value.slice(1, -1);
-                    } else if (!escaped.contains('%')) {
+                    } else if (!this.is_like(value)) {
                         if (operator == 'ilike') {
                             operator = '=';
                         } else {
                             operator = '!';
                         }
-                        value = value.replace('%%', '%');
+                        value = this.unescape(value);
                     }
                 }
                 var def_operator = this.default_operator(field);
@@ -1191,7 +1296,6 @@
                 return (this.quote(field.string) + ': ' +
                         operator + formatted_value);
             };
-            string = string.bind(this);
 
             if (jQuery.isEmptyObject(domain)) {
                 return '';
@@ -1234,7 +1338,7 @@
 
             var pslice = function(string, depth) {
                 if (depth > 0) {
-                    return string.substring(0, depth);
+                    return string.substring(0, string.length - depth);
                 }
                 return string;
             };
@@ -1344,18 +1448,15 @@
             }
             return results;
         },
-        is_leaf: function(element) {
-            return ((element instanceof Array) && element.clause);
+        is_subdomain: function(element) {
+            return (element instanceof Array) && !element.clause;
         },
-        ending_clause: function(domain, depth) {
-            if (depth === undefined) {
-                depth = 0;
-            }
+        ending_clause: function(domain, depth=0) {
             if (domain.length === 0) {
                 return [null, depth];
             }
             var last_element = domain[domain.length - 1];
-            if (!this.is_leaf(last_element)) {
+            if (this.is_subdomain(last_element)) {
                 return this.ending_clause(last_element, depth + 1);
             }
             return [last_element, depth];
@@ -1366,9 +1467,9 @@
             for (i = 0, len=domain.length - 1; i < len; i++) {
                 results.push(domain[i]);
             }
-            if (!this.is_leaf(domain[i])) {
-                results = results.concat(this.replace_ending_clause(domain[i],
-                            clause));
+            if (this.is_subdomain(domain[i])) {
+                results.push(
+                    this.replace_ending_clause(domain[i], clause));
             } else {
                 results.push(clause);
             }
@@ -1380,7 +1481,7 @@
             }
             var results = domain.slice(0, -1);
             var last_element = domain[domain.length - 1];
-            if (!this.is_leaf(last_element)) {
+            if (this.is_subdomain(last_element)) {
                 results.push(this.append_ending_clause(last_element, clause,
                             depth - 1));
             } else {
@@ -1424,7 +1525,7 @@
                 return results;
             };
 
-            var complete_reference = function() {
+            const complete_reference = () => {
                 var results = [];
                 var test_value = value !== null ? value : '';
                 if (value instanceof Array) {
@@ -1444,7 +1545,7 @@
                     }
                 }
                 return results;
-            }.bind(this);
+            };
 
             var complete_datetime = function() {
                 return [Sao.Date(), Sao.DateTime().utc()];
@@ -1477,7 +1578,7 @@
             var cur = tokens[0];
             var nex = null;
             var result = [];
-            tokens.slice(1).forEach(function(nex) {
+            for (const nex of tokens.slice(1)) {
                 if ((nex == '=') && cur &&
                     ~this.OPERATORS.indexOf(cur + nex)) {
                     result.push(cur + nex);
@@ -1488,7 +1589,7 @@
                     }
                     cur = nex;
                 }
-            }.bind(this));
+            }
             if (cur !== null) {
                 result.push(cur);
             }
@@ -1498,9 +1599,9 @@
             var result = [];
             var current = result;
             var parent = [];
-            tokens.forEach(function(token, i) {
+            for (const token of tokens) {
                 if (current === undefined) {
-                    return;
+                    continue;
                 }
                 if (token == '(') {
                     parent.push(current);
@@ -1510,13 +1611,13 @@
                 } else {
                     current.push(token);
                 }
-            });
+            }
             return result;
         },
         group: function(tokens) {
             var result = [];
 
-            var _group = function(parts) {
+            const _group = parts => {
                 var result = [];
                 var push_result = function(part) {
                     var clause = [part];
@@ -1596,27 +1697,26 @@
                 }
                 return result;
             };
-            _group = _group.bind(this);
 
             var parts = [];
-            tokens.forEach(function(token) {
+            for (const token of tokens) {
                 if (this.is_generator(token)) {
-                    _group(parts).forEach(function(group) {
+                    for (const group of _group(parts)) {
                         if (!Sao.common.compare(group, [null])) {
                             result.push(group);
                         }
-                    });
+                    }
                     parts = [];
                     result.push(this.group(token));
                 } else {
                     parts.push(token);
                 }
-            }.bind(this));
-            _group(parts).forEach(function(group) {
+            }
+            for (const group of _group(parts)) {
                 if (!Sao.common.compare(group, [null])) {
                     result.push(group);
                 }
-            });
+            }
             return result;
         },
         is_generator: function(value) {
@@ -1688,7 +1788,7 @@
         },
         parse_clause: function(tokens) {
             var result = [];
-            tokens.forEach(function(clause) {
+            tokens.forEach(clause => {
                 if (this.is_generator(clause)) {
                     result.push(this.parse_clause(clause));
                 } else if ((clause === 'OR') || (clause === 'AND')) {
@@ -1755,9 +1855,8 @@
                         }
                     }
                     if (value instanceof Array) {
-                        value = value.map(function(v) {
-                            return this.convert_value(field, v, this.context);
-                        }.bind(this));
+                        value = value.map(
+                            v => this.convert_value(field, v, this.context));
                         if (~['many2one', 'one2many', 'many2many', 'one2one',
                             'many2many', 'one2one'].indexOf(field.type)) {
                             field_name += '.rec_name';
@@ -1776,19 +1875,52 @@
                             [field_name, operator, value]));
                     }
                 }
-            }.bind(this));
+            });
             return result;
         },
-        likify: function(value) {
+        likify: function(value, escape) {
+            escape = escape || '\\';
             if (!value) {
                 return '%';
             }
-            var escaped = value.replace('%%', '__');
-            if (escaped.contains('%')) {
+            var escaped = value
+                .replace(escape + '%', '')
+                .replace(escape + '_', '');
+            if (escaped.contains('%') || escaped.contains('_')) {
                 return value;
             } else {
                 return '%' + value + '%';
             }
+        },
+        is_full_text: function(value, escape) {
+            escape = escape || '\\';
+            var escaped = value;
+            while (escaped.charAt(0) == '%') {
+                escaped = escaped.substring(1);
+            }
+            while (escaped.charAt(escaped.length - 1) == '%') {
+                escaped = escaped.substring(0, escaped.length - 1);
+            }
+            escaped = escaped
+                .replace(escape + '%', '')
+                .replace(escape + '_', '');
+            if (escaped.contains('%') || escaped.contains('_')) {
+                return false;
+            }
+            return value.startsWith('%') && value.endsWith('%');
+        },
+        is_like: function(value, escape) {
+            escape = escape || '\\';
+            var escaped = value
+                .replace(escape + '%', '')
+                .replace(escape + '_', '');
+            return escaped.contains('%') || escaped.contains('_');
+        },
+        unescape: function(value, escape) {
+            escape = escape || '\\';
+            return value
+                .replace(escape + '%', '%')
+                .replace(escape + '_', '_');
         },
         quote: function(value) {
             if (typeof value != 'string') {
@@ -1811,7 +1943,7 @@
         },
         default_operator: function(field) {
             if (~['char', 'text', 'many2one', 'many2many', 'one2many',
-                    'reference'].indexOf(field.type)) {
+                    'reference', 'one2one'].indexOf(field.type)) {
                 return 'ilike';
             } else if (field.type == 'multiselection') {
                 return 'in';
@@ -1913,33 +2045,29 @@
                 'selection': convert_selection,
                 'multiselection': convert_selection,
                 'reference': convert_selection,
-                'datetime': function() {
-                    var result = Sao.common.parse_datetime(
-                            Sao.common.date_format(context.date_format),
-                            this.time_format(field),
-                            value);
-                    return result;
-                }.bind(this),
+                'datetime': () => Sao.common.parse_datetime(
+                    Sao.common.date_format(context.date_format) + ' ' +
+                    this.time_format(field), value),
                 'date': function() {
                     return Sao.common.parse_date(
                             Sao.common.date_format(context.date_format),
                             value);
                 },
-                'time': function() {
+                'time': () => {
                     try {
                         return Sao.common.parse_time(this.time_format(field),
                                 value);
                     } catch (e) {
                         return null;
                     }
-                }.bind(this),
-                'timedelta': function() {
+                },
+                'timedelta': () => {
                     var converter = null;
                     if (field.converter) {
                         converter = this.context[field.converter];
                     }
                     return Sao.common.timedelta.parse(value, converter);
-                }.bind(this),
+                },
                 'many2one': function() {
                     if (value === '') {
                         return null;
@@ -1955,31 +2083,30 @@
                 return value;
             }
         },
-        format_value: function(field, value, target, context) {
-            if (target === undefined) {
-                target = null;
-            }
-            if (!context) {
-                context = {};
-            }
+        format_value: function(field, value, target=null, context={}) {
             var format_float = function() {
                 if (!value && value !== 0 && value !== new Sao.Decimal(0)) {
                     return '';
                 }
+                var digit = 0;
                 var factor = Number(field.factor || 1);
-                var digit = String(value * factor)
-                    .replace(/0+$/, '').split('.')[1];
-                if (digit) {
-                    digit = digit.length;
-                } else {
-                    digit = 0;
+                var string = String(value * factor);
+                if (string.contains('e')) {
+                    var exp = string.split('e')[1];
+                    string = string.split('e')[0];
+                    digit -= parseInt(exp);
+                }
+                if (string.contains('.')) {
+                    digit += string.replace(/0+$/, '').split('.')[1].length;
                 }
                 return (value * factor).toFixed(digit);
             };
             var format_selection = function() {
-                for (var i = 0; i < field.selection.length; i++) {
-                    if (field.selection[i][0] == value) {
-                        return field.selection[i][1];
+                if (field.selection instanceof Array) {
+                    for (var i = 0; i < field.selection.length; i++) {
+                        if (field.selection[i][0] == value) {
+                            return field.selection[i][1];
+                        }
                     }
                 }
                 return value || '';
@@ -2021,7 +2148,7 @@
                 'selection': format_selection,
                 'multiselection': format_selection,
                 'reference': format_reference,
-                'datetime': function() {
+                'datetime': () => {
                     if (!value) {
                         return '';
                     }
@@ -2034,24 +2161,20 @@
                                 value);
                     }
                     return Sao.common.format_datetime(
-                            Sao.common.date_format(context.date_format),
-                            this.time_format(field),
-                            value);
-                }.bind(this),
-                'date': function() {
-                    return Sao.common.format_date(
-                            Sao.common.date_format(context.date_format),
-                            value);
+                        Sao.common.date_format(context.date_format) + ' ' +
+                        this.time_format(field), value);
                 },
-                'time': function() {
+                'date': () => Sao.common.format_date(
+                    Sao.common.date_format(context.date_format), value),
+                'time': () => {
                     if (!value) {
                         return '';
                     }
                     return Sao.common.format_time(
                             this.time_format(field),
                             value);
-                }.bind(this),
-                'timedelta': function() {
+                },
+                'timedelta': () => {
                     if (!value || !value.valueOf()) {
                         return '';
                     }
@@ -2060,7 +2183,7 @@
                         converter = this.context[field.converter];
                     }
                     return Sao.common.timedelta.format(value, converter);
-                }.bind(this),
+                },
                 'many2one': function() {
                     if (value === null) {
                         return '';
@@ -2070,9 +2193,7 @@
                 }
             };
             if (value instanceof Array) {
-                return value.map(function(v) {
-                    return this.format_value(field, v);
-                }.bind(this)).join(';');
+                return value.map(v => this.format_value(field, v)).join(';');
             } else {
                 var func = converts[field.type];
                 if (func) {
@@ -2085,22 +2206,20 @@
             }
         },
         simplify: function(value) {
-            if ((value instanceof Array) && !this.is_leaf(value)) {
-                if ((value.length == 1) && (value[0] instanceof Array) &&
-                        ((value[0][0] == 'AND') || (value[0][0] == 'OR') ||
-                         (value[0][0] instanceof Array))) {
+            if (this.is_subdomain(value)) {
+                if ((value.length == 1) && this.is_subdomain(value[0])) {
                     return this.simplify(value[0]);
                 } else if ((value.length == 2) &&
-                        ((value[0] == 'AND') || (value[0] == 'OR')) &&
-                        (value[1] instanceof Array)) {
+                    ((value[0] == 'AND') || (value[0] == 'OR')) &&
+                    this.is_subdomain(value[1])) {
                     return this.simplify(value[1]);
                 } else if ((value.length == 3) &&
-                        ((value[0] == 'AND') || (value[0] == 'OR')) &&
-                        (value[1] instanceof Array) &&
-                        (value[0] == value[1][0])) {
+                    ((value[0] == 'AND') || (value[0] == 'OR')) &&
+                    this.is_subdomain(value[1]) &&
+                    (value[0] == value[1][0])) {
                     value = this.simplify(value[1]).concat([value[2]]);
                 }
-                return value.map(this.simplify.bind(this));
+                return value.map(v => this.simplify(v));
             }
             return value;
         }
@@ -2142,10 +2261,7 @@
             'child_of': function() {return true;},
             'not child_of': function() {return true;}
         },
-        locale_part: function(expression, field_name, locale_name) {
-            if (locale_name === undefined) {
-                locale_name = 'id';
-            }
+        locale_part: function(expression, field_name, locale_name='id') {
             if (expression === field_name) {
                 return locale_name;
             }
@@ -2186,6 +2302,17 @@
                 return Boolean(context[field.split('.')[0]]);
             }
             var context_field = context[field];
+            if (!~['=', '!='].indexOf(operand) &&
+                ((context_field === null) ||
+                    (context_field === undefined) ||
+                    (value === null) ||
+                    (value === undefined)) &&
+                !(~['in', 'not in'].indexOf(operand) &&
+                    ((context_field === null) ||
+                        (context_field === undefined)) &&
+                    ((value instanceof Array) && ~value.indexOf(null)))) {
+                return;
+            }
             if ((context_field && context_field._isAMomentObject) && !value) {
                 if (context_field.isDateTime) {
                     value = Sao.DateTime.min;
@@ -2237,7 +2364,7 @@
                 }
                 return domain;
             } else {
-                return domain.map(this.inverse_leaf.bind(this));
+                return domain.map(d => this.inverse_leaf(d));
             }
         },
         filter_leaf: function(domain, field, model) {
@@ -2251,9 +2378,7 @@
                 }
                 return domain;
             } else {
-                return domain.map(function(d) {
-                    return this.filter_leaf(d, field, model);
-                }.bind(this));
+                return domain.map(d => this.filter_leaf(d, field, model));
             }
         },
         eval_domain: function(domain, context, boolop) {
@@ -2271,8 +2396,9 @@
             } else if (domain[0] == 'OR') {
                 return this.eval_domain(domain.slice(1), context, this.or);
             } else {
-                return boolop(this.eval_domain(domain[0], context),
-                        this.eval_domain(domain.slice(1), context, boolop));
+                return boolop(Boolean(this.eval_domain(domain[0], context)),
+                    Boolean(this.eval_domain(domain.slice(1), context, boolop))
+                );
             }
         },
         localize_domain: function(domain, field_name, strip_target) {
@@ -2298,9 +2424,8 @@
                 return [this.locale_part(domain[0], field_name, local_name)]
                     .concat(domain.slice(1, n)).concat(domain.slice(4));
             } else {
-                return domain.map(function(e) {
-                    return this.localize_domain(e, field_name, strip_target);
-                }.bind(this));
+                return domain.map(
+                    e => this.localize_domain(e, field_name, strip_target));
             }
         },
         prepare_reference_domain: function(domain, reference) {
@@ -2405,9 +2530,8 @@
                 }
                 return domain;
             } else {
-                return domain.map(function(d) {
-                    return this.prepare_reference_domain(d, reference);
-                }.bind(this));
+                return domain.map(
+                    d => this.prepare_reference_domain(d, reference));
             }
         },
         extract_reference_models: function(domain, field_name) {
@@ -2422,7 +2546,7 @@
                 return [];
             } else {
                 var models = [];
-                domain.map(function(d) {
+                domain.map(d => {
                     var new_models = this.extract_reference_models(
                         d, field_name);
                     for (var i=0, len=new_models.length; i < len; i++) {
@@ -2431,26 +2555,90 @@
                             models.push(model);
                         }
                     }
-                }.bind(this));
+                });
                 return models;
             }
         },
+        _bool_operator: function(domain) {
+            var bool_op = 'AND';
+            if ((domain.length > 0) &&
+                ((domain[0] == 'AND') || (domain[0] == 'OR'))) {
+                bool_op = domain[0];
+            }
+            return bool_op;
+        },
+        simplify_nested: function(domain) {
+            if (!domain.length) {
+                return [];
+            } else if (this.is_leaf(domain)) {
+                return [domain];
+            } else if ((domain == 'AND') || (domain == 'OR')) {
+                return [domain];
+            } else if ((domain instanceof Array) && (domain.length == 1)) {
+                return this.simplify_nested(domain[0]);
+            } else {
+                var simplified = [];
+                for (var branch of domain) {
+                    var simplified_branch = this.simplify_nested(branch);
+                    if ((this._bool_operator(simplified_branch) ==
+                                this._bool_operator(simplified)) ||
+                            (simplified_branch.length == 1)) {
+                        if ((simplified.length > 0) &&
+                            (simplified_branch.length > 0) &&
+                            ((simplified_branch[0] == 'AND') ||
+                                (simplified_branch[0] == 'OR'))) {
+                            simplified.push(...simplified_branch.slice(1));
+                        } else {
+                            simplified.push(...simplified_branch);
+                        }
+                    } else {
+                        simplified.push(simplified_branch);
+                    }
+                }
+                return simplified;
+            }
+        },
+        simplify_duplicate: function(domain) {
+            var dedup_branches = [];
+            var bool_op = null;
+            if (~['AND', 'OR'].indexOf(domain[0])) {
+                bool_op = domain[0];
+                domain = domain.slice(1);
+            }
+            for (var branch of domain) {
+                var simplified_branch = this.simplify(branch);
+                if (simplified_branch.length == 0) {
+                    if (bool_op === 'OR') {
+                        return [];
+                    } else {
+                        continue;
+                    }
+                }
+                var found_branch = false;
+                for (var duped_branch of dedup_branches) {
+                    if (Sao.common.compare(
+                        simplified_branch, duped_branch)) {
+                        found_branch = true;
+                        break;
+                    }
+                }
+                if (!found_branch) {
+                    dedup_branches.push(simplified_branch);
+                }
+            }
+
+            if (bool_op && (dedup_branches.length > 1)) {
+                dedup_branches.unshift(bool_op);
+            }
+            return dedup_branches;
+        },
         simplify: function(domain) {
             if (this.is_leaf(domain)) {
-                return domain;
-            } else if (~['OR', 'AND'].indexOf(domain)) {
-                return domain;
-            } else if ((domain instanceof Array) && (domain.length == 1) &&
-                    (~['OR', 'AND'].indexOf(domain[0]))) {
+                return [domain];
+            } else if (!domain.length) {
                 return [];
-            } else if ((domain instanceof Array) && (domain.length == 1) &&
-                    (!this.is_leaf(domain[0]))) {
-                return this.simplify(domain[0]);
-            } else if ((domain instanceof Array) && (domain.length == 2) &&
-                    ~['AND', 'OR'].indexOf(domain[0])) {
-                return [this.simplify(domain[1])];
             } else {
-                return domain.map(this.simplify.bind(this));
+                return this.simplify_nested(this.simplify_duplicate(domain));
             }
         },
         merge: function(domain, domoperator) {
@@ -2462,14 +2650,11 @@
             if (this.is_leaf(domain)) {
                 return [domain];
             } else if (domoperator === undefined) {
-                return [domain_type].concat([].concat.apply([],
-                        domain.map(function(e) {
-                            return this.merge(e, domain_type);
-                        }.bind(this))));
+                return [domain_type].concat([].concat.apply(
+                    [], domain.map(e => this.merge(e, domain_type))));
             } else if (domain_type == domoperator) {
-                return [].concat.apply([], domain.map(function(e) {
-                    return this.merge(e, domain_type);
-                }.bind(this)));
+                return [].concat.apply(
+                    [], domain.map(e => this.merge(e, domain_type)));
             } else {
                 // without setting the domoperator
                 return [this.merge(domain)];
@@ -2480,11 +2665,11 @@
             if (domoperator) {
                 result.push(domoperator);
             }
-            domains.forEach(function append(domain) {
+            for (const domain of domains) {
                 if (!jQuery.isEmptyObject(domain)) {
                     result.push(domain);
                 }
-            });
+            }
             return this.simplify(this.merge(result));
         },
         unique_value: function(domain) {
@@ -2523,10 +2708,7 @@
                 return new And(domain.slice(begin));
             }
         },
-        domain_inversion: function(domain, symbol, context) {
-            if (context === undefined) {
-                context = {};
-            }
+        domain_inversion: function(domain, symbol, context={}) {
             var expression = this.parse(domain);
             if (!~expression.variables.indexOf(symbol)) {
                 return true;
@@ -2729,24 +2911,41 @@
         }
     });
 
+    Sao.common.mimetypes = {
+        'csv': 'text/csv',
+        'doc': 'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'gif': 'image/gif',
+        'html': 'text/html',
+        'jpeg': 'image/jpeg',
+        'jpg': 'image/jpeg',
+        'mpeg': 'video/mpeg',
+        'mpg': 'video/mpeg',
+        'ods': 'application/vnd.oasis.opendocument.spreadsheet',
+        'odt': 'application/vnd.oasis.opendocument.text',
+        'ogg': 'audio/ogg',
+        'pdf': 'application/pdf',
+        'png': 'image/png',
+        'svg': 'image/svg+xml',
+        'text': 'text/plain',
+        'tif': 'image/tif',
+        'tiff': 'image/tif',
+        'txt': 'text/plain',
+        'webp': 'image/webp',
+        'xls': 'application/vnd.ms-excel',
+        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'xml': 'application/xml',
+        'xpm': 'image/x-xpixmap',
+    };
+
     Sao.common.guess_mimetype = function(filename) {
-        if (/.*odt$/.test(filename)) {
-            return 'application/vnd.oasis.opendocument.text';
-        } else if (/.*ods$/.test(filename)) {
-            return 'application/vnd.oasis.opendocument.spreadsheet';
-        } else if (/.*pdf$/.test(filename)) {
-            return 'application/pdf';
-        } else if (/.*docx$/.test(filename)) {
-            return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-        } else if (/.*doc/.test(filename)) {
-            return 'application/msword';
-        } else if (/.*xlsx$/.test(filename)) {
-            return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-        } else if (/.*xls/.test(filename)) {
-            return 'application/vnd.ms-excel';
-        } else {
-            return 'application/octet-binary';
+        for (var ext in Sao.common.mimetypes) {
+            var re = new RegExp('.*\.' + ext + '$', 'i');
+            if (re.test(filename)) {
+                return Sao.common.mimetypes[ext];
+            }
         }
+        return 'application/octet-binary';
     };
 
     Sao.common.LOCAL_ICONS = [
@@ -2790,10 +2989,12 @@
         'tryton-open',
         'tryton-print',
         'tryton-public',
+        'tryton-question',
         'tryton-refresh',
         'tryton-remove',
         'tryton-save',
         'tryton-search',
+        'tryton-send',
         'tryton-star-border',
         'tryton-star',
         'tryton-switch',
@@ -2822,7 +3023,7 @@
 
             var icon_model = new Sao.Model('ir.ui.icon');
             return icon_model.execute('list_icons', [], {})
-            .then(function(icons) {
+            .then(icons => {
                 if (!refresh) {
                     this.name2id = {};
                     this.loaded_icons = {};
@@ -2839,7 +3040,7 @@
                     this.tryton_icons.push([icon_id, icon_name]);
                     this.name2id[icon_name] = icon_id;
                 }
-            }.bind(this));
+            });
         },
         register_icon: function(icon_name) {
             if (!icon_name) {
@@ -2849,9 +3050,8 @@
                 return jQuery.when();
             }
             if (this.register_prm.state() == 'pending') {
-                return this.register_prm.then(function() {
-                    return this.register_icon(icon_name);
-                }.bind(this));
+                return this.register_prm.then(
+                    () => this.register_icon(icon_name));
             }
             var loaded_prm;
             if (!(icon_name in this.name2id)) {
@@ -2861,8 +3061,8 @@
             }
 
             var icon_model = new Sao.Model('ir.ui.icon');
-            this.register_prm = loaded_prm.then(function () {
-                var find_array = function(array) {
+            this.register_prm = loaded_prm.then(() => {
+                const find_array = array => {
                     var idx, l;
                     for (idx=0, l=this.tryton_icons.length; idx < l; idx++) {
                         var icon = this.tryton_icons[idx];
@@ -2871,28 +3071,28 @@
                         }
                     }
                     return idx;
-                }.bind(this);
+                };
                 var idx = find_array([this.name2id[icon_name], icon_name]);
                 var from = Math.round(idx - this.batchnum / 2);
                 from = (from < 0) ? 0 : from;
                 var to = Math.round(idx + this.batchnum / 2);
                 var ids = [];
-                this.tryton_icons.slice(from, to).forEach(function(e) {
+                for (const e of this.tryton_icons.slice(from, to)) {
                     ids.push(e[0]);
-                });
+                }
 
                 var read_prm = icon_model.execute('read',
                     [ids, ['name', 'icon']], {});
-                return read_prm.then(function(icons) {
-                    icons.forEach(function(icon) {
+                return read_prm.then(icons => {
+                    for (const icon of icons) {
                         var img_url = this._convert(icon.icon);
                         this.loaded_icons[icon.name] = img_url;
                         delete this.name2id[icon.name];
                         this.tryton_icons.splice(
                             find_array([icon.id, icon.name]), 1);
-                    }.bind(this));
-                }.bind(this));
-            }.bind(this));
+                    }
+                });
+            });
             return this.register_prm;
         },
         _convert: function(data) {
@@ -2907,18 +3107,21 @@
             if (!icon_name) {
                 return jQuery.when('');
             }
-            return this.register_icon(icon_name).then(function() {
+            return this.register_icon(icon_name).then(() => {
                 if (icon_name in this.loaded_icons) {
                     return this.loaded_icons[icon_name];
                 } else {
                     return jQuery.get('images/' + icon_name + '.svg', null, null, 'text')
-                        .then(function(icon) {
+                        .then(icon => {
                             var img_url = this._convert(icon);
                             this.loaded_icons[icon_name] = img_url;
                             return img_url;
-                        }.bind(this));
+                        })
+                        .fail(() => {
+                            Sao.error("Unknown icon %s", icon_name);
+                        });
                 }
-            }.bind(this));
+            });
         },
         get_icon_img: function(icon_name, attrs) {
             attrs = attrs || {};
@@ -2953,22 +3156,22 @@
             var prm = jQuery.Deferred();
             args.push(prm);
             var dialog = this.build_dialog.apply(this, args);
-            dialog.content.submit(function(evt) {
+            dialog.content.submit(evt => {
                 dialog.footer.find('button.btn-primary').first().click();
                 evt.preventDefault();
-            }.bind(this));
+            });
             this.running = true;
             dialog.modal.modal('show');
             dialog.modal.on('shown.bs.modal', function() {
                 dialog.modal.find('input,select')
                     .filter(':visible').first().focus();
             });
-            dialog.modal.on('keydown', function(e) {
+            dialog.modal.on('keydown', e => {
                 if (e.which == Sao.common.ESC_KEYCODE) {
                     this.close(dialog);
                     prm.reject();
                 }
-            }.bind(this));
+            });
             return prm;
         },
         close: function(dialog) {
@@ -2999,11 +3202,12 @@
                 .css('white-space', 'pre-wrap')));
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('OK')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("OK"),
+            }).text(Sao.i18n.gettext('OK')).click(() => {
                 this.close(dialog);
                 prm.resolve('ok');
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             return dialog;
         },
         run: function(message, icon) {
@@ -3037,11 +3241,12 @@
             dialog.body.append(content);
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('OK')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("OK"),
+            }).text(Sao.i18n.gettext('OK')).click(() => {
                 this.close(dialog);
                 prm.resolve('ok');
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             return dialog;
         }
     });
@@ -3052,37 +3257,39 @@
         build_dialog: function(message, title, prm) {
             var dialog = Sao.common.UserWarningDialog._super.build_dialog.call(
                 this, message, title, prm);
-            // Coog specific : do not display this warning cf bug #9035
+            // Coog specific : do not display this warning button cf bug #9035
             // var always = jQuery('<input/>', {
             //     'type': 'checkbox'
             // });
             // dialog.body.append(jQuery('<div/>', {
             //     'class': 'checkbox',
             // }).append(jQuery('<label/>')
-            //     .append(always)
-            //     .append(Sao.i18n.gettext('Always ignore this warning.')))
+            //     .text(Sao.i18n.gettext("Always ignore this warning."))
+            //     .prepend(always))
             // );
             dialog.body.append(jQuery('<p/>')
                     .text(Sao.i18n.gettext('Do you want to proceed?')));
             dialog.footer.empty();
             jQuery('<button/>', {
                 'class': 'btn btn-link',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('No')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("No"),
+            }).text(Sao.i18n.gettext('No')).click(() => {
                 this.close(dialog);
                 prm.reject();
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('Yes')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("Yes"),
+            }).text(Sao.i18n.gettext('Yes')).click(() => {
                 this.close(dialog);
                 // Coog specific : always is not displayed cf bug #9035
                 // if (always.prop('checked')) {
                 //     prm.resolve('always');
                 // }
                 prm.resolve('ok');
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             return dialog;
         }
     });
@@ -3115,18 +3322,20 @@
                 this, message);
             jQuery('<button/>', {
                 'class': 'btn btn-link',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('Cancel')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("Cancel"),
+            }).text(Sao.i18n.gettext('Cancel')).click(() => {
                 this.close(dialog);
                 prm.reject();
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('OK')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("OK"),
+            }).text(Sao.i18n.gettext('OK')).click(() => {
                 this.close(dialog);
                 prm.resolve();
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             return dialog;
         }
     });
@@ -3138,25 +3347,28 @@
                 this, message);
             jQuery('<button/>', {
                 'class': 'btn btn-link',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('Cancel')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("Cancel"),
+            }).text(Sao.i18n.gettext('Cancel')).click(() => {
                 this.close(dialog);
                 prm.resolve('cancel');
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('No')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("No"),
+            }).text(Sao.i18n.gettext('No')).click(() => {
                 this.close(dialog);
                 prm.resolve('ko');
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('Yes')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("Yes"),
+            }).text(Sao.i18n.gettext('Yes')).click(() => {
                 this.close(dialog);
                 prm.resolve('ok');
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             return dialog;
         }
     });
@@ -3186,18 +3398,20 @@
             }).text(question)).append(entry));
             jQuery('<button/>', {
                 'class': 'btn btn-link',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('Cancel')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("Cancel"),
+            }).text(Sao.i18n.gettext('Cancel')).click(() => {
                 this.close(dialog);
                 prm.reject();
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('OK')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("OK"),
+            }).text(Sao.i18n.gettext('OK')).click(() => {
                 this.close(dialog);
                 prm.resolve(entry.val());
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             return dialog;
         }
     });
@@ -3212,7 +3426,7 @@
                 ).removeClass('modal-sm').addClass('modal-lg');
             dialog.add_title(Sao.i18n.gettext('Concurrency Exception'));
             dialog.body.append(jQuery('<div/>', {
-                'class': 'alert alert-warning',
+                'class': 'alert alert-info',
                 role: 'alert'
             }).append(jQuery('<p/>')
                 .append(Sao.common.ICONFACTORY.get_icon_img('tryton-info', {
@@ -3235,15 +3449,17 @@
                 );
             jQuery('<button/>', {
                 'class': 'btn btn-link',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('Cancel')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("Cancel"),
+            }).text(Sao.i18n.gettext('Cancel')).click(() => {
                 this.close(dialog);
                 prm.reject();
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('Compare')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("Compare"),
+            }).text(Sao.i18n.gettext('Compare')).click(() => {
                 this.close(dialog);
                 Sao.rpc({
                     'method': 'model.' + model + '.read',
@@ -3260,14 +3476,15 @@
                     });
                     prm.reject();
                 });
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             jQuery('<button/>', {
                 'class': 'btn btn-default',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('Write Anyway')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("Write Anyway"),
+            }).text(Sao.i18n.gettext('Write Anyway')).click(() => {
                 this.close(dialog);
                 prm.resolve();
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             return dialog;
         }
     });
@@ -3282,7 +3499,7 @@
                 ).removeClass('modal-sm').addClass('modal-lg');
             dialog.add_title(Sao.i18n.gettext('Application Error'));
             dialog.body.append(jQuery('<div/>', {
-                'class': 'alert alert-warning',
+                'class': 'alert alert-danger',
                 role: 'alert'
             }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-error', {
                 'aria-hidden': true,
@@ -3301,11 +3518,12 @@
                     }).text(Sao.i18n.gettext('Report Bug')))));
             jQuery('<button/>', {
                 'class': 'btn btn-primary',
-                'type': 'button'
-            }).text(Sao.i18n.gettext('Close')).click(function() {
+                'type': 'button',
+                'title': Sao.i18n.gettext("Close"),
+            }).text(Sao.i18n.gettext('Close')).click(() => {
                 this.close(dialog);
                 prm.resolve();
-            }.bind(this)).appendTo(dialog.footer);
+            }).appendTo(dialog.footer);
             return dialog;
         }
     });
@@ -3319,20 +3537,26 @@
                 'id': 'processing',
                 'class': 'text-center'
             });
-            this.el.append(jQuery('<span/>', {
+            var label = jQuery('<span/>', {
                 'class': 'label label-info',
-                'text': Sao.i18n.gettext('Processing...')
-            }));
+                'text': Sao.i18n.gettext('Processing'),
+            }).appendTo(this.el);
+            for (var i = 0; i < 3; i ++) {
+                label.append(jQuery('<span/>', {
+                    'class': 'dot',
+                    'text': '.',
+                }));
+            }
             this.el.hide();
-            jQuery(function() {
+            jQuery(() => {
                 this.el.appendTo('body');
-            }.bind(this));
+            });
         },
         show: function() {
-            return window.setTimeout(function() {
+            return window.setTimeout(() => {
                 this.queries += 1;
                 this.el.show();
-            }.bind(this), this.timeout);
+            }, this.timeout);
         },
         hide: function(timeoutID) {
             window.clearTimeout(timeoutID);
@@ -3346,6 +3570,30 @@
         }
     });
     Sao.common.processing = new Sao.common.Processing();
+
+    Sao.common.set_overflow = function set_overflow(el, state) {
+        // We must set the overflow of the treeview and modal-body
+        // containing the input to visible to prevent vertical scrollbar
+        // inherited from the auto overflow-x
+        // Idem when in navbar collapse for the overflow-y
+        // (see http://www.w3.org/TR/css-overflow-3/#overflow-properties)
+        var overflow, height;
+        if (state == 'hide') {
+            overflow = '';
+            height = '';
+        } else {
+            overflow = 'visible';
+            height = 'none';
+        }
+        el.closest('.treeview')
+            .css('overflow', overflow)
+            .css('max-height', height);
+        el.closest('.modal-body').css('overflow', overflow);
+        el.closest('.navbar-collapse.in').css('overflow-y', overflow);
+        el.closest('.content-box').css('overflow-y', overflow);
+        el.closest('fieldset.form-group_').css('overflow', overflow);
+        Sao.common.scrollIntoViewIfNeeded(el);
+    };
 
     Sao.common.InputCompletion = Sao.class_(Object, {
         init: function(el, source, match_selected, format) {
@@ -3379,11 +3627,11 @@
 
             this._search_text = null;
 
-            this.input.on('input', function() {
+            this.input.on('input', () => {
                 window.setTimeout(this._input.bind(this), 300,
                         this.input.val());
-            }.bind(this));
-            this.input.keydown(function(evt) {
+            });
+            this.input.keydown(evt => {
                 if (evt.which == Sao.common.ESC_KEYCODE) {
                     if (this.dropdown.hasClass('open')) {
                         evt.preventDefault();
@@ -3397,38 +3645,21 @@
                         this.menu.find('li > a').first().focus();
                     }
                 }
-            }.bind(this));
-            this.menu.keydown(function(evt) {
+            });
+            this.menu.keydown(evt => {
                 if (evt.which == Sao.common.ESC_KEYCODE) {
                     evt.preventDefault();
                     evt.stopPropagation();
                     this.menu.dropdown('toggle');
                 }
-            }.bind(this));
-            // We must set the overflow of the treeview and modal-body
-            // containing the input to visible to prevent vertical scrollbar
-            // inherited from the auto overflow-x
-            // Idem when in navbar collapse for the overflow-y
-            // (see http://www.w3.org/TR/css-overflow-3/#overflow-properties)
-            this.dropdown.on('hide.bs.dropdown', function() {
+            });
+            this.dropdown.on('hide.bs.dropdown', () => {
                 this.input.focus();
-                this.input.closest('.treeview')
-                    .css('overflow', '')
-                    .css('max-height', '');
-                this.input.closest('.modal-body').css('overflow', '');
-                this.input.closest('.navbar-collapse.in').css('overflow-y', '');
-                this.input.closest('.content-box').css('overflow-y', '');
-                Sao.common.scrollIntoViewIfNeeded(this.input);
-            }.bind(this));
-            this.dropdown.on('show.bs.dropdown', function() {
-                this.input.closest('.treeview')
-                    .css('overflow', 'visible')
-                    .css('max-height', 'none');
-                this.input.closest('.modal-body').css('overflow', 'visible');
-                this.input.closest('.navbar-collapse.in').css('overflow-y', 'visible');
-                this.input.closest('.content-box').css('overflow-y', 'visible');
-                Sao.common.scrollIntoViewIfNeeded(this.input);
-            }.bind(this));
+                Sao.common.set_overflow(this.input, 'hide');
+            });
+            this.dropdown.on('show.bs.dropdown', () => {
+                Sao.common.set_overflow(this.input, 'show');
+            });
         },
         set_actions: function(actions, action_activated) {
             if (action_activated !== undefined) {
@@ -3448,13 +3679,13 @@
                 }).append(jQuery('<a/>', {
                     'href': '#'
                 }).text(this._format_action(content)))
-                .click(function(evt) {
+                .click(evt => {
                     evt.preventDefault();
                     if (this.action_activated) {
                         this.action_activated(action_id);
                     }
                     this.input.val('');
-                }.bind(this))
+                })
                 .appendTo(this.menu);
             }, this);
         },
@@ -3482,12 +3713,12 @@
             } else {
                 prm = this.source(text);
             }
-            prm.then(function(values) {
+            prm.then(values => {
                 if (text != this.input.val()) {
                     return;
                 }
                 this._set_selection(values);
-            }.bind(this));
+            });
         },
         _set_selection: function(values) {
             if (values === undefined) {
@@ -3500,15 +3731,17 @@
                 }).append(jQuery('<a/>', {
                     'href': '#'
                 }).append(this._format(value)))
-                .click(function(evt) {
+                .click(evt => {
                     evt.preventDefault();
                     if (this.match_selected) {
                         this.match_selected(value);
                     }
                     this.input.focus();
-                }.bind(this)).prependTo(this.menu);
+                }).prependTo(this.menu);
             }, this);
-            if (!this.input.val()) {
+            if (!this.input.val() || (
+                !this.menu.find('li.completion').length &&
+                !this.menu.find('li.action').length)) {
                 if (this.dropdown.hasClass('open')) {
                     this.menu.dropdown('toggle');
                 }
@@ -3521,16 +3754,22 @@
     });
 
     Sao.common.get_completion = function(el, source,
-            match_selected, action_activated) {
+            match_selected, action_activated, search, create) {
         var format = function(content) {
             return content.rec_name;
         };
         var completion = new Sao.common.InputCompletion(
                 el, source, match_selected, format);
-        completion.set_actions([
-                ['search', Sao.i18n.gettext('Search...')],
-                ['create', Sao.i18n.gettext('Create...')]],
-                action_activated);
+        if (action_activated) {
+            var actions = [];
+            if (search || search == undefined) {
+                actions.push(['search', Sao.i18n.gettext('Search...')]);
+            }
+            if (create || create == undefined) {
+                actions.push(['create', Sao.i18n.gettext('Create...')]);
+            }
+            completion.set_actions(actions, action_activated);
+        }
     };
 
     Sao.common.update_completion = function(
@@ -3543,12 +3782,17 @@
             domain = field.get_domain(record);
         }
         var context = field.get_search_context(record);
-        domain = [['rec_name', 'ilike', '%' + search_text + '%'], domain];
+        var likify = new Sao.common.DomainParser().likify;
+        domain = [['rec_name', 'ilike', likify(search_text)], domain];
 
         var order = field.get_search_order(record);
         var sao_model = new Sao.Model(model);
         return sao_model.execute('search_read',
-                [domain, 0, Sao.config.limit, order, ['rec_name']], context);
+                [domain, 0, Sao.config.limit, order, ['rec_name']], context,
+                undefined, false).fail(function() {
+                    Sao.Logger.warning(
+                        "Unable to search for completion of %s", model);
+                });
     };
 
     Sao.common.Paned = Sao.class_(Object, {
@@ -3660,8 +3904,7 @@
 
     Sao.common.download_file = function(data, name, options) {
         if (options === undefined) {
-            var type = Sao.common.guess_mimetype(
-                name ? name.split('.').pop() : undefined);
+            var type = Sao.common.guess_mimetype(name);
             options = {type: type};
         }
         var blob = new Blob([data], options);
@@ -3686,7 +3929,8 @@
                 .click(close);
         var button = jQuery('<button/>', {
             'class': 'btn btn-default',
-            'type': 'button'
+            'type': 'button',
+            'title': Sao.i18n.gettext("Close"),
         }).text(Sao.i18n.gettext('Close')).click(close)
             .appendTo(dialog.footer);
         dialog.modal.on('shown.bs.modal', function() {
@@ -3728,14 +3972,23 @@
         return string.slice(0, length - ellipsis.length) + ellipsis;
     };
 
+    Sao.common.accesskey = function(string) {
+        for (var i=0; i < string.length; i++) {
+            var c = string.charAt(i).toLowerCase();
+            // Skip sao and browser shortcuts
+            if (!~['d', 'e', 'f', 'i', 'n', 't', 'w'].indexOf(c)) {
+                return c;
+            }
+        }
+    };
+
     Sao.common.debounce = function(func, wait) {
-        return function() {
-            var args = [].slice(arguments);
+        return (...args) => {
             clearTimeout(func._debounceTimeout);
-            func._debounceTimeout = setTimeout(function() {
+            func._debounceTimeout = setTimeout(() => {
                 func.apply(this, args);
-            }.bind(this), wait);
-        }.bind(this);
+            }, wait);
+        };
     };
 
     Sao.common.uuid4 = function() {
@@ -3745,6 +3998,247 @@
                 var v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
             });
+    };
+
+    Sao.common.COLOR_SCHEMES = {
+        'red': '#cf1d1d',
+        'green': '#3fb41b',
+        'blue': '#224565',
+        'grey': '#444444',
+        'black': '#000000',
+        'darkcyan': '#305755',
+    };
+
+    Sao.common.hex2rgb = function(hexstring, digits) {
+        digits = digits || 2;
+        var top = parseInt('f'.repeat(digits), 16);
+        var r = parseInt(
+            hexstring.substring(1, digits + 1), 16);
+        var g = parseInt(
+            hexstring.substring(digits + 1, digits * 2 + 1), 16);
+        var b = parseInt(
+            hexstring.substring(digits * 2 + 1, digits * 3 + 1), 16);
+        return [r / top, g / top, b / top];
+    };
+
+    Sao.common.rgb2hex = function(rgb, digits) {
+        digits = digits || 2;
+        var top = parseInt('f'.repeat(digits), 16);
+        return '#' + rgb
+            .map(function(i) { return Math.round(i * top).toString(16); })
+            .join('');
+    };
+
+    Sao.common.rgb2hsv = function(rgb) {
+        var r = rgb[0],
+            g = rgb[1],
+            b = rgb[2];
+        var maxc = Math.max.apply(null, rgb);
+        var minc = Math.min.apply(null, rgb);
+        var v = maxc;
+        if (minc == maxc) return [0, 0, v];
+        var s = (maxc - minc) / maxc;
+        var rc = (maxc - r) / (maxc - minc);
+        var gc = (maxc - g) / (maxc - minc);
+        var bc = (maxc - b) / (maxc - minc);
+        var h;
+        if (r == maxc) {
+            h = bc - gc;
+        } else if (g == maxc) {
+            h = 2 + rc - bc;
+        } else {
+            h = 4 + gc - rc;
+        }
+        h = (h / 6) % 1;
+        return [h, s, v];
+    };
+
+    Sao.common.hsv2rgb = function(hsv) {
+        var h = hsv[0],
+            s = hsv[1],
+            v = hsv[2];
+        if (s == 0) return [v, v, v];
+        var i = Math.trunc(h * 6);
+        var f = (h * 6) - i;
+        var p = v * (1 - s);
+        var q = v * (1 - s * f);
+        var t = v * (1 - s * (1 - f));
+        i = i % 6;
+
+        if (i == 0) return [v, t, p];
+        else if (i == 1) return [q, v, p];
+        else if (i == 2) return [p, v, t];
+        else if (i == 3) return [p, q, v];
+        else if (i == 4) return [t, p, v];
+        else if (i == 5) return [v, p, q];
+    };
+
+    Sao.common.generateColorscheme = function(masterColor, keys, light=0.1) {
+        var rgb = Sao.common.hex2rgb(
+            Sao.common.COLOR_SCHEMES[masterColor] || masterColor);
+        var hsv = Sao.common.rgb2hsv(rgb);
+        var h = hsv[0],
+            s = hsv[1],
+            v = hsv[2];
+        if (keys.length) {
+            light = Math.min(light, (1 - v) / keys.length);
+        }
+        var golden_angle = 0.618033988749895;
+        var colors = {};
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            colors[key] = Sao.common.rgb2hex(Sao.common.hsv2rgb(
+                [(h + golden_angle * i) % 1, s, (v + light * i) % 1]));
+        }
+        return colors;
+    };
+
+    Sao.common.richtext_toolbar = function() {
+        var toolbar = jQuery('<div/>', {
+            'class': 'btn-toolbar',
+            'role': 'toolbar',
+        });
+
+        var button_apply_command = function(evt) {
+            document.execCommand(evt.data);
+        };
+
+        var add_buttons = function(buttons) {
+            var group = jQuery('<div/>', {
+                'class': 'btn-group',
+                'role': 'group'
+            }).appendTo(toolbar);
+            for (const properties of buttons) {
+                const button = jQuery('<button/>', {
+                    'class': 'btn btn-default',
+                    'type': 'button',
+                    'title': properties.label,
+                }).append(Sao.common.ICONFACTORY.get_icon_img(
+                    'tryton-format-' + properties.icon)
+                ).appendTo(group);
+                button.click(properties.command, button_apply_command);
+            }
+        };
+
+        add_buttons([
+            {
+                'icon': 'bold',
+                'command': 'bold',
+                'label': Sao.i18n.gettext("Bold"),
+            }, {
+                'icon': 'italic',
+                'command': 'italic',
+                'label': Sao.i18n.gettext("Italic"),
+            }, {
+                'icon': 'underline',
+                'command': 'underline',
+                'label': Sao.i18n.gettext("Underline"),
+            }]);
+
+        var selections = [
+            {
+                'heading': Sao.i18n.gettext('Font'),
+                'options': ['Normal', 'Serif', 'Sans', 'Monospace'],  // XXX
+                'command': 'fontname'
+            }, {
+                'heading': Sao.i18n.gettext('Size'),
+                'options': [1, 2, 3, 4, 5, 6, 7],
+                'command': 'fontsize'
+            }];
+        var add_option = function(dropdown, properties) {
+            return function(option) {
+                dropdown.append(jQuery('<li/>').append(jQuery('<a/>', {
+                    'href': '#'
+                }).text(option).click(function(evt) {
+                    evt.preventDefault();
+                    document.execCommand(properties.command, false, option);
+                })));
+            };
+        };
+        for (var properties of selections) {
+            var group = jQuery('<div/>', {
+                'class': 'btn-group',
+                'role': 'group'
+            }).appendTo(toolbar);
+            var button = jQuery('<button/>', {
+                'class': 'btn btn-default dropdown-toggle',
+                'type': 'button',
+                'data-toggle': 'dropdown',
+                'aria-expanded': false,
+                'aria-haspopup': true
+            }).append(properties.heading)
+                .append(jQuery('<span/>', {
+                    'class': 'caret'
+                })).appendTo(group);
+            var dropdown = jQuery('<ul/>', {
+                'class': 'dropdown-menu'
+            }).appendTo(group);
+            properties.options.forEach(add_option(dropdown, properties));
+        }
+
+        add_buttons([
+            {
+                'icon': 'align-left',
+                'command': Sao.i18n.rtl? 'justifyRight' : 'justifyLeft',
+                'label': (Sao.i18n.rtl?
+                    Sao.i18n.gettext("Justify Right") :
+                    Sao.i18n.gettext("Justify Left")),
+            }, {
+                'icon': 'align-center',
+                'command': 'justifyCenter',
+                'label': Sao.i18n.gettext("Justify Center"),
+            }, {
+                'icon': 'align-right',
+                'command': Sao.i18n.rtl? 'justifyLeft': 'justifyRight',
+                'label': (Sao.i18n.rtl?
+                    Sao.i18n.gettext("Justify Left") :
+                    Sao.i18n.gettext("Justify Right")),
+            }, {
+                'icon': 'align-justify',
+                'command': 'justifyFull',
+                'label': Sao.i18n.gettext("Justify Full"),
+            }]);
+
+        // TODO backColor
+        [['foreColor', '#000000']].forEach(
+            function(e) {
+                var command = e[0];
+                var color = e[1];
+                jQuery('<input/>', {
+                    'class': 'btn btn-default',
+                    'type': 'color'
+                }).appendTo(toolbar)
+                    .change(function() {
+                        document.execCommand(command, false, jQuery(this).val());
+                    }).focusin(function() {
+                        document.execCommand(command, false, jQuery(this).val());
+                    }).val(color);
+            });
+        return toolbar;
+    };
+
+    Sao.common.richtext_normalize = function(html) {
+        var el = jQuery('<div/>').html(html);
+        // TODO order attributes
+        el.find('div').each(function(i, el) {
+            el = jQuery(el);
+            // Not all browsers respect the styleWithCSS
+            if (el.css('text-align')) {
+                // Remove browser specific prefix
+                var align = el.css('text-align').split('-').pop();
+                el.attr('align', align);
+                el.css('text-align', '');
+            }
+            // Some browsers set start as default align
+            if (el.attr('align') == 'start') {
+                if (Sao.i18n.rtl) {
+                    el.attr('align', 'right');
+                } else {
+                    el.attr('align', 'left');
+                }
+            }
+        });
+        return el.html();
     };
 
     Sao.common.clone = function(obj) {

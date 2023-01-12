@@ -45,6 +45,8 @@
     QUnit.test('PYSON Encoder', function() {
         var encoder = new Sao.PYSON.Encoder();
         var none;
+        var decimal = Sao.Decimal(1.1);
+        var pyson_decimal = 1.1;
         var date = Sao.Date(2002, 0, 1);
         var datetime = Sao.DateTime(2002, 0, 1, 12, 30, 0, 0);
         var pyson_date = new Sao.PYSON.Date(2002, 1, 1).pyson();
@@ -63,6 +65,8 @@
         QUnit.strictEqual(encoder.encode(), 'null', "encode()");
         QUnit.strictEqual(encoder.encode(none), 'null', "encode(none)");
         QUnit.strictEqual(encoder.encode(null), 'null', "encode()");
+        QUnit.strictEqual(encoder.encode(decimal),
+            JSON.stringify(pyson_decimal), "encode(decimal)");
         QUnit.strictEqual(encoder.encode(date),
             JSON.stringify(pyson_date), "encode(date)");
         QUnit.strictEqual(encoder.encode(datetime),
@@ -97,6 +101,9 @@
         QUnit.strictEqual(new Sao.PYSON.Decoder({test: 1}).decode(eval_), 1,
             "decode(Eval('test', 0))");
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), 0,
+            "decode(Eval('test', 0))");
+        QUnit.strictEqual(
+            new Sao.PYSON.Decoder({test: undefined}).decode(eval_), 0,
             "decode(Eval('test', 0))");
     });
 
@@ -189,138 +196,132 @@
     });
 
     QUnit.test('PYSON And', function() {
-        var value = new Sao.PYSON.And([true, false]).pyson();
-        QUnit.strictEqual(value.__class__, 'And', 'And([true, false]).pyson()');
+        var value = new Sao.PYSON.And(true, false).pyson();
+        QUnit.strictEqual(value.__class__, 'And', 'And(true, false).pyson()');
         QUnit.ok(Sao.common.compare(value.s, [true, false]),
             'And([true, false]).pyson()');
 
         QUnit.throws(function() {
-            new Sao.PYSON.And([true]);
-        }, 'must have at least 2 statements', 'And([true])');
-        QUnit.throws(function() {
-            new Sao.PYSON.And([]);
-        }, 'must have at least 2 statements', 'And([])');
+            new Sao.PYSON.And(true);
+        }, 'must have at least 2 statements', 'And(true)');
         QUnit.throws(function() {
             new Sao.PYSON.And();
         }, 'must have at least 2 statements', 'And()');
 
-        QUnit.ok(Sao.common.compare(new Sao.PYSON.And([true, false]).types(),
-                    ['boolean']), 'And([true, false]).types()');
+        QUnit.ok(Sao.common.compare(new Sao.PYSON.And(true, false).types(),
+                    ['boolean']), 'And(true, false).types()');
 
         var eval_;
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.And([true, true]));
+                new Sao.PYSON.And(true, true));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
-                'decode(And([true, true]))');
+                'decode(And(true, true))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.And([true, true, true]));
+                new Sao.PYSON.And(true, true, true));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
-                'decode(And([true, true, true]))');
+                'decode(And(true, true, true))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.And([true, false]));
+                new Sao.PYSON.And(true, false));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-                'decode(And([true, false]))');
+                'decode(And(true, false))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.And([false, true]));
+                new Sao.PYSON.And(false, true));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-                'decode(And([false, true]))');
+                'decode(And(false, true))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.And([false, false]));
+                new Sao.PYSON.And(false, false));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-                'decode(And([false, false]))');
+                'decode(And(false, false))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.And([false, false, false]));
+                new Sao.PYSON.And(false, false, false));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-                'decode(And([false, false, false]))');
+                'decode(And(false, false, false))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.And([true, false, false]));
+                new Sao.PYSON.And(true, false, false));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-                'decode(And([true, false, false]))');
+                'decode(And(true, false, false))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.And([false, true, false]));
+                new Sao.PYSON.And(false, true, false));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-                'decode(And([false, true, false]))');
+                'decode(And(false, true, false))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.And([false, false, true]));
+                new Sao.PYSON.And(false, false, true));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-                'decode(And([false, false, true]))');
-        QUnit.strictEqual(new Sao.PYSON.And([false, true, true]).toString(),
+                'decode(And(false, false, true))');
+        QUnit.strictEqual(new Sao.PYSON.And(false, true, true).toString(),
                 "And(false, true, true)");
     });
 
     QUnit.test('PYSON Or', function() {
-        var value = new Sao.PYSON.Or([true, false]).pyson();
-        QUnit.strictEqual(value.__class__, 'Or', 'Or([true, false]).pyson()');
+        var value = new Sao.PYSON.Or(true, false).pyson();
+        QUnit.strictEqual(value.__class__, 'Or', 'Or(true, false).pyson()');
         QUnit.ok(Sao.common.compare(value.s, [true, false]),
-            'Or([true, false]).pyson()');
+            'Or(true, false).pyson()');
 
         QUnit.throws(function() {
-            new Sao.PYSON.Or([true]);
-        }, 'must have at least 2 statements', 'Or([true])');
-        QUnit.throws(function() {
-            new Sao.PYSON.Or([]);
-        }, 'must have at least 2 statements', 'Or([])');
+            new Sao.PYSON.Or(true);
+        }, 'must have at least 2 statements', 'Or(true)');
         QUnit.throws(function() {
             new Sao.PYSON.Or();
-        }, 'must have at least 2 statements', 'Or([])');
+        }, 'must have at least 2 statements', 'Or()');
 
-        QUnit.ok(Sao.common.compare(new Sao.PYSON.Or([true, false]).types(),
-                    ['boolean']), 'Or([true, false]).types()');
+        QUnit.ok(Sao.common.compare(new Sao.PYSON.Or(true, false).types(),
+                    ['boolean']), 'Or(true, false).types()');
 
         var eval_;
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.Or([true, true]));
+                new Sao.PYSON.Or(true, true));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
-                'decode(Or([true, true]))');
+                'decode(Or(true, true))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.Or([true, true, true]));
+                new Sao.PYSON.Or(true, true, true));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
-                'decode(Or([true, true, true]))');
+                'decode(Or(true, true, true))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.Or([true, false]));
+                new Sao.PYSON.Or(true, false));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
-                'decode(Or([true, false]))');
+                'decode(Or(true, false))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.Or([false, true]));
+                new Sao.PYSON.Or(false, true));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
-                'decode(Or([false, true]))');
+                'decode(Or(false, true))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.Or([false, false]));
+                new Sao.PYSON.Or(false, false));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-                'decode(Or([false, false]))');
+                'decode(Or(false, false))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.Or([false, false, false]));
+                new Sao.PYSON.Or(false, false, false));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
-                'decode(Or([false, false, false]))');
+                'decode(Or(false, false, false))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.Or([true, false, false]));
+                new Sao.PYSON.Or(true, false, false));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
-                'decode(Or([true, false, false]))');
+                'decode(Or(true, false, false))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.Or([false, true, false]));
+                new Sao.PYSON.Or(false, true, false));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
-                'decode(Or([false, true, false]))');
+                'decode(Or(false, true, false))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
-                new Sao.PYSON.Or([false, false, true]));
+                new Sao.PYSON.Or(false, false, true));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
-                'decode(Or([false, false, true]))');
-        QUnit.strictEqual(new Sao.PYSON.Or([false, true, true]).toString(),
+                'decode(Or(false, false, true))');
+        QUnit.strictEqual(new Sao.PYSON.Or(false, true, true).toString(),
                 "Or(false, true, true)");
     });
 
@@ -407,13 +408,19 @@
 
         QUnit.throws(function() {
             new Sao.PYSON.Greater('test', 0);
-        }, 'statement must be an integer or a float');
+        }, 'statement must be an integer, float, date or datetime');
         QUnit.throws(function() {
             new Sao.PYSON.Greater(1, 'test');
-        }, 'statement must be an integer or a float');
+        }, 'statement must be an integer, float, date or datetime');
         QUnit.throws(function() {
             new Sao.PYSON.Greater(new Sao.PYSON.Eval('foo'), 0);
-        }, 'statement must be an integer of float');
+        }, 'statement must be an integer, float, date or datetime');
+        QUnit.throws(function() {
+            new Sao.PYSON.Greater(Sao.PYSON.DateTime(), 'test');
+        }, 'statement must be an integer, float, date or datetime');
+        QUnit.throws(function() {
+            new Sao.PYSON.Greater('test', Date());
+        }, 'statement must be an integer, float, date or datetime');
 
         QUnit.ok(Sao.common.compare(new Sao.PYSON.Greater(1, 0).types(),
                 ['boolean']), 'Greater(1, 0).types()');
@@ -451,10 +458,63 @@
                 'decode(Greater(null, 1))');
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(1, null));
-        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
                 'decode(Greater(1, null))');
         QUnit.strictEqual(new Sao.PYSON.Greater(1, 0).toString(),
                 "Greater(1, 0, false)");
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
+            Sao.Date(2020, 0, 2)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+            'decode(Greater(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), ' +
+            'Date(2020, 0, 2)))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1000),
+            Sao.Date(2020, 0, 1)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            'decode(Greater(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1000), ' +
+            'Date(2020, 0, 1)))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
+            Sao.Date(2020, 0, 1), true));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            'decode(Greater(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), ' +
+            'Date(2020, 0, 1), true))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+            'decode(Greater(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), ' +
+            'PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0, 0)))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
+            new Sao.PYSON.Date(2020, 1, 1),
+            Sao.Date(2020, 0, 1)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+            'decode(Greater(PYSON.Date(2020, 1, 1), Date(2020, 0, 1)))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
+            new Sao.PYSON.Date(2020, 1, 1),
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+            'decode(Greater(PYSON.Date(2020, 1, 1), ' +
+            'PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1)))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1),
+            new Sao.PYSON.Date(2020, 1, 1), true));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            'decode(Greater(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1), ' +
+            'PYSON.Date(2020, 1, 1), true))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Greater(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), 90000));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            'decode(Greater(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), 90000))');
 
         eval_ = new Sao.PYSON.Encoder().encode(
             new Sao.PYSON.Greater(new Sao.PYSON.Eval('i', 0), 0));
@@ -471,10 +531,22 @@
 
         QUnit.throws(function() {
             new Sao.PYSON.Less('test', 0);
-        }, 'statement must be an integer or a float');
+        }, 'statement must be an integer, float, date or datetime');
         QUnit.throws(function() {
             new Sao.PYSON.Less(1, 'test');
-        }, 'statement must be an integer or a float');
+        }, 'statement must be an integer, float, date or datetime');
+        QUnit.throws(function() {
+            new Sao.PYSON.Less(1, 'test');
+        }, 'statement must be an integer, float, date or datetime');
+        QUnit.throws(function() {
+            new Sao.PYSON.Less(new Sao.PYSON.Eval('foo'), 0);
+        }, 'statement must be an integer, float, date or datetime');
+        QUnit.throws(function() {
+            new Sao.PYSON.Less(Sao.PYSON.DateTime(), 'test');
+        }, 'statement must be an integer, float, date or datetime');
+        QUnit.throws(function() {
+            new Sao.PYSON.Less('test', Date());
+        }, 'statement must be an integer, float, date or datetime');
 
         QUnit.ok(Sao.common.compare(new Sao.PYSON.Less(1, 0).types(),
                 ['boolean']), 'Less(1, 0).types()');
@@ -508,7 +580,7 @@
                 'decode(Less(1, 1, true))');
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(null, 1));
-        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
                 'decode(Less(null, 1))');
 
         eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(1, null));
@@ -516,6 +588,53 @@
                 'decode(Less(1, null))');
         QUnit.strictEqual(new Sao.PYSON.Less(0, 1).toString(),
                 "Less(0, 1, false)");
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1000),
+            Sao.Date(2020, 0, 1)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+            'decode(Less(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1000), ' +
+            'Date(2020, 0, 1)))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
+            Sao.Date(2020, 0, 2), true));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            'decode(Less(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), ' +
+            'Date(2020, 0, 2), true))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+            'decode(Less(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), ' +
+            'PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0)))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
+            new Sao.PYSON.Date(2020, 1, 1),
+            Sao.Date(2020, 0, 2)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            'decode(Less(PYSON.Date(2020, 1, 1), Date(2020, 0, 2)))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
+            new Sao.PYSON.Date(2020, 1, 1),
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 1000)));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            'decode(Less(PYSON.Date(2020, 1, 1), ' +
+            'PYSON.DateTime(2020, 1, 1, 0, 0, 1000)))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0),
+            new Sao.PYSON.Date(2020, 0, 1), true));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+            'decode(Less(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), ' +
+            'PYSON.Date(2020, 1, 1), true))');
+
+        eval_ = new Sao.PYSON.Encoder().encode(new Sao.PYSON.Less(
+            new Sao.PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), 90000));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+            'decode(Less(PYSON.DateTime(2020, 1, 1, 0, 0, 0, 0), 90000))');
+
     });
 
     QUnit.test('PYSON If', function() {
@@ -620,6 +739,11 @@
                 "decode(In('foo', {foo: 'bar'}))");
 
         eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.In(new Sao.PYSON.Eval('test', 'foo'), {foo: 'bar'}));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
+                "decode(In(Eval('test', 'foo'), {foo: 'bar'}))");
+
+        eval_ = new Sao.PYSON.Encoder().encode(
             new Sao.PYSON.In('1', {1: 'bar'}));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), true,
                 "decode(In('1', {1: 'bar'}))");
@@ -628,6 +752,11 @@
             new Sao.PYSON.In('test', {foo: 'bar'}));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
                 "decode(In('test', {foo: 'bar'}))");
+
+        eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.In(new Sao.PYSON.Eval('foo', 'test'), {foo: 'bar'}));
+        QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
+                "decode(In(Eval('foo', 'test'), {foo: 'bar'}))");
 
         eval_ = new Sao.PYSON.Encoder().encode(
             new Sao.PYSON.In('foo', ['foo']));
@@ -653,6 +782,12 @@
             new Sao.PYSON.In('test', []));
         QUnit.strictEqual(new Sao.PYSON.Decoder().decode(eval_), false,
                 "decode(In('test', []))");
+
+        eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.In('test', new Sao.PYSON.Eval('foo', [])));
+        QUnit.strictEqual(new Sao.PYSON.Decoder({'foo': null}).decode(eval_),
+            false, "decode(In('test', Eval('foo', [])))");
+
         QUnit.strictEqual(new Sao.PYSON.In('foo', ['foo', 'bar']).toString(),
                 'In("foo", ["foo", "bar"])');
     });
@@ -1115,6 +1250,31 @@
         });
     });
 
+    QUnit.test('PYSON.EVal dot notation in context', function() {
+        var eval_ = new Sao.PYSON.Encoder().encode(
+            new Sao.PYSON.Eval('foo.bar', 0));
+        var ctx = {
+            'foo.bar': 1,
+            'foo': {
+                'bar': 0,
+            },
+        };
+        QUnit.strictEqual(
+            new Sao.PYSON.Decoder(ctx).decode(eval_), 1,
+            "decode(" + JSON.stringify(ctx) + ")");
+    });
+
+    QUnit.test('PYSON eval', function() {
+        QUnit.strictEqual(eval_pyson('True'), true, "eval_pyson('True')");
+        QUnit.strictEqual(eval_pyson('False'), false, "eval_pyson('False')");
+        QUnit.strictEqual(
+            eval_pyson('And(True, True).toString()'),
+            "And(true, true)", "eval_pyson('And(True, True)').toString()");
+        QUnit.strictEqual(
+            eval_pyson('Or(True, False).toString()'),
+            "Or(true, false)", "eval_pyson('Or(True, False)').toString()");
+    });
+
     QUnit.test('DomainParser.group_operator', function() {
         var parser = new Sao.common.DomainParser();
         QUnit.ok(Sao.common.compare(parser.group_operator(['a', '>', '=']),
@@ -1189,6 +1349,7 @@
     converter_time_only.s = Sao.common.timedelta.DEFAULT_CONVERTER.s;
     converter_time_only.m = Sao.common.timedelta.DEFAULT_CONVERTER.m;
     converter_time_only.h = Sao.common.timedelta.DEFAULT_CONVERTER.h;
+    converter_time_only.d = 0;
 
     QUnit.test('timedelta.format time only converter', function() {
         time_only_converter_values.forEach(function(test) {
@@ -1409,6 +1570,24 @@
         });
     });
 
+    QUnit.test('DomainParser.likify', function() {
+        var parser = new Sao.common.DomainParser();
+
+        [
+            ['', '%'],
+            ['foo', '%foo%'],
+            ['foo%', 'foo%'],
+            ['foo_bar', 'foo_bar'],
+            ['foo\\%', '%foo\\%%'],
+            ['foo\\_bar', '%foo\\_bar%'],
+        ].forEach(function(test) {
+            var value = test[0];
+            var result = test[1];
+            QUnit.ok(Sao.common.compare(parser.likify(value), result),
+                'likify(' + JSON.stringify(value) + ')');
+        });
+    });
+
     QUnit.test('DomainParser.quote', function() {
         var parser = new Sao.common.DomainParser();
 
@@ -1457,22 +1636,27 @@
 
     QUnit.test('DomainParser.convert_value', function() {
         var parser = new Sao.common.DomainParser();
+        var context = {
+            'date_format': '%Y-%m-%d',
+        };
 
         var test_func = function(test) {
             var value = test[0];
             var result = test[1];
-            QUnit.strictEqual(parser.convert_value(this, value), result,
+            QUnit.strictEqual(
+                parser.convert_value(this, value, context), result,
                 'convert_value(' + JSON.stringify(this) + ', ' +
-                    JSON.stringify(value) + ')');
+                JSON.stringify(value) + ', ' + JSON.stringify(context) + ')');
         };
 
         var test_valueOf_func = function(test) {
             var value = test[0];
             var result = test[1];
-            QUnit.strictEqual(parser.convert_value(this, value).valueOf(),
+            QUnit.strictEqual(
+                parser.convert_value(this, value, context).valueOf(),
                 result.valueOf(),
                 'convert_value(' + JSON.stringify(this) + ', ' +
-                    JSON.stringify(value) + ')');
+                JSON.stringify(value) + ', ' + JSON.stringify(context) + ')');
         };
 
         var field = {
@@ -1746,13 +1930,18 @@
 
     QUnit.test('DomainParser.format_value', function() {
         var parser = new Sao.common.DomainParser();
+        var context = {
+            'date_format': '%Y-%m-%d',
+        };
 
         var test_func = function(test) {
             var value = test[0];
             var result = test[1];
-            QUnit.strictEqual(parser.format_value(this, value), result,
+            QUnit.strictEqual(
+                parser.format_value(this, value, null, context), result,
                 'format_value(' + JSON.stringify(this) + ', ' +
-                    JSON.stringify(value) + ')');
+                JSON.stringify(value) + ', null, ' + JSON.stringify(context) +
+                ')');
         };
 
         var field = {
@@ -1789,7 +1978,9 @@
         [0, '0'],
         [0.0, '0'],
         [false, ''],
-        [null, '']
+        [null, ''],
+        [1e-12, '0.000000000001'],
+        [1.0579e-10, '0.00000000010579'],
         ].forEach(test_func, field);
 
         test_func.call({'type': 'float', 'factor': '100'}, [0.42, '42']);
@@ -1985,7 +2176,7 @@
         [[['name', 'ilike', '%<%']], 'Name: "" "<"'],
         [[['name', 'ilike', 'Doe']], 'Name: =Doe'],
         [[['name', 'ilike', 'Doe%']], 'Name: Doe%'],
-        [[['name', 'ilike', 'Doe%%']], 'Name: =Doe%'],
+        [[['name', 'ilike', 'Doe\\%']], 'Name: =Doe%'],
         [[['name', 'not ilike', '%Doe%']], 'Name: !Doe'],
         [[['name', 'in', ['John', 'Jane']]], 'Name: John;Jane'],
         [[['name', 'not in', ['John', 'Jane']]], 'Name: !John;Jane'],
@@ -2393,7 +2584,7 @@
                 JSON.stringify(context) + ')');
         context = {y: 4, z: 'b'};
         QUnit.ok(compare(domain_inversion(domain, 'x', context),
-                ['OR', [['x', '=', 3]], [['x', '=', 2]]]),
+                ['OR', ['x', '=', 3], ['x', '=', 2]]),
             'domain_inversion(' + JSON.stringify(domain) + ', \'x\', ' +
                 JSON.stringify(context) + ')');
     });
@@ -2419,21 +2610,69 @@
         var compare = Sao.common.compare;
 
         [
-        [[['x', '=', 3]], [['x', '=', 3]]],
-        [[[['x', '=', 3]]], [['x', '=', 3]]],
-        [['OR', ['x', '=', 3]], [['x', '=', 3]]],
-        [['OR', [['x', '=', 3]], [['y', '=', 5]]],
-            ['OR', [['x', '=', 3]], [['y', '=', 5]]]],
-        [['OR', ['x', '=', 3], ['AND', ['y', '=', 5]]],
-            ['OR', ['x', '=', 3], [['y', '=', 5]]]],
-        [['AND'], []],
-        [['OR'], []]
+            [[['x', '=', 3]], [['x', '=', 3]]],
+            [[[['x', '=', 3]]], [['x', '=', 3]]],
+            [
+                [[['x', '=', 3], ['y', '=', 4]]], 
+                [['x', '=', 3], ['y', '=', 4]]],
+            [['OR', ['x', '=', 3]], [['x', '=', 3]]],
+            [
+                ['OR', [['x', '=', 3]], [['y', '=', 5]]],
+                ['OR', ['x', '=', 3], ['y', '=', 5]]],
+            [
+                ['OR', ['x', '=', 3], ['AND', ['y', '=', 5]]],
+                ['OR', ['x', '=', 3], ['y', '=', 5]]],
+            [
+                ['OR', ['x', '=', 1], ['OR', ['x', '=', 2], ['x', '=', 3]]],
+                ['OR', ['x', '=', 1], ['x', '=', 2], ['x', '=', 3]]],
+            [[['x', '=', 3], ['OR']], [['x', '=', 3]]],
+            [['OR', ['x', '=', 3], []], []],
+            [['OR', ['x', '=', 3], ['OR']], []],
+            [[['x', '=', 3], []], [['x', '=', 3]]],
+            [[['x', '=', 3], ['AND']], [['x', '=', 3]]],
+            [['AND'], []],
+            [['OR'], []]
         ].forEach(function(test) {
             var domain = test[0];
             var result = test[1];
             QUnit.ok(compare(simplify(domain), result),
                 'simplify(' + JSON.stringify(domain) + ')');
         });
+    });
+
+    QUnit.test('DomainInversion simplify deduplicate', function() {
+        var domain_inversion = new Sao.common.DomainInversion();
+        var simplify = domain_inversion.simplify.bind(domain_inversion);
+        var compare = Sao.common.compare;
+
+        var clause = ['x', '=', 3];
+        var another = ['y', '=', 4];
+        var third = ['z', '=', 5];
+        [
+            [[], []],
+            [['OR', []], []],
+            [['AND', []], []],
+            [[clause], [clause]],
+            [['OR', clause], [clause]],
+            [[clause, clause], [clause]],
+            [['OR', clause, clause], [clause]],
+            [[clause, [clause, clause]], [clause]],
+            [[clause, another], [clause, another]],
+            [['OR', clause, another], ['OR', clause, another]],
+            [[clause, clause, another], [clause, another]],
+            [[clause, [clause, clause], another], [clause, another]],
+            [[clause, clause, another, another], [clause, another]],
+            [[clause, another, clause, another], [clause, another]],
+            [
+                ['AND', ['OR', clause, another], third],
+                ['AND', ['OR', clause, another], third]],
+        ].forEach(function(test) {
+            var domain = test[0];
+            var result = test[1];
+            QUnit.ok(compare(simplify(domain), result),
+                'simplify(' + JSON.stringify(domain) + ')');
+        });
+
     });
 
     QUnit.test('DomainInversion merge', function() {
@@ -2488,7 +2727,7 @@
         QUnit.ok(compare(concat([[], []]), []),
             'compare(' + JSON.stringify([[], []]) + ')');
         QUnit.ok(compare(concat([domain1, domain2], 'OR'),
-                ['OR', [['a', '=', 1]], [['b', '=', 2]]]),
+                ['OR', ['a', '=', 1], ['b', '=', 2]]),
             'compare(' + JSON.stringify([domain1, domain2]) + ', \'OR\')');
     });
 
@@ -2524,15 +2763,26 @@
         [
         [[['x', '>', 5]], {'x': 6}, true],
         [[['x', '>', 5]], {'x': 4}, false],
-        [[['x', '>', null]], {'x': today}, true],
-        [[['x', '>', null]], {'x': now}, true],
-        [[['x', '<', today]], {'x': null}, true],
-        [[['x', '<', now]], {'x': null}, true],
+        [[['x', '>', null]], {'x': today}, false],
+        [[['x', '>', null]], {'x': now}, false],
+        [[['x', '<', today]], {'x': null}, false],
+        [[['x', '<', now]], {'x': null}, false],
         [[['x', 'in', [3, 5]]], {'x': 3}, true],
         [[['x', 'in', [3, 5]]], {'x': 4}, false],
         [[['x', 'in', [3, 5]]], {'x': [3]}, true],
         [[['x', 'in', [3, 5]]], {'x': [3, 4]}, true],
         [[['x', 'in', [3, 5]]], {'x': [1, 2]}, false],
+        [[['x', 'in', [3, 5]]], {'x': null}, false],
+        [[['x', 'in', [1, null]]], {'x': null}, true],
+        [[['x', 'in', [1, null]]], {'x': 2}, false],
+        [[['x', 'not in', [3, 5]]], {'x': 3}, false],
+        [[['x', 'not in', [3, 5]]], {'x': 4}, true],
+        [[['x', 'not in', [3, 5]]], {'x': [3]}, false],
+        [[['x', 'not in', [3, 5]]], {'x': [3, 4]}, false],
+        [[['x', 'not in', [3, 5]]], {'x': [1, 2]}, true],
+        [[['x', 'not in', [3, 5]]], {'x': null}, false],
+        [[['x', 'not in', [1, null]]], {'x': null}, false],
+        [[['x', 'not in', [1, null]]], {'x': 2}, true],
         [[['x', 'like', 'abc']], {'x': 'abc'}, true],
         [[['x', 'like', 'abc']], {'x': ''}, false],
         [[['x', 'like', 'abc']], {'x': 'xyz'}, false],
@@ -2810,6 +3060,8 @@
         ['Name: !=foo', []],
         ['', ["Name: "]],
         [' ', ["", "Name: "]],
+        ["Name: foo or", ["Name: foo"]],
+        ['Name: foo (Name: foo or N', ["Name: foo (Name: foo or Name: "]],
         ].forEach(function(test) {
             var value = test[0];
             var expected = test[1];
@@ -2850,6 +3102,27 @@
             ["Active: False", "Active: True"]));
     });
 
+    QUnit.test('Date.toString', function() {
+        QUnit.strictEqual(Sao.Date(2020, 8, 11).toString(), '2020-09-11');
+    });
+
+    QUnit.test('DateTime.toString', function() {
+        QUnit.strictEqual(
+            Sao.DateTime(2020, 8, 11, 10, 30, 42).toString(),
+            '2020-09-11 10:30:42');
+
+        QUnit.strictEqual(
+            Sao.DateTime(2020, 8, 11, 10, 30, 42, 123).toString(),
+            '2020-09-11 10:30:42.123000');
+    });
+
+    QUnit.test('Time.toString', function() {
+        QUnit.strictEqual(Sao.Time(10, 30, 42).toString(), '10:30:42');
+
+        QUnit.strictEqual(
+            Sao.Time(10, 30, 42, 123).toString(), '10:30:42.123000');
+    });
+
     QUnit.test('HTML Sanitization', function() {
         var examples = [
             ["Test", "Test"],
@@ -2861,6 +3134,7 @@
             ['<div align="left">Test</div>', '<div align="left">Test</div>'],
             ['<font href="test" size="1">Test</font>',
                 '<font size="1">Test</font>'],
+            ["<p>Test</p>", "Test"],
         ];
         for (var i = 0; i < examples.length; i++) {
             var input = examples[i][0], output = examples[i][1];

@@ -17,7 +17,7 @@
     @input-single-text-color:   @input-multi-text-color;
 
     @icon-color:                @color_blue;
-    @icon-background-color:     transparent;
+    @icon-background-color:     @color_white;
     @icon-text-color:           @color_blue;
     @icon-hover-color:          @color_light_blue;
     @icon-hover-text-color:     @color_white;
@@ -166,6 +166,7 @@ td.widget > button.btn.btn-default {
         border-color:       @input-single-border-color;
     }
 }
+
 .form-control {
     border-color: @input-single-border-color;
     &:focus{
@@ -220,4 +221,23 @@ div.btn-group> button.btn {
 .input-group .form-control:first-child {
   border-top-right-radius: @input-border-radius;
   border-bottom-right-radius: @input-border-radius;
+}
+
+.input-date {
+    min-width: 12rem !important;
+}
+
+.input-checkbox {
+    box-shadow: none !important;
+    min-width: 3rem;
+    max-width: fit-content;
+}
+
+.btn {
+    box-shadow: none !important;
+}
+
+/*.form-one2many.panel.panel-default,*/
+.form-dict.panel.panel-default {
+    box-shadow: none;
 }

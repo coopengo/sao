@@ -21,7 +21,7 @@
             if (attributes.yfill === undefined) {
                 attributes.yfill = true;
             }
-            action = new Sao.View.Board.Action(attributes, this.view.context);
+            action = new Sao.View.Board.Action(this.view, attributes);
             this.view.actions.push(action);
             this.container.add(action, attributes);
         },
@@ -34,6 +34,7 @@
 
             this.context = context;
             this.actions = [];
+            this.containers = [];
             this.state_widgets = [];
             this.el = jQuery('<div/>', {
                 'class': 'board'
@@ -41,8 +42,8 @@
             new this.xml_parser(this, null, {}).parse(xml.children()[0]);
 
             actions_prms = [];
-            for (var i = 0, len = this.actions.length; i < len; i++) {
-                actions_prms.push(this.actions[i].action_prm);
+            for (const action of this.actions) {
+                actions_prms.push(action.action_prm);
             }
             this.actions_prms = jQuery.when.apply(jQuery, actions_prms);
         },
@@ -54,89 +55,22 @@
             for (i = 0; i < this.state_widgets.length; i++) {
                 this.state_widgets[i].set_state(null);
             }
-        }
+        },
+        active_changed: function(event_action) {
+            for (const action of this.actions) {
+                if (action !== event_action) {
+                    action.update_domain(this.actions);
+                }
+            }
+        },
     });
 
     Sao.View.Board.Action = Sao.class_(Object, {
-        init: function(attributes, context) {
-            if (context === undefined) {
-                context = {};
-            }
-            var model, action_prm, act_window;
-            var decoder, search_context, search_value;
-
+        init: function(view, attributes) {
+            var session = Sao.Session.current_session;
             this.name = attributes.name;
-            this.context = jQuery.extend({}, context);
+            this.view = view;
 
-            act_window = new Sao.Model('ir.action.act_window');
-            this.action_prm = act_window.execute('get', [this.name],
-                    this.context);
-            this.action_prm.done(function(action) {
-                var i, len;
-                var view_ids, decoder, search_context;
-                var screen_attributes, action_modes;
-
-                this.action = action;
-                this.action.mode = [];
-                view_ids = [];
-                if ((this.action.views || []).length > 0) {
-                    for (i = 0, len = this.action.views.length; i < len; i++) {
-                        view_ids.push(this.action.views[i][0]);
-                        this.action.mode.push(this.action.views[i][1]);
-                    }
-                } else if (this.action.view_id !== undefined) {
-                    view_ids = [this.action.view_id[0]];
-                }
-
-                if ('mode' in attributes) {
-                    this.action.mode = attributes.mode;
-                }
-
-                if (!('pyson_domain' in this.action)) {
-                    this.action.pyson_domain = '[]';
-                }
-
-                jQuery.extend(this.context,
-                        Sao.Session.current_session.context);
-                this.context._user = Sao.Session.current_session.user_id;
-                decoder = new Sao.PYSON.Decoder(this.context);
-                jQuery.extend(this.context,
-                        decoder.decode(this.action.pyson_context || '{}'));
-                decoder = new Sao.PYSON.Decoder(this.context);
-                jQuery.extend(this.context,
-                        decoder.decode(this.action.pyson_context || '{}'));
-
-                this.domain = [];
-                this.update_domain([]);
-
-                search_context = jQuery.extend({}, this.context);
-                search_context.context = this.context;
-                search_context._user = Sao.Session.current_session.user_id;
-                decoder = new Sao.PYSON.Decoder(search_context);
-                search_value = decoder.decode(
-                        this.action.pyson_search_value || '[]');
-
-                screen_attributes = {
-                    mode: this.action.mode,
-                    context: this.context,
-                    view_ids: view_ids,
-                    domain: this.domain,
-                    search_value: search_value,
-                    row_activate: this.row_activate.bind(this),
-                };
-                this.screen = new Sao.Screen(this.action.res_model,
-                        screen_attributes);
-
-                if (attributes.string) {
-                    this.title.html(attributes.string);
-                } else {
-                    this.title.html(this.action.name);
-                }
-                this.screen.switch_view().done(function() {
-                    this.body.append(this.screen.screen_container.el);
-                    this.screen.search_filter();
-                }.bind(this));
-            }.bind(this));
             this.el = jQuery('<div/>', {
                 'class': 'board-action panel panel-default',
             });
@@ -148,6 +82,74 @@
                 'class': 'panel-body',
             });
             this.el.append(this.body);
+
+            var act_window = new Sao.Model('ir.action.act_window');
+            this.action_prm = act_window.execute('get', [this.name], {});
+            this.action_prm.done(action => {
+                var params = {};
+                this.action = action;
+                params.view_ids = [];
+                params.mode = null;
+                if (!jQuery.isEmptyObject(action.views)) {
+                    params.view_ids = [];
+                    params.mode = [];
+                    for (const view of action.views) {
+                        params.view_ids.push(view[0]);
+                        params.mode.push(view[1]);
+                    }
+                } else if (!jQuery.isEmptyObject(action.view_id)) {
+                    params.view_ids = [action.view_id[0]];
+                }
+
+                if (!('pyson_domain' in this.action)) {
+                    this.action.pyson_domain = '[]';
+                }
+                var ctx = {};
+                ctx = jQuery.extend(ctx, session.context);
+                ctx._user = session.user_id;
+                var decoder = new Sao.PYSON.Decoder(ctx);
+                params.context = jQuery.extend(
+                    {}, this.view.context,
+                    decoder.decode(action.pyson_context || '{}'));
+                ctx = jQuery.extend(ctx, params.context);
+
+                ctx.context = ctx;
+                decoder = new Sao.PYSON.Decoder(ctx);
+                params.order = decoder.decode(action.pyson_order);
+                params.search_value = decoder.decode(
+                    action.pyson_search_value || '[]');
+                params.tab_domain = [];
+                for (const element of action.domains) {
+                    params.tab_domain.push(
+                        [element[0], decoder.decode(element[1]), element[2]]);
+                }
+                params.context_model = action.context_model;
+                params.context_domain = action.context_domain;
+                if (action.limit !== null) {
+                    params.limit = action.limit;
+                } else {
+                    params.limit = Sao.config.limit;
+                }
+
+                this.context = ctx;
+                this.domain = [];
+                this.update_domain([]);
+
+                params.row_activate = this.row_activate.bind(this);
+
+                this.screen = new Sao.Screen(this.action.res_model,
+                        params);
+
+                if (attributes.string) {
+                    this.title.text(attributes.string);
+                } else {
+                    this.title.text(this.action.name);
+                }
+                this.screen.switch_view().done(() => {
+                    this.body.append(this.screen.screen_container.el);
+                    this.screen.search_filter();
+                });
+            });
         },
         row_activate: function() {
             var record_ids, win;
@@ -166,13 +168,15 @@
                     ids: record_ids
                 }, jQuery.extend({}, this.screen.group._context), false);
             } else {
-                win = new Sao.Window.Form(this.screen, function(result) {
+                win = new Sao.Window.Form(this.screen, result => {
                     if (result) {
                         this.screen.current_record.save();
                     } else {
                         this.screen.current_record.cancel();
                     }
-                }.bind(this));
+                }, {
+                'title': this.title.text(),
+                });
             }
         },
         set_value: function() {
@@ -180,9 +184,23 @@
         display: function() {
             this.screen.search_filter(this.screen.screen_container.get_text());
         },
-        get_active: function() {
+        record_message: function() {
+            this.view.active_changed(this);
+        },
+        get active() {
             if (this.screen && this.screen.current_record) {
-                return Sao.common.EvalEnvironment(this.screen.current_record);
+                return {
+                    'active_id': this.screen.current_record.id,
+                    'active_ids': this.screen.selected_records.map(
+                        function(r) {
+                            return r.id;
+                        }),
+                };
+            } else {
+                return {
+                    'active_id': null,
+                    'active_ids': [],
+                };
             }
         },
         update_domain: function(actions) {
@@ -190,13 +208,9 @@
             var active, domain_ctx, decoder, new_domain;
 
             domain_ctx = jQuery.extend({}, this.context);
-            domain_ctx.context = domain_ctx;
-            domain_ctx._user = Sao.Session.current_session.user_id;
+            domain_ctx._actions = {};
             for (i = 0, len = actions.length; i < len; i++) {
-                active = actions[i].get_active();
-                if (active) {
-                    domain_ctx[actions[i].name] = active;
-                }
+                domain_ctx._actions[actions[i].name] = actions[i].active;
             }
             decoder = new Sao.PYSON.Decoder(domain_ctx);
             new_domain = decoder.decode(this.action.pyson_domain);

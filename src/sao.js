@@ -5,14 +5,6 @@ var Sao = {};
 (function() {
     'use strict';
 
-    // Restore htmlPrefilter of jQuery < 3.5
-    // To be removed when
-    // https://github.com/fullcalendar/fullcalendar/pull/5391 is merged
-    var rxhtmlTag = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([a-z][^\/\0>\x20\t\r\n\f]*)[^>]*)\/>/gi;
-    jQuery.htmlPrefilter = function( html ) {
-        return html.replace( rxhtmlTag, "<$1></$2>" );
-    };
-
     // Browser compatibility: polyfill
     if (!('contains' in String.prototype)) {
         String.prototype.contains = function(str, startIndex) {
@@ -103,9 +95,9 @@ var Sao = {};
             // Implementation is not strictly equivalent but works for most
             // cases
             var result = [];
-            value.forEach(function(e) {
+            for (const e of value) {
                 result.push(e);
-            });
+            }
             return result;
         };
     }
@@ -171,10 +163,81 @@ var Sao = {};
                     Object.getOwnPropertyDescriptor(props, name));
             }
         }
+
+        // Method to create new instance with a list of arguments
+        function F(args) {
+            return ClassConstructor.apply(this, args);
+        }
+        F.prototype = ClassConstructor.prototype;
+        ClassConstructor.new_ = function(args) {
+            return new F(args);
+        };
         return ClassConstructor;
     };
 
+    Sao.Logging = Sao.class_(Object, {
+        init: function() {
+            this.level = Sao.Logging.ERROR;
+        },
+        set_level: function(level) {
+            this.level = level;
+        },
+        _log: function(level, logger, args) {
+            if (this.level <= level) {
+                logger.apply(console, args);
+            }
+        },
+        debug: function() {
+            this._log(Sao.Logging.DEBUG, console.log, arguments);
+        },
+        info: function() {
+            this._log(Sao.Logging.INFO, console.info, arguments);
+        },
+        warn: function() {
+            this._log(Sao.Logging.WARNING, console.warn, arguments);
+        },
+        error: function() {
+            this._log(Sao.Logging.ERROR, console.error, arguments);
+        },
+        critical: function() {
+            this._log(Sao.Logging.CRITICAL, console.error, arguments);
+        },
+        assert: function() {
+            if (this.level <= Sao.Logging.DEBUG) {
+                console.assert.apply(console, arguments);
+            }
+        },
+    });
+    Sao.Logging.CRITICAL = 50;
+    Sao.Logging.ERROR = 40;
+    Sao.Logging.WARNING = 30;
+    Sao.Logging.INFO = 20;
+    Sao.Logging.DEBUG = 10;
+    Sao.Logging.NOTSET = 0;
+    Sao.Logger = new Sao.Logging();
+
     Sao.Decimal = Number;
+
+    var _moment_to_string = moment.prototype.toString;
+    moment.prototype.toString = function() {
+        if (this.isDate) {
+            return this.format('YYYY-MM-DD');
+        } else if (this.isDateTime) {
+            if (this.milliseconds()) {
+                return this.format('YYYY-MM-DD HH:mm:ss.SSSSSS');
+            } else {
+                return this.format('YYYY-MM-DD HH:mm:ss');
+            }
+        } else if (this.isTime) {
+            if (this.milliseconds()) {
+                return this.format('HH:mm:ss.SSSSSS');
+            } else {
+                return this.format('HH:mm:ss');
+            }
+        } else {
+            return _moment_to_string.call(this);
+        }
+    };
 
     Sao.Date = function(year, month, day) {
         var date;
@@ -190,9 +253,6 @@ var Sao = {};
         date.date(day);
         date.set({hour: 0, minute: 0, second: 0, millisecond: 0});
         date.isDate = true;
-        date.toString = function() {
-            return this.format('YYYY-MM-DD');
-        };
         return date;
     };
 
@@ -204,26 +264,15 @@ var Sao = {};
     Sao.Date.max.set({hour: 0, minute: 0, second: 0, millisecond: 0});
     Sao.Date.max.isDate = true;
 
-    Sao.DateTime = function(year, month, day, hour, minute, second,
-            millisecond, utc) {
+    Sao.DateTime = function(
+        year, month, day,
+        hour=0, minute=0, second=0, millisecond=0, utc=false) {
         var datetime;
         if (month === undefined) {
             datetime = moment(year);
             year = undefined;
         }
         else {
-            if (hour === undefined) {
-                hour = 0;
-            }
-            if (minute === undefined) {
-                minute = 0;
-            }
-            if (second === undefined) {
-                second = 0;
-            }
-            if (millisecond === undefined) {
-                millisecond = 0;
-            }
             datetime = moment();
         }
         if (utc) {
@@ -239,23 +288,21 @@ var Sao = {};
             datetime.milliseconds(millisecond);
         }
         datetime.isDateTime = true;
-        datetime.toString = function() {
-            if (this.milliseconds()) {
-                return this.format('YYYY-MM-DD HH:mm:ss.SSSSSS');
-            } else {
-                return this.format('YYYY-MM-DD HH:mm:ss');
-            }
-        };
         datetime.local();
+        datetime.todate = function() {
+            return Sao.Date(this.year(), this.month(), this.date());
+        };
+        datetime.totime = function() {
+            return Sao.Time(
+                this.hour(), this.minute(), this.second(), this.millisecond());
+        };
         return datetime;
     };
 
     Sao.DateTime.combine = function(date, time) {
-        var datetime = date.clone();
-        datetime.set({hour: time.hour(), minute: time.minute(),
-            second: time.second(), millisecond: time.millisecond()});
-        datetime.isDateTime = true;
-        return datetime;
+        return Sao.DateTime(
+            date.year(), date.month(), date.date(),
+            time.hour(), time.minute(), time.second(), time.millisecond());
     };
 
     Sao.DateTime.min = moment(new Date(-100000000 * 86400000)).local();
@@ -289,8 +336,11 @@ var Sao = {};
     Sao.config.display_size = 20;
     Sao.config.bug_url = 'https://support.coopengo.com/';
     Sao.config.title = 'Coog';
-    Sao.config.icon_colors = '#0094d2,#555753,#cc0000'.split(',');
+    Sao.config.icon_colors = '#0094d2,#3e4950,#e78e42'.split(',');
+    Sao.config.calendar_colors = '#fff,#267f82'.split(',');
+    Sao.config.graph_color = '#267f82';
     Sao.config.bus_timeout = 10 * 60 * 1000;
+    Sao.config.image_max_size = Math.pow(10, 6);
 
     Sao.i18n = i18n();
     Sao.i18n.setlang = function(lang) {
@@ -339,6 +389,8 @@ var Sao = {};
     };
     Sao.i18n.locale = {};
 
+    Sao.BOM_UTF8 = '\uFEFF';
+
     Sao.get_preferences = function() {
         var session = Sao.Session.current_session;
         return session.reload_context().then(function() {
@@ -350,17 +402,14 @@ var Sao = {};
                 deferreds.push(Sao.common.MODELACCESS.load_models());
                 deferreds.push(Sao.common.ICONFACTORY.load_icons());
                 deferreds.push(Sao.common.MODELHISTORY.load_history());
+                deferreds.push(Sao.common.MODELNOTIFICATION.load_names());
                 deferreds.push(Sao.common.VIEW_SEARCH.load_searches());
                 return jQuery.when.apply(jQuery, deferreds).then(function() {
-                    (preferences.actions || []).forEach(function(action_id) {
+                    for (const action_id of (preferences.actions || [])) {
                         Sao.Action.execute(action_id, {}, null, {});
-                    });
+                    }
                     Sao.set_title();
-                    /* Coog: avoid icon filled with standard color
-                    Sao.common.ICONFACTORY.get_icon_url('tryton-menu')
-                        .then(function(url) {
-                            jQuery('.navbar-brand > img').attr('src', url);
-                        }); */
+                    // JMO merge_60, here we had: Coog: avoid icon filled with standard color
                     var new_lang = preferences.language != Sao.i18n.getLocale();
                     var prm = jQuery.Deferred();
                     Sao.i18n.setlang(preferences.language).always(function() {
@@ -371,6 +420,7 @@ var Sao = {};
                     });
                     Sao.i18n.set_direction(preferences.language_direction);
                     Sao.i18n.locale = preferences.locale;
+                    Sao.common.MODELNAME.clear();
                     return prm;
                 });
             });
@@ -417,8 +467,7 @@ var Sao = {};
             }
         } else {
             url = decodeURIComponent(url);
-            for (var i = 0; i < Sao.Tab.tabs.length; i++) {
-                tab = Sao.Tab.tabs[i];
+            for (const tab of Sao.Tab.tabs) {
                 if (decodeURIComponent(tab.get_url()) == url) {
                     tab.show();
                     return;
@@ -439,12 +488,12 @@ var Sao = {};
         var path, params = {};
         if (i >= 0) {
             path = url.substring(0, i);
-            url.substring(i + 1).split('&').forEach(function(part) {
+            for (const part of url.substring(i + 1).split('&')) {
                 if (part) {
                     var item = part.split('=').map(decodeURIComponent);
                     params[item[0]] = item[1];
                 }
-            });
+            }
         } else {
             path = url;
         }
@@ -487,15 +536,13 @@ var Sao = {};
         }
         function open_wizard(path) {
             var attributes = {};
-            attributes.name = path[0];
-            if (!attributes.name) {
+            attributes.action = path[0];
+            if (!attributes.action) {
                 return;
             }
             try {
                 attributes.data = loads(params.data || '{}');
                 attributes.direct_print = loads(params.direct_print || 'false');
-                attributes.email_print = loads(params.email_print || 'false');
-                attributes.email = loads(params.email || 'null');
                 attributes.name = loads(params.name || '""');
                 attributes.window = loads(params.window || 'false');
                 attributes.context = loads(params.context || '{}');
@@ -518,8 +565,6 @@ var Sao = {};
             try {
                 attributes.data = loads(params.data || '{}');
                 attributes.direct_print = loads(params.direct_print || 'false');
-                attributes.email_print = loads(params.email_print || 'false');
-                attributes.email = loads(params.email || 'null');
                 attributes.context = loads(params.context || '{}');
             } catch (e) {
                 return;
@@ -579,7 +624,6 @@ var Sao = {};
         var session = Sao.Session.current_session;
         Sao.Tab.tabs.close(true).done(function() {
             jQuery('#user-preferences').empty();
-            jQuery('#user-logout').empty();
             jQuery('#user-favorites').empty();
             jQuery('#global-search').empty();
             jQuery('#menu').empty();
@@ -592,9 +636,9 @@ var Sao = {};
         Sao.Tab.tabs.close(true).done(function() {
             jQuery('#user-preferences').empty();
             jQuery('#user-favorites').empty();
-            jQuery('#user-logout').empty();
             jQuery('#menu').empty();
             new Sao.Window.Preferences(function() {
+                Sao.Session.current_session.reset_context();
                 Sao.get_preferences().then(function(preferences) {
                     Sao.menu(preferences);
                     Sao.user_menu(preferences);
@@ -671,26 +715,33 @@ var Sao = {};
     Sao.user_menu = function(preferences) {
         jQuery('#user-preferences').empty();
         jQuery('#user-favorites').empty();
-        jQuery('#user-logout').empty();
-        jQuery('#user-preferences').append(jQuery('<a/>', {
+        var user = jQuery('<a/>', {
             'href': '#',
             'title': preferences.status_bar,
         }).click(function(evt) {
             evt.preventDefault();
             Sao.preferences();
-        }).text(preferences.status_bar));
+        }).text(preferences.status_bar);
+        jQuery('#user-preferences').append(user);
+        if (preferences.avatar_badge_url) {
+            user.prepend(jQuery('<img/>', {
+                'src': preferences.avatar_badge_url + '?s=15',
+                'class': 'img-circle img-badge',
+            }));
+        }
+        if (preferences.avatar_url) {
+            user.prepend(jQuery('<img/>', {
+                'src': preferences.avatar_url + '?s=30',
+                'class': 'img-circle',
+            }));
+        }
         var title = Sao.i18n.gettext("Logout");
-        jQuery('#user-logout').append(jQuery('<a/>', {
-            'href': '#',
-            'title': title,
-            'aria-label': title,
-        }).click(Sao.logout).append(
-            Sao.common.ICONFACTORY.get_icon_img('tryton-exit', {
-            'class': 'icon hidden-xs',
-            'aria-hidden': true,
-        })).append(jQuery('<span/>', {
-            'class': 'visible-xs',
-        }).text(title)));
+        jQuery('#user-logout > a')
+            .attr('title', title)
+            .attr('aria-label', title)
+            .off()
+            .click(Sao.logout)
+            .find('span:not(.icon)').text(title);
     };
 
     Sao.main_menu_row_activate = function() {
@@ -779,7 +830,7 @@ var Sao = {};
             if (!cell) {
                 cell = this.get_cell();
             }
-            record.load(this.field.name).done(function() {
+            record.load(this.field.name).done(() => {
                 if (record._values.favorite !== null) {
                     var icon = 'tryton-star';
                     if (!record._values.favorite) {
@@ -787,14 +838,19 @@ var Sao = {};
                     }
                     cell.data('star', Boolean(record._values.favorite));
                     Sao.common.ICONFACTORY.get_icon_url(icon)
-                        .then(function(url) {
+                        .then(url => {
                             cell.attr('src', url);
                         });
                     cell.click({'record': record, 'button': cell},
                         this.favorite_click);
                     }
-                }.bind(this));
+                });
             return cell;
+        },
+        set_visible: function() {
+        },
+        get_visible: function() {
+            return true;
         },
         favorite_click: function(e) {
             // Prevent activate the action of the row
@@ -826,11 +882,7 @@ var Sao = {};
     });
 
     Sao.Dialog = Sao.class_(Object, {
-        init: function(title, class_, size, keyboard) {
-            size = size || 'sm';
-            if (keyboard === undefined) {
-                keyboard = true;
-            }
+        init: function(title, class_, size='sm', keyboard=true) {
             this.modal = jQuery('<div/>', {
                 'class': class_ + ' modal fade',
                 'role': 'dialog',
@@ -867,8 +919,9 @@ var Sao = {};
         },
         add_title: function(title) {
             this.header.append(jQuery('<h4/>', {
-                'class': 'modal-title'
-            }).text(title));
+                'class': 'modal-title',
+                'title': title,
+            }).text(Sao.common.ellipsize(title, 120)));
         }
     });
 
@@ -927,22 +980,25 @@ var Sao = {};
         },
         update: function(text) {
             var ir_model = new Sao.Model('ir.model');
+            if (!text) {
+                return jQuery.when([]);
+            }
             return ir_model.execute('global_search',
                     [text, Sao.config.limit, Sao.main_menu_screen.model_name],
-                    Sao.main_menu_screen.context)
-                .then(function(s_results) {
-                var results = [];
-                for (var i=0, len=s_results.length; i < len; i++) {
-                    results.push({
-                        'model': s_results[i][1],
-                        'model_name': s_results[i][2],
-                        'record_id': s_results[i][3],
-                        'record_name': s_results[i][4],
-                        'icon': s_results[i][5],
-                    });
-                }
-                return results;
-            }.bind(this));
+                    Sao.main_menu_screen.context, undefined, false)
+                .then(s_results => {
+                    var results = [];
+                    for (const result of s_results) {
+                        results.push({
+                            'model': result[1],
+                            'model_name': result[2],
+                            'record_id': result[3],
+                            'record_name': result[4],
+                            'icon': result[5],
+                        });
+                    }
+                    return results;
+                });
         },
         match_selected: function(item) {
             if (item.model == Sao.main_menu_screen.model_name) {
@@ -1029,6 +1085,10 @@ var Sao = {};
                 label: Sao.i18n.gettext('Print'),
                 id: 'print',
             }, {
+                shortcut: 'ctrl+shift+e',
+                label: Sao.i18n.gettext('E-Mail'),
+                id: 'email',
+            }, {
                 shortcut: 'alt+shift+tab',
                 label: Sao.i18n.gettext('Previous tab'),
                 callback: function() {
@@ -1053,6 +1113,12 @@ var Sao = {};
                 callback: function() {
                     shortcuts_dialog();
                 },
+            }, {
+                shortcut: 'ctrl+f1',
+                label: Sao.i18n.gettext('Show/Hide access keys'),
+                callback: function() {
+                    jQuery('html').toggleClass('accesskey');
+                },
             },
         ];
     }
@@ -1062,7 +1128,7 @@ var Sao = {};
         try {
             Notification.requestPermission();
         } catch (e) {
-            (console.error || console.log).call(console, e, e.stack);
+            Sao.Logger.error(e.message, e.stack);
         }
         Sao.login();
     });
@@ -1112,7 +1178,7 @@ var Sao = {};
             .text(Sao.i18n.gettext('Tab shortcuts')))
             .appendTo(row);
 
-        shortcuts_defs().forEach(function(definition) {
+        for (const definition of shortcuts_defs()) {
             var dt = jQuery('<dt/>').text(definition.label);
             var dd = jQuery('<dd/>').append(jQuery('<kbd>')
                 .text(definition.shortcut));
@@ -1124,7 +1190,7 @@ var Sao = {};
             }
             dt.appendTo(dest_dl);
             dd.appendTo(dest_dl);
-        });
+        }
         dialog.modal.on('hidden.bs.modal', function() {
             jQuery(this).remove();
         });
@@ -1150,6 +1216,16 @@ var Sao = {};
         }
     });
 
+    // Fix Chrome bug: https://bugs.chromium.org/p/chromium/issues/detail?id=890248
+    jQuery(document).on('keydown', 'textarea', function(event) {
+        if (event.key === 'PageUp' || event.key === 'PageDown') {
+            var cursorPosition = (
+                event.key === 'PageUp' ? 0 : event.target.textLength);
+            event.preventDefault();
+            event.target.setSelectionRange(cursorPosition, cursorPosition);
+        }
+    });
+
     function setModalsAndBackdropsOrder() {
         var modalZIndex = 1040;
         jQuery('.modal.in').each(function(index) {
@@ -1162,4 +1238,5 @@ var Sao = {};
         jQuery('.modal.in:visible:last').focus()
         .next('.modal-backdrop.in').removeClass('hidden');
     }
+
 }());

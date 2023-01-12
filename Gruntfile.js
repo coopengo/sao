@@ -8,6 +8,7 @@ module.exports = function(grunt) {
       'src/rpc.js',
       'src/pyson.js',
       'src/session.js',
+      'src/common.js',
       'src/model.js',
       'src/tab.js',
       'src/screen.js',
@@ -18,7 +19,6 @@ module.exports = function(grunt) {
       'src/view/calendar.js',
       'src/view/list_form.js',
       'src/action.js',
-      'src/common.js',
       'src/window.js',
       'src/wizard.js',
       'src/board.js',
@@ -26,21 +26,17 @@ module.exports = function(grunt) {
       'src/plugins.js',
       'src/html_sanitizer.js'
   ];
+  var less_paths = [
+      'src',
+      'bower_components',
+      'bower_components/bootstrap',
+      'bower_components/bootstrap/less',
+      'bower_components/bootstrap-rtl-ondemand/less',
+  ];
 
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-    xgettext: {
-        locale: {
-            files: {
-                javascript: jsfiles
-            },
-            options: {
-                functionName: "Sao.i18n.gettext",
-                potFile: "locale/messages.pot"
-            },
-        }
-    },
     shell: {
         options: {
             failOnError: true
@@ -48,8 +44,20 @@ module.exports = function(grunt) {
         msgmerge: {
             command: _.map(locales, function(locale) {
                 var po = "locale/" + locale + ".po";
-                return "msgmerge -U " + po + " locale/messages.pot;";
+                return (
+                    "msgmerge " +
+                    "-U " + po + " " +
+                    "--no-location " +
+                    "locale/messages.pot;");
             }).join("")
+        },
+        xgettext: {
+            command: (
+                "xgettext " +
+                "--language=JavaScript --from-code=UTF-8 " +
+                "--omit-header --no-location " +
+                "-o locale/messages.pot " +
+                jsfiles.join(" "))
         }
     },
     po2json: {
@@ -100,21 +108,19 @@ module.exports = function(grunt) {
     less: {
         dev: {
             options: {
-                paths: ['src', 'bower_components/bootstrap/less', 'theme/coog']
+                paths: less_paths,
             },
             files: {
-                'dist/coog-sao.css': 'theme/coog/coog-sao.less',
-                'dist/<%= pkg.name %>.css': 'src/*.less'
+                'dist/<%= pkg.name %>.css': 'src/sao.less'
             }
         },
         'default': {
             options: {
-                paths: ['src', 'bower_components/bootstrap/less'],
+                paths: less_paths,
                 yuicompress: true
             },
             files: {
-                'dist/coog-sao.min.css': 'theme/coog/coog-sao.less',
-                'dist/<%= pkg.name %>.min.css': 'src/*.less'
+                'dist/<%= pkg.name %>.min.css': 'src/sao.less'
             }
         }
     },
@@ -124,18 +130,21 @@ module.exports = function(grunt) {
             tasks: ['concat', 'jshint']
         },
         styles: {
-            files: ['src/*.less', 'theme/coog/*.less',
-                'theme/coog/elements/*.less'],
+            files: ['src/*.less'],
             tasks: 'less:dev'
         }
     },
     qunit: {
         options: {
+            timeout: 300000,
             puppeteer: {
                 headless: true,
                 args: [
                     '--no-sandbox',
                 ],
+                env: {
+                    TZ: 'UTC',
+                },
             },
         },
         all: ['tests/*.html']
@@ -163,8 +172,8 @@ module.exports = function(grunt) {
     grunt.task.run(['shell:msgmerge']);
     });
   grunt.registerTask('xgettext', ' Extracts translatable messages', function() {
-    grunt.loadNpmTasks('grunt-xgettext');
-    grunt.task.run(['xgettext']);
+    grunt.loadNpmTasks('grunt-shell');
+    grunt.task.run(['shell:xgettext']);
   });
   grunt.registerTask('test', 'Run tests', function() {
     grunt.loadNpmTasks('grunt-contrib-qunit');

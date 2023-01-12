@@ -12,8 +12,7 @@
         },
         _node_attributes: function(node) {
             var node_attrs = {};
-            for (var i = 0, len = node.attributes.length; i < len; i++) {
-                var attribute = node.attributes[i];
+            for (const attribute of node.attributes) {
                 node_attrs[attribute.name] = attribute.value;
             }
             if (node_attrs.name) {
@@ -25,9 +24,9 @@
             return node_attrs;
         },
         _parse_graph: function(node, attributes) {
-            [].forEach.call(node.childNodes, function(child) {
+            for (const child of node.childNodes) {
                 this.parse(child);
-            }.bind(this));
+            }
             var Widget = Sao.View.GraphXMLViewParser.WIDGETS[
                 attributes.type || 'vbar'];
             var widget = new Widget(this.view, this._xfield, this._yfields);
@@ -35,13 +34,13 @@
             this.view.widgets.root = widget;
         },
         _parse_x: function(node, attributes) {
-            for (var i = 0; i < node.children.length; i++) {
-                this._xfield = this._node_attributes(node.children[i]);
+            for (const child of node.children) {
+                this._xfield = this._node_attributes(child);
             }
         },
         _parse_y: function(node, attributes) {
-            for (var i = 0; i < node.children.length; i++) {
-                this._yfields.push(this._node_attributes(node.children[i]));
+            for (const child of node.children) {
+                this._yfields.push(this._node_attributes(child));
             }
         }
     });
@@ -84,22 +83,26 @@
             var fields2load = [this.xfield.name];
             for (i = 0, len = this.yfields.length; i < len; i++) {
                 yfield = this.yfields[i];
-                data.columns.push([yfield.name]);
-                data.names[yfield.name] = yfield.string;
-                key2columns[yfield.key || yfield.name] = i + 1;
+                key = yfield.key || yfield.name;
+                data.columns.push([key]);
+                data.names[key] = yfield.string;
+                key2columns[key] = i + 1;
                 fields2load.push(yfield.name);
             }
 
             var prms = [];
-            var set_data = function(index) {
-                return function () {
+            const set_data = index => {
+                return () => {
                     record = group[index];
                     var x = record.field_get_client(this.xfield.name);
                     // c3 does not support moment
                     if (x && (x.isDate || x.isDateTime)) {
-                        x = x.toDate();
+                        x = x.toString();
                     }
-                    data.columns[0][index + 1] = x;
+                    var pos = data.columns[0].indexOf(x);
+                    if (pos < 0) {
+                        pos = data.columns[0].push(x) - 1;
+                    }
                     this._add_id(x, record.id);
 
                     var column;
@@ -107,45 +110,43 @@
                         yfield = this.yfields[j];
                         key = yfield.key || yfield.name;
                         column = data.columns[key2columns[key]];
+                        if (column[pos] === undefined) {
+                            column[pos] = null;
+                        }
                         if (yfield.domain) {
                             var ctx = jQuery.extend({},
-                                    Sao.session.current_session.context);
+                                    Sao.Session.current_session.context);
                             ctx.context = ctx;
-                            ctx._user = Sao.session.current_session.user_id;
+                            ctx._user = Sao.Session.current_session.user_id;
                             for (var field in group.model.fields) {
                                 ctx[field] = record.field_get(field);
                             }
                             var decoder = new Sao.PYSON.Decoder(ctx);
                             if (!decoder.decode(yfield.domain)) {
-                                column[index + 1] = 0;
                                 continue;
                             }
                         }
+                        if (!column[pos]) {
+                            column[pos] = 0;
+                        }
                         if (yfield.name == '#') {
-                            column[index + 1] = 1;
+                            column[pos] += 1;
                         } else {
                             var value = record.field_get(yfield.name);
                             if (value && value.isTimeDelta) {
                                 value = value.asSeconds();
                             }
-                            column[index + 1] = value || 0;
+                            column[pos] += value || 0;
                         }
                     }
-                }.bind(this);
-            }.bind(this);
-            var load_field = function(record) {
-                return function(fname) {
-                    prms.push(record.load(fname));
                 };
             };
 
             var r_prms = [];
             for (i = 0, len = group.length; i < len; i++) {
                 record = group[i];
-                fields2load.forEach(load_field(group[i]));
-
-                for (j = 0, y_len = data.columns.length; j < y_len; j++) {
-                    data.columns[j].push(undefined);
+                for (const fname of fields2load) {
+                    prms.push(record.load(fname));
                 }
                 r_prms.push(
                         jQuery.when.apply(jQuery, prms).then(set_data(i)));
@@ -162,9 +163,9 @@
         },
         display: function(group) {
             var update_prm = this.update_data(group);
-            update_prm.done(function(data) {
+            update_prm.done(data => {
                 c3.generate(this._c3_config(data));
-            }.bind(this));
+            });
             return update_prm;
         },
         _c3_config: function(data) {
@@ -176,18 +177,21 @@
             c3_config.data.x = 'labels';
             c3_config.data.onclick = this.action.bind(this);
 
-            var type = this.xfield.type;
+            var type = this.view.screen.model.fields[this.xfield.name]
+                .description.type;
             if ((type == 'date') || (type == 'datetime')) {
                 var format_func, date_format, time_format;
                 date_format = Sao.common.date_format(
                     this.view.screen.context.date_format);
                 time_format = '%X';
                 if (type == 'datetime') {
+                    c3_config.data.xFormat = '%Y-%m-%d %H:%M:%S';
                     format_func = function(dt) {
-                        return Sao.common.format_datetime(date_format,
-                                time_format, moment(dt));
+                        return Sao.common.format_datetime(
+                            date_format + ' ' + time_format, moment(dt));
                     };
                 } else {
+                    c3_config.data.xFormat = '%Y-%m-%d';
                     format_func = function(dt) {
                         return Sao.common.format_date(date_format, moment(dt));
                     };
@@ -207,17 +211,28 @@
                     }
                 };
             }
-            var colors = {};
-            for (var i = 0; i < this.yfields.length; i++) {
-                var field = this.yfields[i];
-                if (field.color) {
-                    colors[field.name] = field.color;
+            var color = this.view.attributes.color || Sao.config.graph_color;
+            var rgb = Sao.common.hex2rgb(
+                Sao.common.COLOR_SCHEMES[color] || color);
+            var maxcolor = Math.max.apply(null, rgb);
+            var keys = [];
+            var i, yfield;
+            for (i = 0; i < this.yfields.length; i++) {
+                yfield = this.yfields[i];
+                keys.push(yfield.key || yfield.name);
+            }
+            var colors = Sao.common.generateColorscheme(
+                color, keys, maxcolor / (keys.length || 1));
+            for (i = 0; i < this.yfields.length; i++) {
+                yfield = this.yfields[i];
+                if (yfield.color) {
+                    colors[yfield.key || yfield.name] = field.color;
                 }
             }
             c3_config.data.color = function(color, column) {
                 // column is an object when called for legend
-                var name = column.id || column;
-                return colors[name] || color;
+                var key = column.id || column;
+                return colors[key] || color;
             };
             return c3_config;
         },
@@ -247,11 +262,20 @@
             var config = Sao.View.Graph.HorizontalBar._super._c3_config
                 .call(this, data);
             config.axis.rotated = true;
+            return config;
         }
     });
 
     Sao.View.Graph.Line = Sao.class_(Sao.View.Graph.Chart, {
-        _chart_type: 'line'
+        _chart_type: 'line',
+        _c3_config: function(data) {
+            var config =  Sao.View.Graph.Line._super._c3_config
+                .call(this, data);
+            config.line = {
+                connectNull: true,
+            };
+            return config;
+        }
     });
 
     Sao.View.Graph.Pie = Sao.class_(Sao.View.Graph.Chart, {
@@ -274,7 +298,8 @@
             delete config.axis;
             delete config.data.x;
             var format_func;
-            var type = this.xfield.type;
+            var type = this.view.screen.model.fields[this.xfield.name]
+                .description.type;
             if ((type == 'date') || (type == 'datetime')) {
                 var date_format = Sao.common.date_format(
                     this.view.screen.context.date_format);

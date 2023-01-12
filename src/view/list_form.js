@@ -4,20 +4,30 @@
     'use strict';
 
     Sao.View.ListGroupViewForm = Sao.class_(Sao.View.Form, {
-        editable: true,
         get record() {
             return this._record;
         },
         set record(value) {
             this._record = value;
+        },
+        button_clicked: function(event) {
+            if ((this.record !== this.screen.current_record) ||
+                (this.listform.selected_records.length != 1)) {
+                return;
+            }
+            Sao.View.ListGroupViewForm._super.button_clicked.call(this, event);
         }
     });
 
     Sao.View.ListForm = Sao.class_(Sao.View, {
+        editable: true,
+        creatable: true,
         view_type: 'list-form',
         init: function(view_id, screen, xml) {
             Sao.View.ListForm._super.init.call(this, view_id, screen, xml);
-            this.editable = true;
+            if (this.attributes.creatable) {
+                this.creatable = Boolean(parseInt(this.attributes.creatable, 10));
+            }
 
             this.form_xml = xml;
             this.el = jQuery('<ul/>', {
@@ -66,6 +76,7 @@
             var view_form = new Sao.View.ListGroupViewForm(
                 this.view_id, this.screen, this.form_xml);
             view_form.record = record;
+            view_form.listform = this;
             this._view_forms.push(view_form);
             var frame = jQuery('<li/>', {
                 'class': 'list-group-item list-form-item'
@@ -76,11 +87,9 @@
             return frame;
         },
         get selected_records() {
-            var view_form, records = [];
-            var frame;
-            for (var i = 0; i < this._view_forms.length; i++) {
-                view_form = this._view_forms[i];
-                frame = view_form.el.parent();
+            var records = [];
+            for (const view_form of this._view_forms) {
+                const frame = view_form.el.parent();
                 if (frame.hasClass('list-group-item-selected')) {
                     records.push(view_form.record);
                 }
@@ -113,10 +122,9 @@
                 to = tmp;
             }
 
-            var select_form = function(form) {
+            for (const form of this._view_forms.slice(from, to + 1)) {
                 form.el.parent().addClass('list-group-item-selected');
-            };
-            this._view_forms.slice(from, to + 1).forEach(select_form);
+            }
         },
         _select_row: function(event_) {
             var current_view_form;
@@ -124,15 +132,15 @@
             var view_form = this._view_forms[view_form_idx];
 
             if (event_.shiftKey) {
-                for (var i=0; i < this._view_forms.length; i++) {
-                    if (this._view_forms[i].record === this.record) {
-                        current_view_form = this._view_forms[i];
+                for (const other_view_form of this._view_forms) {
+                    if (other_view_forms.record === this.record) {
+                        current_view_form = other_view_form;
                         break;
                     }
                 }
                 this.select_records(i, view_form_idx);
             } else {
-                if (!event_.ctrlKey) {
+                if (!(event_.ctrlKey || event_.metaKey)) {
                     this.select_records(null, null);
                 }
                 this.record = view_form.record;
