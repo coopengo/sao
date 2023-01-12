@@ -17,9 +17,8 @@
             this.database = database;
             this.login = login;
             this.restore();
-            this.context = {
-                client: Sao.Bus.id,
-            };
+            this.context = {};
+            this.restore_context();
             if (!Sao.Session.current_session) {
                 Sao.Session.current_session = this;
             }
@@ -33,7 +32,7 @@
             var device_cookies = JSON.parse(
                 localStorage.getItem('sao_device_cookies'));
             var device_cookie = null;
-            if (device_cookies) {
+            if (device_cookies && device_cookies[this.database]) {
                 device_cookie = device_cookies[this.database][this.login];
             }
             var func = function(parameters) {
@@ -43,19 +42,19 @@
                     'params': [login, parameters, Sao.i18n.getlang()]
                 };
             };
-            new Sao.Login(func, this).run().then(function(result) {
+            new Sao.Login(func, this).run().then(result => {
                 this.login = login;
                 this.user_id = result[0];
                 this.session = result[1];
                 this.store();
                 this.renew_device_cookie();
                 dfd.resolve();
-            }.bind(this), function() {
+            }, () => {
                 this.user_id = null;
                 this.session = null;
                 this.store();
                 dfd.reject();
-            }.bind(this));
+            });
             return dfd.promise();
         },
         do_logout: function() {
@@ -90,15 +89,33 @@
         reload_context: function() {
             var args = {
                 'method': 'model.res.user.get_preferences',
-                'params': [true, {}]
+                'params': [true, this.context]
             };
+            this.reset_context();
+            var prm = Sao.rpc(args, this);
+            return prm.then(context => {
+                jQuery.extend(this.context, context);
+                this.store_context();
+            });
+        },
+        reset_context: function() {
             this.context = {
                 client: Sao.Bus.id,
             };
-            var prm = Sao.rpc(args, this);
-            return prm.then(function(context) {
-                jQuery.extend(this.context, context);
-            }.bind(this));
+        },
+        restore_context: function() {
+            this.reset_context();
+            var context = sessionStorage.getItem('sao_context_' + this.database);
+            if (context !== null) {
+                jQuery.extend(
+                    this.context, Sao.rpc.convertJSONObject(JSON.parse(context)));
+            }
+        },
+        store_context: function() {
+            var context = jQuery.extend({}, this.context);
+            delete context.client;
+            context = JSON.stringify(Sao.rpc.prepareObject(context));
+            sessionStorage.setItem('sao_context_' + this.database, context);
         },
         restore: function() {
             if (this.database && !this.session) {
@@ -139,7 +156,7 @@
                 method: 'model.res.user.device.renew',
                 params: [device_cookie, {}],
             }, this);
-            renew_prm.done(function(result) {
+            renew_prm.done(result => {
                 device_cookies = JSON.parse(
                     localStorage.getItem('sao_device_cookies'));
                 if (!device_cookies) {
@@ -151,7 +168,10 @@
                 device_cookies[this.database][this.login] = result;
                 localStorage.setItem(
                     'sao_device_cookies', JSON.stringify(device_cookies));
-            }.bind(this));
+            });
+            renew_prm.fail(() => {
+                Sao.error("Cannot renew device cookie");
+            });
         }
     });
 
@@ -188,7 +208,8 @@
         );
         dialog.button = jQuery('<button/>', {
             'class': 'btn btn-primary',
-            'type': 'submit'
+            'type': 'submit',
+            'title': Sao.i18n.gettext("Login"),
         }).text(' ' + Sao.i18n.gettext("Login")).appendTo(dialog.footer);
         return dialog;
     };
@@ -266,12 +287,12 @@
                 el = dialog.database_input;
             } else {
                 el = dialog.database_select;
-                databases.forEach(function(database) {
+                for (const database of databases) {
                     el.append(jQuery('<option/>', {
                         'value': database,
                         'text': database
                     }));
-                });
+                }
             }
             el.prop('readonly', databases.length == 1);
             el.show();
@@ -304,10 +325,7 @@
             this.func = func;
             this.session = session || Sao.Session.current_session;
         },
-        run: function(parameters) {
-            if (parameters === undefined) {
-                parameters = {};
-            }
+        run: function(parameters={}) {
             var dfd = jQuery.Deferred();
             var timeoutID = Sao.common.processing.show();
             var data = this.func(parameters);
@@ -351,11 +369,11 @@
                         var name = args[0];
                         var message = args[1];
                         var type = args[2];
-                        this['get_' + type](message).then(function(value) {
+                        this['get_' + type](message).then(value => {
                             parameters[name] = value;
                             return this.run(parameters).then(
                                     dfd.resolve, dfd.reject);
-                        }.bind(this), dfd.reject);
+                        }, dfd.reject);
                     }
                 } else {
                     dfd.resolve(data.result);
@@ -410,6 +428,7 @@
                 delete this.store[prefix][key];
                 return undefined;
             }
+            Sao.Logger.info("(cached)", prefix, key);
             return Sao.rpc.convertJSONObject(jQuery.parseJSON(data.value));
         },
         clear: function(prefix) {

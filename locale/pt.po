@@ -76,6 +76,9 @@ msgstr "Relacionar"
 msgid "Print"
 msgstr "Imprimir"
 
+msgid "E-Mail"
+msgstr ""
+
 msgid "Previous tab"
 msgstr "Aba anterior"
 
@@ -87,6 +90,9 @@ msgstr "Pesquisa global"
 
 msgid "Show this help"
 msgstr "Mostra esta ajuda"
+
+msgid "Show/Hide access keys"
+msgstr ""
 
 msgid "Keyboard shortcuts"
 msgstr "Teclas de atalho"
@@ -114,6 +120,156 @@ msgstr "Usuário"
 
 msgid "Database"
 msgstr "Banco de dados"
+
+msgid "Your selection:"
+msgstr "Sua seleção:"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Y"
+msgstr "A"
+
+msgid "M"
+msgstr "M"
+
+msgid "w"
+msgstr "s"
+
+msgid "d"
+msgstr "d"
+
+msgid "h"
+msgstr "h"
+
+msgid "m"
+msgstr "m"
+
+msgid "s"
+msgstr "s"
+
+msgid "By: "
+msgstr "Por: "
+
+msgid ", "
+msgstr ", "
+
+msgid "y"
+msgstr "a"
+
+msgid "Yes"
+msgstr "Sim"
+
+msgid "True"
+msgstr "Verdadeiro"
+
+msgid "t"
+msgstr "v"
+
+msgid "False"
+msgstr "Falso"
+
+msgid "Message: "
+msgstr "Mensagem: "
+
+msgid "Warning: "
+msgstr "Alerta: "
+
+msgid "Always ignore this warning."
+msgstr "Sempre ignorar este alerta."
+
+msgid "Do you want to proceed?"
+msgstr "Você deseja continuar?"
+
+msgid "No"
+msgstr "Não"
+
+msgid "Confirmation: "
+msgstr "Confirmação: "
+
+msgid "Concurrency Exception"
+msgstr "Exceção de concorrência"
+
+msgid "Write Concurrency Warning: "
+msgstr "Alerta de edição concorrente: "
+
+msgid "This record has been modified while you were editing it."
+msgstr "Este registro foi modificado enquanto você o editava."
+
+msgid "Choose:"
+msgstr "Escolha:"
+
+msgid "\"Cancel\" to cancel saving;"
+msgstr "\"Cancelar\" para cancelar a gravação;"
+
+msgid "\"Compare\" to see the modified version;"
+msgstr "\"Comparar\" para ver a versão modificada;"
+
+msgid "\"Write Anyway\" to save your current version."
+msgstr "\"Forçar Escrita\" para gravar sua versão atual."
+
+msgid "Compare"
+msgstr "\"Escrever mesmo assim\" para gravar sua versão atual."
+
+#, fuzzy
+msgid "Compare: %1"
+msgstr "\"Escrever mesmo assim\" para gravar sua versão atual."
+
+msgid "Write Anyway"
+msgstr "Forçar Escrita"
+
+msgid "Application Error"
+msgstr "Erro no Sistema"
+
+msgid "Report Bug"
+msgstr "Relatar erro"
+
+#, fuzzy
+msgid "Processing"
+msgstr "Processando..."
+
+msgid "Search..."
+msgstr "Buscar..."
+
+msgid "Create..."
+msgstr "Criar..."
+
+msgid "Download"
+msgstr "Baixar"
+
+msgid "..."
+msgstr "..."
+
+msgid "Bold"
+msgstr ""
+
+msgid "Italic"
+msgstr ""
+
+#, fuzzy
+msgid "Underline"
+msgstr "Recuperar"
+
+msgid "Font"
+msgstr "Fonte"
+
+msgid "Size"
+msgstr "Tamanho"
+
+msgid "Justify Right"
+msgstr ""
+
+msgid "Justify Left"
+msgstr ""
+
+msgid "Justify Center"
+msgstr ""
+
+msgid "Justify Full"
+msgstr ""
 
 msgid "Switch view"
 msgstr "Alternar a visão"
@@ -143,6 +299,13 @@ msgid "Add an attachment to the record"
 msgstr "Adicionar um anexo ao registro"
 
 msgid "Add a note to the record"
+msgstr "Adicionar uma nota ao registro"
+
+msgid "E-Mail..."
+msgstr ""
+
+#, fuzzy
+msgid "Send an e-mail using the record"
 msgstr "Adicionar uma nota ao registro"
 
 msgid "Export"
@@ -221,14 +384,19 @@ msgid "Add..."
 msgstr "Adicionar..."
 
 #, fuzzy
+msgid "Preview"
+msgstr "Anterior"
+
+#, fuzzy
+msgid "Template"
+msgstr "Relacionar"
+
+#, fuzzy
 msgid "Attachment (%1)"
 msgstr "Anexo (%1)"
 
 msgid "Note (%1/%2)"
 msgstr ""
-
-msgid " of "
-msgstr " de "
 
 msgid "Filters"
 msgstr "Filtros"
@@ -253,12 +421,6 @@ msgstr "Mostrar registros ativos"
 
 msgid "Show inactive records"
 msgstr "Mostrar registros inativos"
-
-msgid "True"
-msgstr "Verdadeiro"
-
-msgid "False"
-msgstr "Falso"
 
 msgid "Find"
 msgstr "Localizar"
@@ -311,12 +473,6 @@ msgstr ":"
 msgid "Translate"
 msgstr "Traduzir"
 
-msgid "Cancel"
-msgstr "Cancelar"
-
-msgid "OK"
-msgstr "OK"
-
 msgid "Edit"
 msgstr "Editar"
 
@@ -334,12 +490,6 @@ msgstr "Mostrar"
 
 msgid "Hide"
 msgstr "Ocultar"
-
-msgid "Font"
-msgstr "Fonte"
-
-msgid "Size"
-msgstr "Tamanho"
 
 #, fuzzy
 msgid "Open the record"
@@ -379,14 +529,22 @@ msgstr "Selecionar..."
 msgid "Clear"
 msgstr "Limpar"
 
+#, fuzzy
+msgid "Open..."
+msgstr "Abrir"
+
 msgid "Choose a language"
 msgstr ""
 
+#, javascript-format
 msgid "%1%"
 msgstr "%1%"
 
 msgid ": "
 msgstr ": "
+
+msgid "Customize"
+msgstr ""
 
 msgid "More"
 msgstr "Mais"
@@ -403,11 +561,8 @@ msgstr "Semana"
 msgid "Day"
 msgstr ""
 
-msgid ", "
-msgstr ", "
-
-msgid ",…"
-msgstr ",…"
+msgid ",..."
+msgstr ""
 
 msgid "%1 (%2)"
 msgstr "%1 (%2)"
@@ -417,112 +572,6 @@ msgstr "Selecione sua ação"
 
 msgid "No action defined."
 msgstr "Nenhuma ação definida."
-
-msgid "Your selection:"
-msgstr "Sua seleção:"
-
-msgid "Y"
-msgstr "A"
-
-msgid "M"
-msgstr "M"
-
-msgid "w"
-msgstr "s"
-
-msgid "d"
-msgstr "d"
-
-msgid "h"
-msgstr "h"
-
-msgid "m"
-msgstr "m"
-
-msgid "s"
-msgstr "s"
-
-msgid "By: "
-msgstr "Por: "
-
-msgid "y"
-msgstr "a"
-
-msgid "Yes"
-msgstr "Sim"
-
-msgid "t"
-msgstr "v"
-
-msgid "Message: "
-msgstr "Mensagem: "
-
-msgid "Warning: "
-msgstr "Alerta: "
-
-msgid "Always ignore this warning."
-msgstr "Sempre ignorar este alerta."
-
-msgid "Do you want to proceed?"
-msgstr "Você deseja continuar?"
-
-msgid "No"
-msgstr "Não"
-
-msgid "Confirmation: "
-msgstr "Confirmação: "
-
-msgid "Concurrency Exception"
-msgstr "Exceção de concorrência"
-
-msgid "Write Concurrency Warning: "
-msgstr "Alerta de edição concorrente: "
-
-msgid "This record has been modified while you were editing it."
-msgstr "Este registro foi modificado enquanto você o editava."
-
-msgid "Choose:"
-msgstr "Escolha:"
-
-msgid "\"Cancel\" to cancel saving;"
-msgstr "\"Cancelar\" para cancelar a gravação;"
-
-msgid "\"Compare\" to see the modified version;"
-msgstr "\"Comparar\" para ver a versão modificada;"
-
-msgid "\"Write Anyway\" to save your current version."
-msgstr "\"Forçar Escrita\" para gravar sua versão atual."
-
-msgid "Compare"
-msgstr "\"Escrever mesmo assim\" para gravar sua versão atual."
-
-#, fuzzy
-msgid "Compare: %1"
-msgstr "\"Escrever mesmo assim\" para gravar sua versão atual."
-
-msgid "Write Anyway"
-msgstr "Forçar Escrita"
-
-msgid "Application Error"
-msgstr "Erro no Sistema"
-
-msgid "Report Bug"
-msgstr "Relatar erro"
-
-msgid "Processing..."
-msgstr "Processando..."
-
-msgid "Search..."
-msgstr "Buscar..."
-
-msgid "Create..."
-msgstr "Criar..."
-
-msgid "Download"
-msgstr "Baixar"
-
-msgid "..."
-msgstr "..."
 
 msgid "Attachments (%1)"
 msgstr "Anexo (%1)"
@@ -551,9 +600,6 @@ msgstr "Separador:"
 msgid "Quote Char:"
 msgstr "Caractere de Citação:"
 
-msgid "Encoding:"
-msgstr "Codificação:"
-
 msgid "CSV Import: %1"
 msgstr "Importar CSV: %1"
 
@@ -563,6 +609,9 @@ msgstr "Auto-Detectar"
 msgid "File to Import"
 msgstr "Arquivo a importar"
 
+msgid "Encoding:"
+msgstr "Codificação:"
+
 msgid "Lines to Skip:"
 msgstr "Linhas a Ignorar:"
 
@@ -570,9 +619,8 @@ msgstr "Linhas a Ignorar:"
 msgid "You must select an import file first."
 msgstr "Primeiro você deve selecionar um arquivo para importar."
 
-#, fuzzy
-msgid "An error occured in loading the file."
-msgstr "Ocorreu um erro ao carregar o arquivo"
+msgid "Detection failed"
+msgstr ""
 
 msgid "Error processing the file at field %1."
 msgstr "Erro ao processar o arquivo no campo %1."
@@ -580,8 +628,15 @@ msgstr "Erro ao processar o arquivo no campo %1."
 msgid "Error"
 msgstr "Erro"
 
-msgid "Error occured in loading the file"
-msgstr "Ocorreu um erro ao carregar o arquivo"
+#, fuzzy
+msgid "Import failed"
+msgstr "Importar"
+
+#, fuzzy
+msgid "%1 record imported"
+msgid_plural "%1 records imported"
+msgstr[0] "%1 (nome do modelo)"
+msgstr[1] "%1 (nome do modelo)"
 
 msgid "CSV Export: %1"
 msgstr "Exportar CSV: %1"
@@ -634,6 +689,46 @@ msgstr "Qual é o nome desta Exportação?"
 
 msgid "Override %1 definition?"
 msgstr "Sobrescrever definição %1?"
+
+#, fuzzy
+msgid "%1 record saved"
+msgid_plural "%1 records saved"
+msgstr[0] "Registo gravado."
+msgstr[1] "Registo gravado."
+
+msgid "E-mail %1"
+msgstr ""
+
+#, fuzzy
+msgid "To:"
+msgstr "Para"
+
+msgid "Cc:"
+msgstr ""
+
+msgid "Bcc:"
+msgstr ""
+
+msgid "Subject:"
+msgstr ""
+
+#, fuzzy
+msgid "Reports"
+msgstr "Relatar erro"
+
+#, fuzzy
+msgid "Attachments"
+msgstr "Anexo"
+
+msgid "Files"
+msgstr ""
+
+msgid "Send"
+msgstr ""
+
+#, fuzzy
+msgid "Remove File"
+msgstr "Remover"
 
 msgid "Wizard"
 msgstr "Assistente"

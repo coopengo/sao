@@ -1,29 +1,84 @@
+Version 6.4.5 - 2022-09-06
+* Bug fixes (see mercurial logs for details)
+
+Version 6.4.4 - 2022-08-17
+* Bug fixes (see mercurial logs for details)
+
+Version 6.4.3 - 2022-07-01
+* Bug fixes (see mercurial logs for details)
+
+Version 6.4.2 - 2022-06-15
+* Bug fixes (see mercurial logs for details)
+
+Version 6.4.1 - 2022-06-03
+* Bug fixes (see mercurial logs for details)
+
+Version 6.4.0 - 2022-05-02
+* Bug fixes (see mercurial logs for details)
+* Support notification message
+* Allow Reference to be edited from tree view
+* Set ECMAScript version to 6
+* Manage optional column
+* Display the number of selected records
+* Humanize the count result
+* Add limit to search_count
+* Call view_get for board view
+* Limit board action domain to active id and ids
+* Manage creatable attribute of view
+
+Version 6.2.0 - 2021-11-01
+* Bug fixes (see mercurial logs for details)
+* Support grouping attribute
+* Add expander on tree to fold or unfold selected rows
+* Support monetary and symbol field attributes
+* Support digits from relation field
+* Add accesskey to widgets and buttons
+* Support Binary field in CSV import/export
+
+Version 6.0.0 - 2021-05-03
+* Bug fixes (see mercurial logs for details)
+* Use appropriate types for email and url widgets
+* Add completion on xxx2Many and Dict
+* Add attachment preview
+* Support document widget
+* Support icon of type URL
+* Allow sending email with existing attachments
+* Add paths and model context to action data
+* Add indentation in CSV export of tree
+* Manage which records to use for actions
+* Add drag and drop on CSV export and import
+* Remove tempusdominus dependency
 * Handle device cookie
+* Add breadcrumb as title of window form
+* Manage help for each selection
+* Display revision on dialog
+* Support empty value for timedelta converter
+* Unify PYSON string format
 
-Version 5.6.7 - 2020-08-02
+Version 5.8.0 - 2020-11-02
 * Bug fixes (see mercurial logs for details)
-
-Version 5.6.6 - 2020-07-16
-* Bug fixes (see mercurial logs for details)
-
-Version 5.6.5 - 2020-07-10
-* Bug fixes (see mercurial logs for details)
+* Format timedelta in CSV export
+* Manage symbol widget
+* Fallback to model name as title
+* Set treeview footer sticky on bottom
+* Add get, in_ and contains methods to PYSON
+* Manage deletable and writable state
+* Support e-mail template
+* Always encode CSV export in UTF-8
+* Use tempusdominus and Popper for date time picker
+* Support PYSON comparison of date and datetime
+* Customize bootstrap default style
+* Set field's name as input's name attribute
+* Position copied records based on order
 * Sanitize translated RichtText fields content (issue9453)
-
-Version 5.6.4 - 2020-06-29
-* Bug fixes (see mercurial logs for details)
+* Allow configuration of default colors for graph and calendar
 * Sanitize RichtText fields content (issue9405)
 * Escape external string (issue9394)
-
-Version 5.6.3 - 2020-06-16
-* Bug fixes (see mercurial logs for details)
-
-Version 5.6.2 - 2020-06-03
-* Bug fixes (see mercurial logs for details)
-
-Version 5.6.1 - 2020-05-26
-* Bug fixes (see mercurial logs for details)
+* Keep context in sessionStorage
+* Use existing context for get_preferences
 * Escape external strings (issue9351)
+* Add context to export URL
+* Allow changes to editable tree checkboxes without first selecting the line
 
 Version 5.6.0 - 2020-05-04
 * Bug fixes (see mercurial logs for details)

@@ -13,6 +13,7 @@
             this.name = '';
             this.name_el = jQuery('<span/>');
             this.view_prm = jQuery.when();
+            this.forced_count = false;
         },
         menu_def: function() {
             return [
@@ -91,6 +92,11 @@
                     id: 'print',
                     icon: 'tryton-print',
                     label: Sao.i18n.gettext('Print'),
+                }, {
+                    id: 'email',
+                    icon: 'tryton-email',
+                    label: Sao.i18n.gettext('E-Mail...'),
+                    tooltip: Sao.i18n.gettext('Send an e-mail using the record'),
                 }, null, {
                     id: 'export',
                     icon: 'tryton-export',
@@ -114,9 +120,12 @@
             var toolbar = this.create_toolbar().appendTo(this.el);
             this.title = toolbar.find('.title');
 
-            this.content = jQuery('<div/>', {
-                'class': 'panel-body',
+            this.main = jQuery('<div/>', {
+                'class': 'panel-body row',
             }).appendTo(this.el);
+            this.content = jQuery('<div/>', {
+                'class': 'col-xs-12',
+            }).appendTo(this.main);
 
             if (this.info_bar) {
                 this.el.append(this.info_bar.el);
@@ -124,7 +133,7 @@
         },
         set_menu: function(menu) {
             var previous;
-            this.menu_def().forEach(function(item) {
+            this.menu_def().forEach(item => {
                 var menuitem;
                 if (item) {
                     if (!this[item.id]) {
@@ -143,10 +152,10 @@
                             'aria-hidden': 'true',
                         })).appendTo(menuitem);
                     this.menu_buttons[item.id] = menuitem;
-                    link.click(function(evt) {
+                    link.click(evt => {
                         evt.preventDefault();
                         this[item.id]();
-                    }.bind(this));
+                    });
                 } else if (!item && previous) {
                     menuitem = jQuery('<li/>', {
                         'role': 'separator',
@@ -157,14 +166,14 @@
                 }
                 previous = menuitem;
                 menuitem.appendTo(menu);
-            }.bind(this));
+            });
         },
         create_toolbar: function() {
             var toolbar = jQuery('<nav/>', {
                 'class': 'toolbar panel-heading',
                 'role': 'toolbar'
             }).append(jQuery('<div/>', {
-                'class': 'container-fluid'
+                'class': 'container-fluid navbar-inverse'
             }).append(jQuery('<div/>', {
                 'class': 'dropdown navbar-header navbar-left flip'
             }).append(jQuery('<a/>', {
@@ -184,19 +193,20 @@
             })).append(jQuery('<button/>', {
                 'type': 'button',
                 'class': 'close visible-xs',
-                'aria-label': Sao.i18n.gettext('Close')
+                'aria-label': Sao.i18n.gettext("Close"),
+                'title': Sao.i18n.gettext("Close"),
             }).append(jQuery('<span/>', {
                 'aria-hidden': true
-            }).append('&times;')).click(function() {
+            }).append('&times;')).click(() => {
                 this.close();
-            }.bind(this)))).append(jQuery('<div/>', {
+            }))).append(jQuery('<div/>', {
                 'class': 'btn-toolbar navbar-right flip',
                 'role': 'toolbar'
             })));
             this.set_menu(toolbar.find('ul[role*="menu"]'));
 
             var group;
-            var add_button = function(item) {
+            const add_button = item => {
                 if (!item || !item.tooltip) {
                     group = null;
                     return;
@@ -241,22 +251,35 @@
                 } else {
                     button.appendTo(group);
                 }
-                this.buttons[item.id].click(item, function(event) {
+                this.buttons[item.id].click(item, event => {
                     var item = event.data;
                     var button = this.buttons[item.id];
-                    button.prop('disabled', true);
+                    // Use data instead of disabled prop because the action may
+                    // actually disable the button.
+                    if (button.data('disabled')) {
+                        event.preventDefault();
+                        return;
+                    }
+                    button.data('disabled', true);
                     (this[item.id](this) || jQuery.when())
                         .always(function() {
-                            button.prop('disabled', false);
+                            button.data('disabled', false);
                         });
-                }.bind(this));
+                });
             };
-            this.menu_def().forEach(add_button.bind(this));
-            this.status_label = jQuery('<span/>', {
-                'class': 'badge',
-            }).appendTo(jQuery('<div/>', {
-                'class': 'navbar-text hidden-xs',
-            }).insertAfter(this.buttons.previous));
+            this.menu_def().forEach(add_button);
+            if (this.buttons.previous) {
+                this.status_label = jQuery('<span/>', {
+                    'class': 'badge',
+                }).appendTo(jQuery('<div/>', {
+                    'class': 'navbar-text hidden-xs',
+                }).insertAfter(this.buttons.previous));
+                this.status_label.click(this._force_count.bind(this));
+                this.buttons.previous.addClass('hidden-xs');
+            }
+            if (this.buttons.next) {
+                this.buttons.next.addClass('hidden-xs');
+            }
             toolbar.find('.btn-toolbar > .btn-group').last()
                 .addClass( 'hidden-xs')
                 .find('.dropdown')
@@ -271,7 +294,8 @@
             return toolbar;
         },
         show: function() {
-            jQuery('#tablist').find('a[href="#' + this.id + '"]').tab('show');
+            jQuery('#tablist').find('a[href="#' + this.id + '"]')
+                .tab('show')[0].scrollIntoView();
         },
         close: function() {
             var tabs = jQuery('#tabs');
@@ -279,7 +303,7 @@
             var tab = tablist.find('#nav-' + this.id);
             var content = tabs.find('#' + this.id);
             this.show();
-            return this._close_allowed().then(function() {
+            return this._close_allowed().then(() => {
                 var next = tab.nextAll('li').first();
                 if (!next.length) {
                     next = tab.prevAll('li').first();
@@ -296,21 +320,24 @@
                     Sao.set_url();
                 }
                 tabs.trigger('ready');
-            }.bind(this));
+            });
         },
         _close_allowed: function() {
             return jQuery.when();
         },
         set_name: function(name) {
             this.name = name;
-            this.name_el.text(Sao.common.ellipsize(name, 20));
-            this.name_el.parents('li').first().attr('title', name);
+            this.name_el.text(name.split(' / ').pop());
+            this.name_el.attr('title', name);
         },
         get_url: function() {
         },
         compare: function(attributes) {
             return false;
         },
+        _force_count: function(evt) {
+            this.forced_count = true;
+        }
     });
 
     Sao.Tab.counter = 0;
@@ -354,10 +381,10 @@
         if (attributes.context === undefined) {
             attributes.context = {};
         }
-        for (var i = 0; i < Sao.Tab.tabs.length; i++) {
-            var other = Sao.Tab.tabs[i];
+        for (const other of Sao.Tab.tabs) {
             if (other.compare(attributes)) {
-                tablist.find('a[href="#' + other.id + '"]').tab('show');
+                tablist.find('a[href="#' + other.id + '"]')
+                    .tab('show')[0].scrollIntoView();
                 return;
             }
         }
@@ -382,15 +409,15 @@
             'data-toggle': 'tab',
             'href': '#' + tab.id
         }).on('show.bs.tab', function() {
-            Sao.set_url(tab.get_url(), tab.name);
+            Sao.set_url(tab.get_url(), tab.name.split(' / ').pop());
         })
         .append(jQuery('<button/>', {
-            'class': 'close'
+            'class': 'close',
+            'aria-label': Sao.i18n.gettext("Close"),
+            'title': Sao.i18n.gettext("Close"),
         }).append(jQuery('<span/>', {
             'aria-hidden': true
-        }).append('&times;')).append(jQuery('<span/>', {
-            'class': 'sr-only'
-        }).text(Sao.i18n.gettext('Close'))).click(function(evt) {
+        }).append('&times;')).click(function(evt) {
             evt.preventDefault();
             tab.close();
         }))
@@ -408,7 +435,13 @@
             id: tab.id
         }).append(tab.el)
         .appendTo(tabcontent);
-        tab_link.tab('show');
+        tab_link.on('hide.bs.tab', function(evt) {
+            jQuery(evt.target).data('scrollTop', tabs.scrollTop());
+        });
+        tab_link.on('shown.bs.tab', function(evt) {
+            tabs.scrollTop(jQuery(evt.target).data('scrollTop') || 0);
+        });
+        tab_link.tab('show')[0].scrollIntoView();
         tabs.trigger('ready');
     };
 
@@ -443,24 +476,35 @@
         class_: 'tab-form',
         init: function(model_name, attributes) {
             Sao.Tab.Form._super.init.call(this, attributes);
+            attributes = jQuery.extend({}, attributes);
+            var name = attributes.name;
+            if (!name) {
+                name = Sao.common.MODELNAME.get(model_name);
+            }
+            this.set_name(name);
+            if (attributes.res_id) {
+                if (attributes.hasOwnProperty('tab_domain')) {
+                    delete attributes.tab_domain;
+                }
+            }
+            attributes.breadcrumb = [name];
             var screen = new Sao.Screen(model_name, attributes);
-            screen.tab = this;
+            screen.windows.push(this);
             this.screen = screen;
             this.info_bar = new Sao.Window.InfoBar();
             this.create_tabcontent();
 
-            screen.message_callback = this.record_message.bind(this);
-            screen.switch_callback = function() {
+            this.attachment_screen = null;
+
+            screen.switch_callback = () => {
                 if (this === Sao.Tab.tabs.get_current()) {
-                    Sao.set_url(this.get_url(), this.name);
+                    Sao.set_url(this.get_url(), this.name.split(' / ').pop());
                 }
-            }.bind(this);
+            };
 
             this.set_buttons_sensitive();
 
-            this.view_prm = this.screen.switch_view().done(function() {
-                this.screen.count_tab_domain();
-                this.set_name(attributes.name || '');
+            this.view_prm = this.screen.switch_view().done(() => {
                 this.content.append(screen.screen_container.el);
                 if (attributes.res_id) {
                     if (!jQuery.isArray(attributes.res_id)) {
@@ -480,27 +524,25 @@
                     }
                 }
                 this.update_revision();
-            }.bind(this));
+            });
         },
         create_toolbar: function() {
             var toolbar = Sao.Tab.Form._super.create_toolbar.call(this);
             var screen = this.screen;
-            var buttons = this.buttons;
-            var prm = screen.model.execute('view_toolbar_get', [],
-                screen.context);
-            prm.done(function(toolbars) {
-                [
+            var toolbars = screen.model.execute(
+                'view_toolbar_get', [], screen.context, false);
+            [
                 ['action', 'tryton-launch',
                     Sao.i18n.gettext('Launch action')],
                 ['relate', 'tryton-link',
-                     Sao.i18n.gettext('Open related records')],
+                    Sao.i18n.gettext('Open related records')],
                 ['print', 'tryton-print',
-                     Sao.i18n.gettext('Print report')]
-                ].forEach(function(menu_action) {
-                    var button = jQuery('<div/>', {
-                        'class': 'btn-group dropdown',
-                        'role': 'group'
-                    })
+                    Sao.i18n.gettext('Print report')]
+            ].forEach(menu_action => {
+                var dropdown = jQuery('<div/>', {
+                    'class': 'btn-group dropdown',
+                    'role': 'group'
+                })
                     .append(jQuery('<button/>', {
                         'type': 'button',
                         'class': 'btn btn-default navbar-btn dropdown-toggle',
@@ -522,39 +564,40 @@
                         'role': 'menu',
                         'aria-labelledby': menu_action[0]
                     }))
-                    .appendTo(toolbar.find('.btn-toolbar > .btn-group').last());
-                    buttons[menu_action[0]] = button;
-                    var dropdown = button
-                        .on('show.bs.dropdown', function() {
-                            jQuery(this).parents('.btn-group').removeClass(
-                                    'hidden-xs');
-                        }).on('hide.bs.dropdown', function() {
-                            jQuery(this).parents('.btn-group').addClass(
-                                    'hidden-xs');
+                    .insertBefore(toolbar.find('button#email'));
+                var button = dropdown.find('button');
+                this.buttons[menu_action[0]] = button;
+                dropdown
+                    .on('show.bs.dropdown', function() {
+                        jQuery(this).parents('.btn-group').removeClass(
+                            'hidden-xs');
+                    }).on('hide.bs.dropdown', function() {
+                        jQuery(this).parents('.btn-group').addClass(
+                            'hidden-xs');
+                    });
+                var menu = dropdown.find('.dropdown-menu');
+                button.click(function() {
+                    menu.find([
+                        '.' + menu_action[0] + '_button',
+                        '.divider-button',
+                        '.' + menu_action[0] + '_plugin',
+                        '.divider-plugin'].join(',')).remove();
+                    var buttons = screen.get_buttons().filter(
+                        function(button) {
+                            return menu_action[0] == (
+                                button.attributes.keyword || 'action');
                         });
-                    var menu = button.find('.dropdown-menu');
-                    button.click(function() {
-                        menu.find([
-                            '.' + menu_action[0] + '_button',
-                            '.divider-button',
-                            '.' + menu_action[0] + '_plugin',
-                            '.divider-plugin'].join(',')).remove();
-                        var buttons = screen.get_buttons().filter(
-                            function(button) {
-                                return menu_action[0] == (
-                                    button.attributes.keyword || 'action');
-                            });
-                        if (buttons.length) {
-                            menu.append(jQuery('<li/>', {
-                                'role': 'separator',
-                                'class': 'divider divider-button',
-                            }));
-                        }
-                        buttons.forEach(function(button) {
-                            var item = jQuery('<li/>', {
-                                'role': 'presentation',
-                                'class': menu_action[0] + '_button'
-                            })
+                    if (buttons.length) {
+                        menu.append(jQuery('<li/>', {
+                            'role': 'separator',
+                            'class': 'divider divider-button',
+                        }));
+                    }
+                    buttons.forEach(function(button) {
+                        var item = jQuery('<li/>', {
+                            'role': 'presentation',
+                            'class': menu_action[0] + '_button'
+                        })
                             .append(
                                 jQuery('<a/>', {
                                     'role': 'menuitem',
@@ -566,40 +609,39 @@
                                 evt.preventDefault();
                                 screen.button(button.attributes);
                             })
-                        .appendTo(menu);
-                        });
+                            .appendTo(menu);
+                    });
 
-                        var kw_plugins = [];
-                        Sao.Plugins.forEach(function(plugin) {
-                            plugin.get_plugins(screen.model.name).forEach(
-                                function(spec) {
-                                    var name = spec[0],
-                                        func = spec[1],
-                                        keyword = spec[2] || 'action';
-                                    if (keyword != menu_action[0]) {
-                                        return;
-                                    }
-                                    kw_plugins.push([name, func]);
-                                });
-                        });
-                        if (kw_plugins.length) {
-                            menu.append(jQuery('<li/>', {
-                                'role': 'separator',
-                                'class': 'divider divider-plugin',
-                            }));
+                    var kw_plugins = [];
+                    for (const plugin of Sao.Plugins) {
+                        for (const spec of plugin.get_plugins(
+                            screen.model.name)) {
+                            var name = spec[0],
+                                func = spec[1],
+                                keyword = spec[2] || 'action';
+                            if (keyword == menu_action[0]) {
+                                kw_plugins.push([name, func]);
+                            }
                         }
-                        kw_plugins.forEach(function(plugin) {
-                            var name = plugin[0],
-                                func = plugin[1];
-                            jQuery('<li/>', {
-                                'role': 'presentation',
-                                'class': menu_action[0] + '_plugin',
-                            }).append(
-                                jQuery('<a/>', {
-                                    'role': 'menuitem',
-                                    'href': '#',
-                                    'tabindex': -1,
-                                }).text(name))
+                    }
+                    if (kw_plugins.length) {
+                        menu.append(jQuery('<li/>', {
+                            'role': 'separator',
+                            'class': 'divider divider-plugin',
+                        }));
+                    }
+                    kw_plugins.forEach(function(plugin) {
+                        var name = plugin[0],
+                            func = plugin[1];
+                        jQuery('<li/>', {
+                            'role': 'presentation',
+                            'class': menu_action[0] + '_plugin',
+                        }).append(
+                            jQuery('<a/>', {
+                                'role': 'menuitem',
+                                'href': '#',
+                                'tabindex': -1,
+                            }).text(name))
                             .click(function(evt) {
                                 evt.preventDefault();
                                 var ids = screen.current_view.selected_records
@@ -608,84 +650,105 @@
                                     });
                                 var id = screen.current_record ?
                                     screen.current_record.id : null;
+                                var model_context = screen.context_screen ?
+                                    screen.context_screen.model_name : null;
                                 func({
                                     'model': screen.model.name,
-                                    'ids': ids,
+                                    'model_context': model_context,
                                     'id': id,
+                                    'ids': ids,
+                                    'paths': screen.selected_paths,
                                 });
                             })
                             .appendTo(menu);
-                        });
                     });
+                });
 
-                    toolbars[menu_action[0]].forEach(function(action) {
-                        var item = jQuery('<li/>', {
-                            'role': 'presentation'
-                        })
+                toolbars[menu_action[0]].forEach(action => {
+                    var item = jQuery('<li/>', {
+                        'role': 'presentation'
+                    })
                         .append(jQuery('<a/>', {
                             'role': 'menuitem',
                             'href': '#',
                             'tabindex': -1
                         }).text(action.name))
-                        .click(function(evt) {
+                        .click(evt => {
                             evt.preventDefault();
-                            var prm = jQuery.when();
-                            if (this.screen.modified()) {
-                                prm = this.save();
-                            }
-                            prm.then(function() {
+                            this.modified_save().then(function() {
                                 var exec_action = jQuery.extend({}, action);
                                 var record_id = null;
                                 if (screen.current_record) {
                                     record_id = screen.current_record.id;
                                 }
-                                var record_ids = screen.current_view
-                                .selected_records.map(function(record) {
+                                var records, paths;
+                                if (action.records == 'listed') {
+                                    records = screen.listed_records;
+                                    paths = screen.listed_paths;
+                                } else {
+                                    records = screen.selected_records;
+                                    paths = screen.selected_paths;
+                                }
+                                var record_ids = records.map(function(record) {
                                     return record.id;
                                 });
-                                exec_action = Sao.Action.evaluate(exec_action,
-                                    menu_action[0], screen.current_record);
+                                var model_context = screen.context_screen ?
+                                    screen.context_screen.model_name : null;
                                 var data = {
-                                    model: screen.model_name,
-                                    id: record_id,
-                                    ids: record_ids
+                                    'model': screen.model_name,
+                                    'model_context': model_context,
+                                    'id': record_id,
+                                    'ids': record_ids,
+                                    'paths': paths,
                                 };
                                 Sao.Action.execute(exec_action, data,
                                     jQuery.extend({}, screen.local_context));
                             });
-                        }.bind(this))
+                        })
                         .appendTo(menu);
-                    }.bind(this));
+                });
 
-                    if (menu_action[0] == 'print') {
-                        if (toolbars.exports.length && toolbars.print.length) {
-                            menu.append(jQuery('<li/>', {
-                                'role': 'separator',
-                                'class': 'divider',
-                            }));
-                        }
-                        toolbars.exports.forEach(function(export_) {
-                            var item = jQuery('<li/>', {
-                                'role': 'presentation',
-                            })
+                if (menu_action[0] != 'action') {
+                    button._can_be_sensitive = Boolean(
+                        menu.children().length);
+                }
+
+                if ((menu_action[0] == 'print') &&
+                    toolbars.exports.length) {
+                    button._can_be_sensitive = true;
+                    if (toolbars.print.length) {
+                        menu.append(jQuery('<li/>', {
+                            'role': 'separator',
+                            'class': 'divider',
+                        }));
+                    }
+                    toolbars.exports.forEach(export_ => {
+                        var item = jQuery('<li/>', {
+                            'role': 'presentation',
+                        })
                             .append(jQuery('<a/>', {
                                 'role': 'menuitem',
                                 'href': '#',
                                 'tabindex': -1,
                             }).text(export_.name))
-                            .click(function(evt) {
+                            .click(evt => {
                                 evt.preventDefault();
                                 this.do_export(export_);
-                            }.bind(this))
+                            })
                             .appendTo(menu);
-                        }.bind(this));
-                    }
-                }.bind(this));
-            }.bind(this));
+                    });
+                }
+            });
             this.buttons.attach
                 .on('dragover', false)
                 .on('drop', this.attach_drop.bind(this));
             return toolbar;
+        },
+        create_tabcontent: function() {
+            Sao.Tab.Form._super.create_tabcontent.call(this);
+            this.attachment_preview = jQuery('<div/>', {
+                'class': 'col-xs-12 attachment-preview',
+            }).prependTo(this.main);
         },
         compare: function(attributes) {
             if (!attributes) {
@@ -707,11 +770,19 @@
                     JSON.stringify(attributes.context)) &&
                 (compare(
                     this.attributes.search_value || [],
-                    attributes.search_value || []))
+                    attributes.search_value || [])) &&
+                (JSON.stringify(this.screen.attributes.tab_domain) ===
+                    JSON.stringify(attributes.tab_domain))
             );
         },
         _close_allowed: function() {
-            return this.modified_save();
+            return this.modified_save().then(null, function(result) {
+                if (result) {
+                    return jQuery.Deferred().resolve();
+                } else {
+                    return jQuery.Deferred().reject();
+                }
+            });
         },
         modified_save: function() {
             this.screen.save_tree_state();
@@ -720,16 +791,27 @@
                 return Sao.common.sur_3b.run(
                         Sao.i18n.gettext('This record has been modified\n' +
                             'do you want to save it?'))
-                    .then(function(result) {
+                    .then(result => {
                         switch(result) {
                             case 'ok':
                                 return this.save();
                             case 'ko':
-                                return this.reload(false);
+                                var record_id = this.screen.current_record.id;
+                                return this.reload(false).then(() => {
+                                    if (record_id < 0) {
+                                        return jQuery.Deferred().reject(true);
+                                    }
+                                    else if (this.screen.current_record) {
+                                        if (record_id !=
+                                            this.screen.current_record.id) {
+                                            return jQuery.Deferred().reject();
+                                        }
+                                    }
+                                });
                             default:
                                 return jQuery.Deferred().reject();
                         }
-                    }.bind(this));
+                    });
             }
             return jQuery.when();
         },
@@ -737,12 +819,12 @@
             if (!Sao.common.MODELACCESS.get(this.screen.model_name).create) {
                 return jQuery.when();
             }
-            return this.modified_save().then(function() {
-                return this.screen.new_().then(function() {
-                    this.info_bar.message();
-                }.bind(this));
-                // TODO activate_save
-            }.bind(this));
+            return this.modified_save().then(() => {
+                return this.screen.new_().then(() => {
+                    this.info_bar.clear();
+                    this.activate_save();
+                });
+            });
         },
         save: function(tab) {
             if (tab) {
@@ -754,28 +836,22 @@
                 return jQuery.Deferred().reject();
             }
             return this.screen.save_current().then(
-                    function() {
-                        this.info_bar.message(
-                                Sao.i18n.gettext('Record saved.'), 'info');
-                        this.screen.count_tab_domain();
-                    }.bind(this),
-                    function() {
-                        this.info_bar.message(
-                            this.screen.invalid_message(), 'danger');
-                        return jQuery.Deferred().reject();
-                    }.bind(this));
+                () => {
+                    this.info_bar.add(
+                        Sao.i18n.gettext('Record saved.'), 'info');
+                    this.screen.count_tab_domain(true);
+                }, () => {
+                    this.info_bar.add(
+                        this.screen.invalid_message(), 'danger');
+                    return jQuery.Deferred().reject();
+                });
         },
         switch_: function() {
-            return this.modified_save().then(function() {
-                return this.screen.switch_view();
-            }.bind(this));
+            return this.modified_save().then(() => this.screen.switch_view());
         },
-        reload: function(test_modified) {
-            if (test_modified === undefined) {
-                test_modified = true;
-            }
-            var reload = function() {
-                return this.screen.cancel_current().then(function() {
+        reload: function(test_modified=true) {
+            const reload = () => {
+                return this.screen.cancel_current().then(() => {
                     var set_cursor = false;
                     var record_id = null;
                     if (this.screen.current_record) {
@@ -784,26 +860,26 @@
                     if (this.screen.current_view.view_type != 'form') {
                         return this.screen.search_filter(
                             this.screen.screen_container.search_entry.val())
-                            .then(function() {
-                                this.screen.group.forEach(function(record) {
+                            .then(() => {
+                                for (const record of this.screen.group) {
                                     if (record.id == record_id) {
                                         this.screen.current_record = record;
                                         set_cursor = true;
                                     }
-                                }.bind(this));
+                                }
                                 return set_cursor;
-                            }.bind(this));
+                            });
                     }
                     return set_cursor;
-                }.bind(this))
-                .then(function(set_cursor) {
-                    return this.screen.display(set_cursor).then(function() {
-                        this.info_bar.message();
-                        // TODO activate_save
+                })
+                .then(set_cursor => {
+                    return this.screen.display(set_cursor).then(() => {
+                        this.info_bar.clear();
+                        this.activate_save();
                         this.screen.count_tab_domain();
-                    }.bind(this));
-                }.bind(this));
-            }.bind(this);
+                    });
+                });
+            };
             if (test_modified) {
                 return this.modified_save().then(reload);
             } else {
@@ -815,15 +891,15 @@
             if (!Sao.common.MODELACCESS.get(this.screen.model_name).create) {
                 return jQuery.when();
             }
-            return this.modified_save().then(function() {
-                return this.screen.copy().then(function() {
-                    this.info_bar.message(
+            return this.modified_save().then(() => {
+                return this.screen.copy().then(() => {
+                    this.info_bar.add(
                             Sao.i18n.gettext(
                                 'Working now on the duplicated record(s).'),
                             'info');
-                    this.screen.count_tab_domain();
-                }.bind(this));
-            }.bind(this));
+                    this.screen.count_tab_domain(true);
+                });
+            });
         },
         delete_: function() {
             if (!Sao.common.MODELACCESS.get(this.screen.model_name)['delete']) {
@@ -835,35 +911,35 @@
             } else {
                 msg = Sao.i18n.gettext('Are you sure to remove those records?');
             }
-            return Sao.common.sur.run(msg).then(function() {
+            return Sao.common.sur.run(msg).then(() => {
                 return this.screen.remove(true, false, true).then(
-                        function() {
-                            this.info_bar.message(
-                                    Sao.i18n.gettext('Records removed.'),
-                                    'info');
-                            this.screen.count_tab_domain();
-                        }.bind(this), function() {
-                            this.info_bar.message(
-                                    Sao.i18n.gettext('Records not removed.'),
-                                    'danger');
-                        }.bind(this));
-            }.bind(this));
+                    () => {
+                        this.info_bar.add(
+                            Sao.i18n.gettext("Records removed."),
+                            'info');
+                        this.screen.count_tab_domain(true);
+                    }, () => {
+                        this.info_bar.add(
+                            Sao.i18n.gettext("Records not removed."),
+                            'danger');
+                    });
+            });
         },
         previous: function() {
-            return this.modified_save().then(function() {
+            return this.modified_save().then(() => {
                 var prm = this.screen.display_previous();
-                this.info_bar.message();
-                // TODO activate_save
+                this.info_bar.clear();
+                this.activate_save();
                 return prm;
-            }.bind(this));
+            });
         },
         next: function() {
-            return this.modified_save().then(function() {
+            return this.modified_save().then(() => {
                 var prm = this.screen.display_next();
-                this.info_bar.message();
-                // TODO activate_save
+                this.info_bar.clear();
+                this.activate_save();
                 return prm;
-            }.bind(this));
+            });
         },
         search: function() {
             var search_entry = this.screen.screen_container.search_entry;
@@ -877,7 +953,7 @@
         logs: function() {
             var record = this.screen.current_record;
             if ((!record) || (record.id < 0)) {
-                this.info_bar.message(
+                this.info_bar.add(
                         Sao.i18n.gettext('You have to select one record.'),
                         'info');
                 return jQuery.when();
@@ -896,38 +972,37 @@
                     fields.map(function(field) {
                         return field[0];
                     })], this.screen.context)
-            .then(function(data) {
+            .then(data => {
                 data = data[0];
                 var message = '';
-                fields.forEach(function(field) {
-                    var key = field[0];
-                    var label = field[1];
-                    var value = data;
-                    var keys = key.split('.');
-                    var name = keys.splice(-1);
-                    keys.forEach(function(key) {
+                for (const field of fields) {
+                    const key = field[0];
+                    const label = field[1];
+                    let value = data;
+                    const keys = key.split('.');
+                    const name = keys.splice(-1);
+                    for (const key of keys) {
                         value = value[key + '.'] || {};
-                    });
+                    }
                     value = (value || {})[name] || '/';
                     if (value && value.isDateTime) {
                         value = Sao.common.format_datetime(
-                            Sao.common.date_format(),
-                            '%H:%M:%S',
+                            Sao.common.date_format() + ' %H:%M:%S',
                             value);
                     }
                     message += label + ' ' + value + '\n';
-                });
+                }
                 message += Sao.i18n.gettext('Model: ') + this.screen.model.name;
                 Sao.common.message.run(message);
-            }.bind(this));
+            });
         },
         revision: function() {
             var current_id = null;
             if (this.screen.current_record) {
                 current_id = this.screen.current_record.id;
             }
-            var set_revision = function(revisions) {
-                return function(revision) {
+            const set_revision = revisions => {
+                return revision => {
                     if (revision) {
                         // Add a millisecond as microseconds are truncated
                         revision.add(1, 'milliseconds');
@@ -951,28 +1026,27 @@
                         this.screen.display(true);
                         this.update_revision();
                     }
-                }.bind(this);
-            }.bind(this);
-            return this.modified_save().then(function() {
+                };
+            };
+            return this.modified_save().then(() => {
                 var ids = this.screen.current_view.selected_records.map(
-                    function(record) {
-                        return record.id;
-                    });
+                    record => record.id);
                 return this.screen.model.execute('history_revisions',
                     [ids], this.screen.context)
-                    .then(function(revisions) {
+                    .then(revisions => {
                         new Sao.Window.Revision(revisions, set_revision(revisions));
                     });
-            }.bind(this));
+            });
         },
         update_revision: function() {
             var revision = this.screen.context._datetime;
             var label, title;
             if (revision) {
-                var date_format = Sao.common.date_format();
+                var date_format = Sao.common.date_format(
+                    this.screen.context.date_format);
                 var time_format = '%H:%M:%S.%f';
                 var revision_label = ' @ ' + Sao.common.format_datetime(
-                    date_format, time_format, revision);
+                    date_format + ' ' + time_format, revision);
                 label = Sao.common.ellipsize(
                     this.name, 80 - revision_label.length) + revision_label;
                 title = this.name + revision_label;
@@ -987,45 +1061,59 @@
         set_buttons_sensitive: function(revision) {
             if (!revision) {
                 var access = Sao.common.MODELACCESS.get(this.screen.model_name);
-                [['new_', access.create],
-                ['save', access.create || access.write],
-                ['delete_', access.delete],
-                ['copy', access.create],
-                ['import', access.create],
-                ].forEach(function(e) {
-                    var name = e[0];
-                    var access = e[1];
+                const accesses = new Map([
+                    ['new_', access.create],
+                    ['save', access.create || access.write],
+                    ['delete_', access.delete],
+                    ['copy', access.create],
+                    ['import', access.create],
+                ]);
+                for (const [name, access] of accesses) {
                     if (this.buttons[name]) {
-                        this.buttons[name].toggleClass('disabled', !access);
+                        this.buttons[name].prop('disabled', !access);
                     }
                     if (this.menu_buttons[name]) {
                         this.menu_buttons[name]
                             .toggleClass('disabled', !access);
                     }
-                }.bind(this));
+                }
             } else {
-                ['new_', 'save', 'delete_', 'copy', 'import'].forEach(
-                    function(name) {
-                        if (this.buttons[name]) {
-                            this.buttons[name].addClass('disabled');
-                        }
-                        if (this.menu_buttons[name]) {
-                            this.menu_buttons[name].addClass('disabled');
-                        }
-                    }.bind(this));
+                for (const name of [
+                    'new_', 'save', 'delete_', 'copy', 'import']) {
+                    if (this.buttons[name]) {
+                        this.buttons[name].prop('disabled', true);
+                    }
+                    if (this.menu_buttons[name]) {
+                        this.menu_buttons[name].addClass('disabled');
+                    }
+                }
             }
         },
         attach: function(evt) {
-            var window_ = function() {
-                return new Sao.Window.Attachment(record, function() {
+            const window_ = () => {
+                return new Sao.Window.Attachment(record, () => {
                     this.refresh_resources(true);
-                }.bind(this));
-            }.bind(this);
+                });
+            };
+            const preview = () => {
+                if (this.attachment_preview.children().length) {
+                    this.attachment_preview.empty();
+                    this.attachment_screen = null;
+                    this.attachment_preview.removeClass('col-md-4 col-md-push-8');
+                    this.content.removeClass('col-md-8 col-md-pull-4');
+                } else {
+                    this.attachment_preview.append(
+                        this._attachment_preview_el());
+                    this.refresh_attachment_preview();
+                    this.attachment_preview.addClass('col-md-4 col-md-push-8');
+                    this.content.addClass('col-md-8 col-md-pull-4');
+                }
+            };
             var dropdown = this.buttons.attach.parents('.dropdown');
             if (!evt) {
-                window.setTimeout(function() {
+                window.setTimeout(() => {
                     this.buttons.attach.click();
-                }.bind(this));
+                });
                 return;
             }
             var record = this.screen.current_record;
@@ -1082,6 +1170,17 @@
                         'role': 'menuitem',
                         'href': '#',
                         'tabindex': -1,
+                    }).text(Sao.i18n.gettext("Preview"))
+                        .click(function(evt) {
+                            evt.preventDefault();
+                            preview();
+                        })));
+                    menu.append(jQuery('<li/>', {
+                        'role': 'presentation',
+                    }).append(jQuery('<a/>', {
+                        'role': 'menuitem',
+                        'href': '#',
+                        'tabindex': -1,
                     }).text(Sao.i18n.gettext('Manage...'))
                         .click(function(evt) {
                             evt.preventDefault();
@@ -1103,7 +1202,7 @@
                 uris = [],
                 texts = [];
             if (evt.dataTransfer.items) {
-                console.log(evt.dataTransfer.items);
+                Sao.Logger.debug("Attach drop items:", evt.dataTransfer.items);
                 for (i = 0; i < evt.dataTransfer.items.length; i++) {
                     var item = evt.dataTransfer.items[i];
                     if (item.kind == 'string') {
@@ -1135,27 +1234,25 @@
                 }
             }
 
-            var window_ = new Sao.Window.Attachment(record, function() {
+            var window_ = new Sao.Window.Attachment(record, () => {
                 this.refresh_resources(true);
-            }.bind(this));
-            files.forEach(function(file) {
-                Sao.common.get_file_data(file, function(data, filename) {
-                    window_.add_data(data, filename);
-                });
             });
+            for (const file of files) {
+                Sao.common.get_file_data(file, window_.add_data);
+            }
             jQuery.when.apply(jQuery, uris).then(function() {
                 function empty(value) {
                     return Boolean(value);
                 }
-                for (var i = 0; i < arguments.length; i++) {
-                    arguments[i].split('\r\n')
+                for (const argument of arguments) {
+                    argument.split('\r\n')
                         .filter(empty)
                         .forEach(window_.add_uri, window_);
                 }
             });
             jQuery.when.apply(jQuery, texts).then(function() {
-                for (var i = 0; i < arguments.length; i++) {
-                    window_.add_text(arguments[i]);
+                for (const argument of arguments) {
+                    window_.add_text(argument);
                 }
             });
             if (evt.dataTransfer.items) {
@@ -1164,14 +1261,128 @@
                 evt.dataTransfer.clearData();
             }
         },
+        _attachment_preview_el: function() {
+            var el = jQuery('<div/>', {
+                'class': 'text-center',
+            });
+            var buttons = jQuery('<div/>', {
+                'class': 'btn-group',
+            }).appendTo(el);
+
+            var but_prev = jQuery('<button/>', {
+                'class': 'btn btn-default btn-sm',
+                'type': 'button',
+                'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Previous"),
+                'title': Sao.i18n.gettext("Previous"),
+            }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-back')
+            ).appendTo(buttons);
+
+            var label = jQuery('<span/>', {
+                'class': 'badge',
+            }).text('(0/0)').appendTo(jQuery('<span/>', {
+                'class': 'btn btn-sm btn-link',
+            }).appendTo(buttons));
+
+            var but_next = jQuery('<button/>', {
+                'class': 'btn btn-default btn-sm',
+                'type': 'button',
+                'tabindex': -1,
+                'aria-label': Sao.i18n.gettext("Next"),
+                'title': Sao.i18n.gettext("Next"),
+            }).append(Sao.common.ICONFACTORY.get_icon_img('tryton-forward')
+            ).appendTo(buttons);
+
+            var screen = new Sao.Screen('ir.attachment', {
+                'readonly': true,
+                'mode': ['form'],
+                'context': {
+                    'preview': true,
+                },
+            });
+            this.attachment_screen = screen;
+
+            but_prev.click(function() {
+                return screen.display_previous();
+            });
+            but_next.click(function() {
+                return screen.display_next();
+            });
+
+            var preview = {};
+            preview.record_message = function(position, length) {
+                var text = (position || '_') + '/' + length;
+                label.text(text).attr('title', text);
+                but_prev.prop('disabled', !position || position <= 1);
+                but_next.prop('disabled', !position || position >= length);
+            };
+            screen.windows.push(preview);
+
+            screen.switch_view().done(function() {
+                el.append(screen.screen_container.el);
+            });
+            return el;
+        },
+        refresh_attachment_preview: function(force) {
+            if (!this.attachment_screen) {
+                return;
+            }
+            var record = this.screen.current_record;
+            if (!record) {
+                return;
+            }
+            var resource = record.model.name + ',' + record.id;
+            var domain = [
+                ['resource', '=', resource],
+                ['type', '=', 'data'],
+            ];
+            if (!Sao.common.compare(this.attachment_screen.domain, domain) ||
+                force) {
+                this.attachment_screen.domain = domain;
+                this.attachment_screen.search_filter();
+            }
+        },
         note: function() {
             var record = this.screen.current_record;
             if (!record || (record.id < 0)) {
                 return;
             }
-            new Sao.Window.Note(record, function() {
+            new Sao.Window.Note(record, () => {
                 this.refresh_resources(true);
-            }.bind(this));
+            });
+        },
+        email: function() {
+            function is_report(action) {
+                return action.type == 'ir.action.report';
+            }
+            if (!this.buttons.email.prop('disabled')) {
+                this.modified_save().then(() => {
+                    var record = this.screen.current_record;
+                    if (!record || (record.id < 0)) {
+                        return;
+                    }
+                    var title = this.title.text();
+                    this.screen.model.execute(
+                        'view_toolbar_get', [], this.screen.context)
+                        .then(function(toolbars) {
+                            var prints = toolbars.print.filter(is_report);
+                            var emails = {};
+                            for (const email of toolbars.emails) {
+                                emails[email.name] = email.id;
+                            }
+                            record.rec_name().then(function(rec_name) {
+                                function email(template) {
+                                    new Sao.Window.Email(
+                                        title + ': ' + rec_name, record,
+                                        prints, template);
+                                }
+                                Sao.common.selection(
+                                    Sao.i18n.gettext("Template"), emails, true)
+                                    .then(email, email);
+                            });
+                        });
+                });
+            }
         },
         refresh_resources: function(reload) {
             var record = this.screen.current_record;
@@ -1181,15 +1392,19 @@
             } else {
                 this.update_resources();
             }
+            if (reload) {
+                this.refresh_attachment_preview(true);
+            }
         },
         update_resources: function(resources) {
             if (!resources) {
                 resources = {};
             }
             var record_id = this.screen.get_id();
-            var disabled = record_id < 0 || record_id === null;
+            var disabled = (
+                record_id < 0 || record_id === null || record_id === undefined);
 
-            var update = function(name, title, text, color) {
+            const update = (name, title, text, color) => {
                 var button = this.buttons[name];
 
                 var badge = button.find('.badge');
@@ -1204,10 +1419,11 @@
                     color = '';
                 }
                 badge.css('background-color', color);
+                badge.css('color', '#fff');
                 badge.text(text);
                 button.attr('title', title);
                 button.prop('disabled', disabled);
-            }.bind(this);
+            };
 
             var count = resources.attachment_count || 0;
             var badge = count || '';
@@ -1236,62 +1452,122 @@
             title = Sao.i18n.gettext("Note (%1/%2)", unread, count);
             update('note', title, badge, color);
         },
-        record_message: function(data) {
-            if (data) {
-                var name = "_";
-                if (data[0] !== 0) {
-                    name = data[0];
+        record_message: function(position, size, max_size, record_id) {
+            const set_sensitive = (button_id, sensitive) => {
+                if (this.buttons[button_id]) {
+                    this.buttons[button_id].prop('disabled', !sensitive);
                 }
-                var buttons = ['print', 'relate', 'attach'];
-                buttons.forEach(function(button_id){
-                    var button = this.buttons[button_id];
-                    if (button) {
-                        var disabled = button.is(':disabled');
-                        button.prop('disabled', disabled || data[0] === 0);
-                    }
-                }.bind(this));
-                this.buttons.switch_.prop('disabled',
-                    this.attributes.view_ids > 1);
-                var msg = name + ' / ' + data[1];
-                if (data[1] < data[2]) {
-                    msg += Sao.i18n.gettext(' of ') + data[2];
+                if (this.menu_buttons[button_id]) {
+                    this.menu_buttons[button_id].toggleClass('disabled', !sensitive);
                 }
-                this.status_label.text(msg).attr('title', msg);
+            };
+
+            var name = "_";
+            if (position) {
+                var selected = this.screen.selected_records.length;
+                name = '' + position;
+                if (selected > 1) {
+                    name += '#' + selected;
+                }
             }
-            this.info_bar.message();
-            // TODO activate_save
+            var buttons = ['print', 'relate', 'email', 'save', 'attach'];
+            for (const button_id of buttons) {
+                const button = this.buttons[button_id];
+                let can_be_sensitive = button._can_be_sensitive;
+                if (can_be_sensitive === undefined) {
+                    can_be_sensitive = true;
+                }
+                if ((button_id == 'print') ||
+                    (button_id == 'relate') ||
+                    (button_id == 'email')) {
+                    can_be_sensitive |= this.screen.get_buttons().some(
+                        function(button) {
+                            var keyword = button.attributes.keyword || 'action';
+                            return keyword == button_id;
+                        });
+                } else if (button_id == 'save') {
+                    can_be_sensitive &= !this.screen.readonly;
+                }
+                set_sensitive(button_id, position && can_be_sensitive);
+            }
+            set_sensitive('switch_', this.screen.number_of_views > 1);
+            set_sensitive('delete_', this.screen.deletable);
+            set_sensitive('previous', this.screen.has_previous());
+            set_sensitive('next', this.screen.has_next());
+
+            var msg;
+            var size_display_func;
+            if (this.forced_count) {
+                size_display_func = (x) => x;
+            } else {
+                size_display_func = Sao.common.humanize;
+            }
+            if (size < max_size) {
+                msg = (
+                    name + '@' +
+                    size_display_func(size) + '/' +
+                    size_display_func(max_size));
+                if (!this.forced_count &&
+                        (max_size >= this.screen.count_limit)) {
+                    msg += '+';
+                }
+            } else {
+                msg = name + '/' + size_display_func(size);
+            }
+            this.status_label.text(msg).attr('title', msg);
+            this.info_bar.clear();
+            this.activate_save();
+            this.refresh_attachment_preview();
+            this.forced_count = false;
+        },
+        record_modified: function() {
+            this.activate_save();
+        },
+        record_saved: function() {
+            this.activate_save();
+            this.refresh_resources();
+        },
+        activate_save: function() {
+            this.menu_buttons.save.toggleClass(
+                'disabled', !this.screen.modified());
+            this.buttons.save.prop('disabled', !this.screen.modified());
         },
         action: function() {
-            window.setTimeout(function() {
-                this.buttons.action.find('button').click();
-            }.bind(this));
+            window.setTimeout(() => {
+                this.buttons.action.click();
+            });
         },
         relate: function() {
-            window.setTimeout(function() {
-                this.buttons.relate.find('button').click();
-            }.bind(this));
+            window.setTimeout(() => {
+                this.buttons.relate.click();
+            });
         },
         print: function() {
-            window.setTimeout(function() {
-                this.buttons.print.find('button').click();
-            }.bind(this));
+            window.setTimeout(() => {
+                this.buttons.print.click();
+            });
         },
         export: function(){
-            this.modified_save().then(function() {
+            this.modified_save().then(() => {
                 new Sao.Window.Export(
                     this.title.text(), this.screen,
                     this.screen.current_view.get_fields());
-            }.bind(this));
+            });
         },
         do_export: function(export_) {
-            this.modified_save().then(function() {
-                var ids = this.screen.current_view.selected_records
-                    .map(function(r) {
-                        return r.id;
-                    });
-                var fields = export_['export_fields.'].map(function(field) {
-                    return field.name;
-                });
+            this.modified_save().then(() => {
+                var ids, paths;
+                if (this.screen.current_view &&
+                    (this.screen.current_view.view_type == 'tree') &&
+                    this.screen.current_view.children_field) {
+                    ids = this.screen.listed_records.map(r => r.id);
+                    paths = this.screen.listed_paths;
+                } else {
+                    ids = this.screen.selected_records.map(r => r.id);
+                    paths = this.screen.selected_paths;
+                }
+                var fields = export_['export_fields.'].map(
+                    field => field.name);
                 this.screen.model.execute(
                     'export_data', [ids, fields], this.screen.context)
                     .then(function(data) {
@@ -1299,25 +1575,29 @@
                             'fields': fields,
                             'data': data,
                         };
-                        unparse_obj.data = data.map(function(row) {
-                            return Sao.Window.Export.format_row(row);
+                        unparse_obj.data = data.map((row, i) => {
+                            var indent = (
+                                paths && paths[i] ? paths[i].length -1 : 0);
+                            return Sao.Window.Export.format_row(row, indent);
                         });
                         var delimiter = ',';
-                        var encoding = 'utf-8';
                         if (navigator.platform &&
                             navigator.platform.slice(0, 3) == 'Win') {
                             delimiter = ';';
-                            encoding = 'cp1252';
                         }
                         var csv = Papa.unparse(unparse_obj, {
                             quoteChar: '"',
                             delimiter: delimiter,
                         });
+                        if (navigator.platform &&
+                            navigator.platform.slice(0, 3) == 'Win') {
+                            csv = Sao.BOM_UTF8 + csv;
+                        }
                         Sao.common.download_file(
                             csv, export_.name + '.csv',
-                            {'type': 'text/csv;charset=' + encoding});
+                            {'type': 'text/csv;charset=utf-8'});
                     });
-            }.bind(this));
+            });
         },
         import: function(){
             if (!Sao.common.MODELACCESS.get(this.screen.model_name).create) {
@@ -1326,7 +1606,12 @@
             new Sao.Window.Import(this.title.text(), this.screen);
         },
         get_url: function() {
-            return this.screen.get_url(this.attributes.name);
+            return this.screen.get_url(this.name);
+        },
+        _force_count: function(evt) {
+            Sao.Tab.Form._super._force_count.call(this, evt);
+            var domain = this.screen.screen_container.get_text();
+            this.screen._force_count(domain);
         },
     });
 
@@ -1339,26 +1624,30 @@
             this.view_id = (attributes.view_ids.length > 0 ?
                     attributes.view_ids[0] : null);
             this.context = attributes.context;
-            this.name = attributes.name || '';
+            var name = attributes.name;
+            if (!name) {
+                name = Sao.common.MODELNAME.get(this.model);
+            }
+            this.name = name;
             this.dialogs = [];
             this.board = null;
             UIView = new Sao.Model('ir.ui.view');
-            this.view_prm = UIView.execute('read', [[this.view_id], ['arch']],
-                    this.context);
-            this.view_prm.done(function(views) {
-                var view, board;
-                view = jQuery(jQuery.parseXML(views[0].arch));
+            this.view_prm = UIView.execute(
+                'view_get', [this.view_id], this.context);
+            this.view_prm.done(view => {
+                var board;
+                view = jQuery(jQuery.parseXML(view.arch));
                 this.board = new Sao.View.Board(view, this.context);
-                this.board.actions_prms.done(function() {
+                this.board.actions_prms.done(() => {
                     var i, len, action;
                     for (i = 0, len = this.board.actions.length; i < len; i++) {
                         action = this.board.actions[i];
-                        action.screen.tab = this;
+                        action.screen.windows.push(this);
                     }
                     this.board.reload();
-                }.bind(this));
+                });
                 this.content.append(this.board.el);
-            }.bind(this));
+            });
             this.create_tabcontent();
             this.set_name(this.name);
             this.title.text(this.name_el.text());
@@ -1402,26 +1691,26 @@
             wizard.tab = this;
             this.create_tabcontent();
             this.title.text(this.name_el.text());
-            this.el.append(wizard.form);
+            this.content.remove();
+            this.content = wizard.form;
+            this.main.css('padding-top', 0).append(wizard.form);
         },
         create_toolbar: function() {
             return jQuery('<span/>');
         },
         _close_allowed: function() {
             var wizard = this.wizard;
-            var prm = jQuery.when();
             if ((wizard.state !== wizard.end_state) &&
                 (wizard.end_state in wizard.states)) {
-                prm = wizard.response(wizard.end_state);
+                wizard.response(
+                    wizard.states[wizard.end_state].attributes);
             }
             var dfd = jQuery.Deferred();
-            prm.always(function() {
-                if (wizard.state === wizard.end_state) {
-                    dfd.resolve();
-                } else {
-                    dfd.reject();
-                }
-            });
+            if (wizard.state === wizard.end_state) {
+                dfd.resolve();
+            } else {
+                dfd.reject();
+            }
             return dfd.promise();
         }
     });

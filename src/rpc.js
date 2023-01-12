@@ -3,14 +3,11 @@
 (function() {
     'use strict';
 
-    Sao.rpc = function(args, session, async) {
+    Sao.rpc = function(args, session=null, async=true, process_exception=true) {
         var dfd = jQuery.Deferred(),
             result;
         if (!session) {
             session = new Sao.Session();
-        }
-        if (async === undefined) {
-            async = true;
         }
         var params = jQuery.extend([], args.params);
         params.push(jQuery.extend({}, session.context, params.pop()));
@@ -33,15 +30,20 @@
         var ajax_success = function(data, status_, query) {
             if (data === null) {
                 Sao.common.warning.run('',
-                        Sao.i18n.gettext('Unable to reach the server.'));
-                dfd.reject();
+                        Sao.i18n.gettext('Unable to reach the server.'))
+                    .always(dfd.reject);
             } else if (data.error) {
+                if (!process_exception) {
+                    dfd.reject();
+                    return;
+                }
+
                 var name, msg, description;
                 if (data.error[0] == 'UserWarning') {
                     name = data.error[1][0];
                     msg = data.error[1][1];
                     description = data.error[1][2];
-                    Sao.common.userwarning.run(msg, description)
+                    Sao.common.userwarning.run(description, msg)
                         .then(function(result) {
                             if (!~['always', 'ok'].indexOf(result)) {
                                 dfd.reject();
@@ -55,11 +57,14 @@
                                     'always': result == 'always'
                                 }], {}]
                             }, session).done(function() {
-                                Sao.rpc(args, session).then(
-                                    dfd.resolve, dfd.reject);
+                                if (async) {
+                                    Sao.rpc(args, session).then(
+                                        dfd.resolve, dfd.reject);
+                                } else {
+                                    dfd.resolve();
+                                }
                             });
                         }, dfd.reject);
-                    return;
                 } else if (data.error[0] == 'UserError') {
                     msg = data.error[1][0];
                     description = data.error[1][1];
@@ -74,9 +79,9 @@
                     }
                     Sao.common.warning.run(description, msg)
                         .always(dfd.reject);
-                    return;
                 } else if (data.error[0] == 'ConcurrencyException') {
-                    if (args.method.startsWith('model.') &&
+                    if (async &&
+                        args.method.startsWith('model.') &&
                         (args.method.endsWith('.write') ||
                             args.method.endsWith('.delete')) &&
                         (args.params[0].length == 1)) {
@@ -88,12 +93,17 @@
                                 Sao.rpc(args, session).then(
                                     dfd.resolve, dfd.reject);
                             }, dfd.reject);
-                        return;
                     } else {
                         Sao.common.message.run('Concurrency Exception',
                                 'tryton-warning').always(dfd.reject);
-                        return;
                     }
+                } else if (data.error[0] == 'TimeoutException') {
+                    Sao.common.message.run(
+                        Sao.i18n.gettext(
+                            'The server took too much time to answer. ' +
+                            'You may try again later.'),
+                        'tryton-warning'
+                    ).always(dfd.reject);
                 // PKUNK Fix#10127
                 } else if (data.error[0] == "'ir.session'") {
                     return session.do_logout()
@@ -104,9 +114,9 @@
                             })
                         );
                 } else {
-                    Sao.common.error.run(data.error[0], data.error[1]);
+                    Sao.common.error.run(data.error[0], data.error[1])
+                        .always(dfd.reject);
                 }
-                dfd.reject();
             } else {
                 result = data.result;
                 if (session.cache) {
@@ -128,16 +138,20 @@
             if (query.status == 401) {
                 //Try to relog
                 Sao.Session.renew(session).then(function() {
-                    Sao.rpc(args, session).then(dfd.resolve, dfd.reject);
+                    if (async) {
+                        Sao.rpc(args, session).then(dfd.resolve, dfd.reject);
+                    } else {
+                        dfd.resolve();
+                    }
                 }, dfd.reject);
-                return;
             } else if (query.status == 429) {
                 Sao.common.message.run(
                     Sao.i18n.gettext('Too many requests. Try again later.'),
-                    'tryton-error').always(dfd.reject);
+                    'tryton-error')
+                    .always(dfd.reject);
             } else {
-                Sao.common.error.run(status_, error);
-                dfd.reject();
+                Sao.common.error.run(status_, error)
+                    .always(dfd.reject);
             }
         };
 
@@ -163,6 +177,8 @@
         });
         if (async) {
             return dfd.promise();
+        } else if (result === undefined) {
+            throw dfd;
         } else {
             return result;
         }
@@ -183,7 +199,7 @@
                        value = Sao.DateTime(value.year,
                                value.month - 1, value.day, value.hour,
                                value.minute, value.second,
-                               value.microsecond / 1000, true);
+                               Math.ceil(value.microsecond / 1000), true);
                        break;
                    case 'date':
                        value = Sao.Date(value.year,
@@ -191,23 +207,13 @@
                        break;
                    case 'time':
                        value = Sao.Time(value.hour, value.minute,
-                               value.second, value.microsecond / 1000);
+                           value.second, Math.ceil(value.microsecond / 1000));
                        break;
                     case 'timedelta':
                        value = Sao.TimeDelta(null, value.seconds);
                        break;
                    case 'bytes':
-                       // javascript's atob does not understand linefeed
-                       // characters
-                       var byte_string = atob(value.base64.replace(/\s/g, ''));
-                       // javascript decodes base64 string as a "DOMString", we
-                       // need to convert it to an array of bytes
-                       var array_buffer = new ArrayBuffer(byte_string.length);
-                       var uint_array = new Uint8Array(array_buffer);
-                       for (var j=0; j < byte_string.length; j++) {
-                           uint_array[j] = byte_string.charCodeAt(j);
-                       }
-                       value = uint_array;
+                       value = Sao.common.atob(value);
                        break;
                    case 'Decimal':
                        value = new Sao.Decimal(value.decimal);
@@ -274,18 +280,9 @@
                     'decimal': value.toString()
                 };
             } else if (value instanceof Uint8Array) {
-                var strings = [], chunksize = 0xffff;
-                // JavaScript Core has hard-coded argument limit of 65536
-                // String.fromCharCode can not be called with too many
-                // arguments
-                for (var j = 0; j * chunksize < value.length; j++) {
-                    strings.push(String.fromCharCode.apply(
-                                null, value.subarray(
-                                    j * chunksize, (j + 1) * chunksize)));
-                }
                 value = {
                     '__class__': 'bytes',
-                    'base64': btoa(strings.join(''))
+                    'base64': Sao.common.btoa(value),
                 };
             } else {
                 value = jQuery.extend({}, value);
