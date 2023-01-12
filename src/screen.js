@@ -1341,7 +1341,16 @@
                 to_sync.push(form);
             }
 
+            var new_record_fields = {};
             for (const form of to_sync) {
+                for (var fname in form.screen.model.fields) {
+                    if (!(fname in this.current_record.model.fields)) {
+                        new_record_fields[fname] = form.screen.model.fields[fname].description;
+                    }
+                }
+                if (new_record_fields) {
+                    this.current_record.group.add_fields(new_record_fields);
+                }
                 form.screen.current_record = this.current_record;
                 form.display();
             }
