@@ -683,8 +683,8 @@
                 if (~rec_named_fields.indexOf(fdescription.type))
                     fnames_to_fetch.push(fname + '.rec_name');
                 if ((fdescription.type == 'selection') &&
-                        ((fdescription.loading || 'eager') == 'eager')) {
-                    fnames_to_fetch.push(fname + '.string');
+                        ((fdescription.loading || 'lazy') == 'eager')) {
+                    fnames_to_fetch.push(fname + ':string');
                 }
             }
             if (!~fnames.indexOf('rec_name')) {
@@ -845,11 +845,16 @@
                 if (this.model.fields[name] instanceof Sao.field.One2Many) {
                     later[name] = value;
                 }
-                if ((this.model.fields[name] instanceof Sao.field.Many2One) ||
-                        (this.model.fields[name] instanceof Sao.field.Reference) ||
-                        (this.model.fields[name] instanceof Sao.field.Selection)) {
-                    var related = name + '.';
+                var related;
+                var field = this.model.fields[name];
+                if ((field instanceof Sao.field.Many2One) ||
+                        (field instanceof Sao.field.Reference)) {
+                    related = name + '.';
                     this._values[related] = values[related] || {};
+                } else if ((field instanceof Sao.field.Selection) &&
+                        (name + ':string' in values)){
+                    related = name + ':string';
+                    this._values[related] = values[related];
                 }
                 this.model.fields[name].set(this, value);
                 this._loaded[name] = true;
