@@ -1549,7 +1549,7 @@
             } else if (force_change) {
                 this.changed(record);
                 record.validate(null, true, false, true);
-                this.set_modified();
+                record.set_modified();
             }
         },
         get_client: function(record) {
