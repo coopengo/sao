@@ -35,10 +35,16 @@
             });
             this._view_forms = [];
         },
-        display: function() {
+        display: function(selected_nodes) {
             var record, view_form, view_form_frame, to_delete;
             var deferreds = [];
             var new_elements = [];
+            var selected = new Set();
+            if (!jQuery.isEmptyObject(selected_nodes)) {
+                for (const id_path of selected_nodes) {
+                    selected.add(id_path[0]);
+                }
+            }
             for (var i = 0; i < this.group.length; i++) {
                 record = this.group[i];
                 view_form = this._view_forms[i];
@@ -57,7 +63,7 @@
                 } else {
                     view_form_frame.removeClass('disabled');
                 }
-                if (this.record === record) {
+                if ((this.record === record) || selected.has(record.id)) {
                     view_form_frame.addClass('list-group-item-selected');
                 } else {
                     view_form_frame.removeClass('list-group-item-selected');
@@ -71,6 +77,17 @@
             jQuery(to_delete.map(function (vf) { return vf.el[0]; }))
                 .parent().detach();
             return jQuery.when.apply(jQuery, deferreds);
+        },
+        get_selected_paths: function() {
+            var paths = [];
+            var view_form_frame;
+            for (const form of this._view_forms) {
+                view_form_frame = form.el.parent();
+                if (view_form_frame.hasClass('list-group-item-selected')) {
+                    paths.push([form.record.id]);
+                }
+            }
+            return paths;
         },
         _create_form: function(record) {
             var view_form = new Sao.View.ListGroupViewForm(
@@ -127,28 +144,46 @@
             }
         },
         _select_row: function(event_) {
-            var current_view_form;
-            var view_form_idx = event_.data;
-            var view_form = this._view_forms[view_form_idx];
+            var next_form_idx = event_.data;
+            var next_view_form = this._view_forms[next_form_idx];
 
-            if (event_.shiftKey) {
-                for (const other_view_form of this._view_forms) {
-                    if (other_view_forms.record === this.record) {
-                        current_view_form = other_view_form;
-                        break;
+            var prm = jQuery.when();
+            if (this.record && (next_view_form.record != this.record)) {
+                if (!this.screen.group.parent) {
+                    if (!this.record.validate(
+                            this.get_fields(), false, false, false)) {
+                        prm = jQuery.Deferred().reject();
+                    } else {
+                        prm = this.record.save();
                     }
+                } else if (this.screen.attributes.pre_validate) {
+                    prm = this.record.pre_validate();
                 }
-                this.select_records(i, view_form_idx);
-            } else {
-                if (!(event_.ctrlKey || event_.metaKey)) {
-                    this.select_records(null, null);
+            }
+
+            prm.done(() => {
+                var current_view_form;
+
+                if (event_.shiftKey) {
+                    for (const other_view_form of this._view_forms) {
+                        if (other_view_forms.record === this.record) {
+                            current_view_form = other_view_form;
+                            break;
+                        }
+                    }
+                    this.select_records(i, next_form_idx);
+                } else {
+                    if (!(event_.ctrlKey || event_.metaKey)) {
+                        this.select_records(null, null);
+                    }
+                    this.record = next_view_form.record;
+                    next_view_form.el.parent()
+                        .toggleClass('list-group-item-selected');
                 }
-                this.record = view_form.record;
-                view_form.el.parent().toggleClass('list-group-item-selected');
-            }
-            if (current_view_form) {
-                this.record = current_view_form.record;
-            }
+                if (current_view_form) {
+                    this.record = current_view_form.record;
+                }
+            });
         }
     });
 
