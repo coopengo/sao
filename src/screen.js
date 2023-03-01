@@ -2097,6 +2097,8 @@
                     });
             } else if (action == 'reload context') {
                 Sao.Session.current_session.reload_context();
+            } else if (action.startsWith('clear_cache')) {
+                Sao.Session.current_session.cache.clear(action.split(' ').slice(1).join(' '));
             }
         },
         get_url: function(name) {
