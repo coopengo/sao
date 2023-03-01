@@ -818,6 +818,8 @@
             this.search_count = 0;
             this.screen_container = new Sao.ScreenContainer(
                 attributes.tab_domain);
+            this._multiview_form = null;
+            this._multiview_group = null;
             this.breadcrumb = attributes.breadcrumb || [];
 
             this.context_screen = null;
@@ -852,9 +854,6 @@
             this.fields_view_tree = {};
             this._domain_parser = {};
             this.pre_validate = false;
-            // [Coog specific] used for group_sync
-            this.parent = null;
-            // end
             this.switch_callback = null;
         },
         get readonly() {
@@ -1219,12 +1218,12 @@
             if (this.group.parent) {
                 this.order = null;
             }
+            this.group.add_fields(fields);
             if (group && group.length) {
                 this.current_record = group[0];
             } else {
                 this.current_record = null;
             }
-            this.group.add_fields(fields);
             for (name in fields_views) {
                 var views = fields_views[name];
                 for (const view of views) {
@@ -1322,8 +1321,39 @@
                 }
             }
             // [Coog specific] multi_mixed_view
-            if (this.parent && changed){
-                this.parent.group_sync(this, this.current_record);
+            if (changed){
+                this._sync_group();
+            }
+        },
+        _sync_group: function() {
+            if (!this._multiview_form || (this.current_view.view_type != "tree")) {
+                return;
+            }
+            if (!this.current_record) {
+                return;
+            }
+
+            var to_sync = [];
+            let [tree, ...forms] = this._multiview_form.widget_groups[this._multiview_group];
+            for (const form of forms) {
+                if (form.screen.current_view.view_type != "form") {
+                    continue;
+                }
+                to_sync.push(form);
+            }
+
+            var new_record_fields = {};
+            for (const form of to_sync) {
+                for (var fname in form.screen.model.fields) {
+                    if (!(fname in this.current_record.model.fields)) {
+                        new_record_fields[fname] = form.screen.model.fields[fname].description;
+                    }
+                }
+                if (new_record_fields) {
+                    this.current_record.group.add_fields(new_record_fields);
+                }
+                form.screen.current_record = this.current_record;
+                form.display();
             }
         },
         load: function(ids, set_cursor=true, modified=false, position=-1) {
@@ -1929,6 +1959,10 @@
             }
             if (this.group.parent) {
                 promises.push(this.group.parent.root_parent.reload());
+            }
+            if (this._multiview_form) {
+                var root_parent = this.current_record.root_parent;
+                this._multiview_form.screen.reload([root_parent.id]);
             }
             return jQuery.when.apply(jQuery, promises).then(() => {
                 this.display();
