@@ -2119,10 +2119,10 @@
             }
             // XXX: Evaluate tab domain later
             // Dynamic domain evaluation in screens and tabs
-            // if (!jQuery.isEmptyObject(this.attributes.tab_domain)) {
-            //     query_string.push([
-            //         'tab_domain', dumps(this.attributes.tab_domain)]);
-            // }
+            if (!jQuery.isEmptyObject(this.attributes.tab_domain)) {
+                query_string.push([
+                    'tab_domain', dumps(this.attributes.tab_domain)]);
+            }
             var path = ['model', this.model_name];
             var view_ids = this.views.map(
                 function(v) {return v.view_id;}).concat(this.view_ids);
