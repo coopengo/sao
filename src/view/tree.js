@@ -756,6 +756,10 @@
                     if (Sao.common.contains(expanded, path)) {
                         const children = record.field_get_client(
                             this.children_field);
+                        // JMO add_fields here is to prevent error
+                        // in field_get_client with 'multi_mixed_view'
+                        // on loan contracts. Not sure this is exactly right.
+                        children.model.add_fields(this.children_definitions[children.model.name]);
                         Array.prototype.push.apply(
                             records, group_records(children, path));
                     }
@@ -1381,19 +1385,12 @@
         var redraw = function() {
             for (; i < rows.length; i++) {
                 var row = rows[i];
-                var record = row.record;
-                var field_name;
-                for (var j=0; j < row.tree.columns.length; j++) {
-                    var column = row.tree.columns[j];
-                    if (column.type == 'field') {
-                        field_name = column.attributes.name;
-                        break;
-                    }
-                }
-                if (field_name && !record.is_loaded(field_name)) {
+                var record = row.record,
+                    column = row.tree.columns[0];
+                if (!record.is_loaded(column.attributes.name)) {
                     // Prefetch the first field to prevent promises in
                     // Cell.render
-                    record.load(field_name).done(redraw);
+                    record.load(column.attributes.name).done(redraw);
                     return;
                 } else {
                     row.redraw(selected, expanded);
