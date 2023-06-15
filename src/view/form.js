@@ -3616,116 +3616,6 @@ function eval_pyson(value){
                 return;
 
             function is_compatible(screen, record){
-                if (screen.current_view === undefined)
-                    return false;
-
-                return (!(screen.current_view.view_type == 'form' &&
-                    record !== undefined &&
-                    screen.model_name != record.model.name));
-            }
-
-            var key;
-            var record;
-            var widget;
-            var widgets = this.view.widgets[this.field_name];
-            var to_sync = [];
-
-            for (var j = 0; j < widgets.length; j++){
-                widget = widgets[j];
-                if (!widget.hasOwnProperty('attributes')){
-                    return;
-                }
-
-                if (widget == this ||
-                    widget.attributes.group != this.attributes.group ||
-                    !widget.hasOwnProperty('screen')){
-                    continue;
-                }
-
-                if (widget.screen.current_record == current_record){
-                    continue;
-                }
-
-                record = current_record;
-                if (!is_compatible(widget.screen, record))
-                    record = null;
-                if (!widget.validate())
-                    return;
-
-                to_sync.push({'widget': widget, 'record': record});
-            }
-            widget = null;
-
-            for (var i = 0; i < to_sync.length; i++){
-                widget = to_sync[i].widget;
-                record = to_sync[i].record;
-
-                if (widget.screen.current_view === undefined)
-                    continue;
-
-                if (widget.screen.current_view.view_type == 'form' &&
-                    record !== undefined && record !== null &&
-                    widget.screen.group.model.name == record.group.model.name){
-                    var fields = widget.screen.group.model.fields;
-                    var ret = [];
-                    for(var name in fields){
-                        ret[name] = fields[name].description;
-                    }
-                    record.group.model.add_fields(ret);
-                }
-
-                widget.screen.current_record = record;
-                widget.display(widget.record(), widget.field());
-            }
-            // !!!> resize forms to fix display width
-            if (widget){
-                for (j in widget.view.containers) {
-                    var container = widget.view.containers[j];
-                    container.resize();
-                }
-            }
-        },
-        get_access: function(type) {
-            var model = this.attributes.relation;
-            if (model) {
-                return Sao.common.MODELACCESS.get(model)[type];
-            }
-            return true;
-        },
-        get read_access() {
-            return this.get_access('read');
-        },
-        get create_access() {
-            var create = this.attributes.create;
-            if (create === undefined) {
-                create = true;
-            } else if (typeof create == 'string') {
-                create = Boolean(parseInt(create, 10));
-            }
-            return create && this.get_access('create');
-        },
-        get write_access() {
-            return this.get_access('write');
-        },
-        get delete_access() {
-            var delete_ = this.attributes.delete;
-            if (delete_ === undefined) {
-                delete_ = true;
-            } else if (typeof delete_ == 'string') {
-                delete_ = Boolean(parseInt(delete_, 10));
-            }
-            return delete_ && this.get_access('delete');
-        },
-        get modified() {
-            return this.screen.current_view.modified;
-        },
-        group_sync: function(screen, current_record){
-            if (this.attributes.mode == 'form')
-                return;
-            if (!this.view || !this.view.widgets)
-                return;
-
-            function is_compatible(screen, record){
                 if (!screen.current_view)
                     return false;
 
@@ -3823,6 +3713,40 @@ function eval_pyson(value){
                     to_display.display(to_display.record, to_display.field);
                 });
             }
+        },
+        get_access: function(type) {
+            var model = this.attributes.relation;
+            if (model) {
+                return Sao.common.MODELACCESS.get(model)[type];
+            }
+            return true;
+        },
+        get read_access() {
+            return this.get_access('read');
+        },
+        get create_access() {
+            var create = this.attributes.create;
+            if (create === undefined) {
+                create = true;
+            } else if (typeof create == 'string') {
+                create = Boolean(parseInt(create, 10));
+            }
+            return create && this.get_access('create');
+        },
+        get write_access() {
+            return this.get_access('write');
+        },
+        get delete_access() {
+            var delete_ = this.attributes.delete;
+            if (delete_ === undefined) {
+                delete_ = true;
+            } else if (typeof delete_ == 'string') {
+                delete_ = Boolean(parseInt(delete_, 10));
+            }
+            return delete_ && this.get_access('delete');
+        },
+        get modified() {
+            return this.screen.current_view.modified;
         },
         set_readonly: function(readonly) {
             Sao.View.Form.One2Many._super.set_readonly.call(this, readonly);
