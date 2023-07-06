@@ -582,6 +582,13 @@ function eval_pyson(value){
                 cell.css('vertical-align', yalign);
             }
 
+            if (attributes.yfill) {
+                cell.addClass('yfill');
+                if (attributes.yexpand) {
+                    widget.el.css('height', '100%');
+                }
+            }
+
             if (attributes.help) {
                 widget.el.attr('title', attributes.help);
             }
@@ -600,6 +607,12 @@ function eval_pyson(value){
                 }
             });
 
+            var get_y_size = function(row) {
+                row = jQuery(row);
+                return row.children(':not(.yfill)').toArray().reduce(
+                    (acc, element) => Math.max(acc, element.clientHeight),
+                    0);
+            };
             var get_xexpands = function(row) {
                 row = jQuery(row);
                 var xexpands = [];
@@ -667,6 +680,8 @@ function eval_pyson(value){
             }
             for (let row of rows) {
                 row = jQuery(row);
+                row.children('.yfill').css('height', '');
+                var y_size = get_y_size(row);
                 let i = 0;
                 for (let cell of row.children()) {
                     cell = jQuery(cell);
@@ -687,6 +702,18 @@ function eval_pyson(value){
                         }
                     } else {
                         cell.css('width', '');
+                    }
+                    if ((y_size > 0) &&
+                        cell.hasClass('yfill') &&
+                        (cell.children(':not(.tooltip)').css('display') !=
+                            'none')) {
+                        cell.css('height', y_size + 'px');
+                        // Override max-height set in sao.css required to have a
+                        // scrollbar
+                        cell.find('.treeview, .list-form').first().css(
+                            'max-height', y_size + 'px');
+                    } else {
+                        cell.css('height', '');
                     }
                     // show/hide when container is horizontal or vertical
                     // to not show padding
